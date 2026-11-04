@@ -513,6 +513,18 @@
 
 <audio id="bgm" preload="none"></audio>
 <audio id="uiMusic" src="Ui.mp3" loop preload="auto" playsinline style="position:fixed;left:-9999px;top:0;width:1px;height:1px"></audio>
+
+<!-- 触屏诊断开关（手机端没有 F12，用这个开关日志）。
+     默认半透明，点一下开启，再点关闭。 -->
+<button id="touchDbgToggle" title="触屏诊断">🐟</button>
+<style>
+#touchDbgToggle{
+  position:fixed;left:6px;top:6px;width:34px;height:34px;border-radius:50%;
+  border:0;background:rgba(10,60,110,.45);color:#fff;font-size:16px;line-height:34px;
+  z-index:99998;opacity:.35;padding:0;touch-action:manipulation;
+}
+#touchDbgToggle.on{background:#0a4;opacity:.9;}
+</style>
 <script src="corr_chart.js"></script>
 <script src="still_chart.js"></script>
 <script src="welkin-os.js"></script>

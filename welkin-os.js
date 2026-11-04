@@ -2006,6 +2006,12 @@ function judgeLane(lane,stamp,pre){
     const ahead=n.time-nowClock;
     if(ahead>BAD_WINDOW){game.lanePtr[lane]=idx;break;}   // future beyond BAD: stop, nothing consumed
     if(ahead<-BAD_WINDOW){idx++;continue;}                // expired: leave to miss loop
+    if(window.TOUCH_DEBUG){
+      tlog('judge',{
+        lane:lane,note:idx,type:n.type,dt:ahead.toFixed(3),
+        ptrWas:(game.lanePtr[lane]||0),clock:nowClock.toFixed(3)
+      });
+    }
     game.lanePtr[lane]=idx+1;
     const dt=ahead,bestDt=Math.abs(dt);
     game.lastDelta=dt;game.lastType='';
@@ -2427,6 +2433,7 @@ function stepGame(dt){
     if(n.perform)continue;
     if(n.type==='break'&&!n.judged&&!n.breakArmed&&game.clock>n.time+MISS_DELAY){
       n.judged=true;game.miss++;game.combo=0;
+      if(window.TOUCH_DEBUG)tlog('MISS',{lane:n.lane,note:i,type:'break',clock:game.clock.toFixed(3),ntime:n.time.toFixed(3)});
       game.feedback='MISS';game.feedbackType='M';game.feedbackTimer=.62;feedbackYOffset=0;
       addMissFx(n.lane);
       continue;
@@ -2434,12 +2441,14 @@ function stepGame(dt){
     if(n.type==='break')continue;
     if(n.type==='hold'&&!n.headHit&&!n.judged&&game.clock>n.time+MISS_DELAY){
       n.judged=true;n.holdFailed=true;game.miss++;game.combo=0;
+      if(window.TOUCH_DEBUG)tlog('MISS',{lane:n.lane,note:i,type:'hold-head',clock:game.clock.toFixed(3),ntime:n.time.toFixed(3)});
       game.feedback='MISS';game.feedbackType='M';game.feedbackTimer=.62;feedbackYOffset=0;
       addMissFx(n.lane);
       continue;
     }
     if(!n.judged&&game.clock>n.time+MISS_DELAY){
       n.judged=true;game.miss++;game.combo=0;
+      if(window.TOUCH_DEBUG)tlog('MISS',{lane:n.lane,note:i,type:n.type,clock:game.clock.toFixed(3),ntime:n.time.toFixed(3)});
       game.feedback='MISS';game.feedbackType='M';game.feedbackTimer=.62;feedbackYOffset=0;
       addMissFx(n.lane);
     }
@@ -2715,6 +2724,110 @@ function wipe(cb){
 /* ============================================================
    15. gameplay —input
    ============================================================ */
+/* ---- 输入诊断日志 (TOUCH_DEBUG) ----
+   目的：把「事件到底到没到」「时间戳合不合并」「多指时 move 怎么重发」
+   这三件事变成可读的数据，而不是靠猜。
+   开启方式：在游戏页控制台执行  touchDebugOn()
+   关闭：touchDebugOff()   导出：touchDebugDump()   清空：touchDebugClear()
+   只记录游戏进行中的事件，不改变任何判定行为。 */
+window.TOUCH_DEBUG=false;
+window.__touchLog=[];
+const TOUCH_LOG_MAX=4000;
+function tlog(type,o){
+  if(!window.TOUCH_DEBUG)return;
+  if(window.__touchLog.length>=TOUCH_LOG_MAX)window.__touchLog.shift();
+  window.__touchLog.push(Object.assign({
+    t:type,
+    wall:performance.now().toFixed(1),
+    clk:isPlaying?(game.clock).toFixed(3):'-'
+  },o));
+}
+window.touchDebugOn=function(){
+  window.TOUCH_DEBUG=true;window.__touchLog=[];
+  showTouchHud(true);
+  console.log('%c[TOUCH_DEBUG] 已开启，去打一遍歌，完事执行 touchDebugDump()','color:#0a0;font-weight:bold');
+  return 'on';
+};
+window.touchDebugOff=function(){window.TOUCH_DEBUG=false;showTouchHud(false);return 'off';};
+window.touchDebugClear=function(){window.__touchLog=[];return 'cleared';};
+
+/* 手机端用的浮动面板：右上角一个小按钮，点开就能复制全部日志。
+   不依赖 F12（手机没有控制台）。 */
+let touchHudEl=null,touchHudSyncEl=null,touchHudExportEl=null;
+function showTouchHud(on){
+  if(!touchHudEl){
+    touchHudEl=document.createElement('div');
+    touchHudEl.id='touchDebugHud';
+    touchHudEl.style.cssText='position:fixed;top:8px;right:8px;z-index:99999;font:12px/1.4 monospace;';
+    touchHudEl.innerHTML=
+      '<button id="touchHudSync" style="background:#0a4;color:#fff;border:0;border-radius:6px;padding:8px 10px;margin-right:6px;font-size:12px">同步到电脑</button>'+
+      '<button id="touchHudExp" style="background:#06c;color:#fff;border:0;border-radius:6px;padding:8px 10px;font-size:12px">复制日志</button>';
+    document.body.appendChild(touchHudEl);
+    touchHudSyncEl=document.getElementById('touchHudSync');
+    touchHudExportEl=document.getElementById('touchHudExp');
+    touchHudSyncEl.onclick=function(e){
+      e.stopPropagation();
+      try{touchHudSyncEl.textContent='同步中…';touchSyncToServer(true);}catch(err){}
+      setTimeout(function(){touchHudSyncEl.textContent='同步到电脑';},1200);
+    };
+    touchHudExportEl.onclick=function(e){
+      e.stopPropagation();
+      const txt=touchLogText();
+      if(!txt){alert('还没记录到事件');return;}
+      // 尝试用剪贴板，失败则弹出一段可全选复制的文本
+      let done=false;
+      try{
+        if(navigator.clipboard&&navigator.clipboard.writeText){
+          navigator.clipboard.writeText(txt);
+          done=true;
+        }
+      }catch(err){}
+      if(done){touchHudExportEl.textContent='已复制';setTimeout(function(){touchHudExportEl.textContent='复制日志';},1200);}
+      else{
+        const ta=document.createElement('textarea');
+        ta.value=txt;ta.style.cssText='position:fixed;inset:10% 5%;width:90%;height:80%;z-index:100000;font:11px monospace';
+        document.body.appendChild(ta);ta.select();
+        touchHudExportEl.textContent='上面文本全选复制';
+      }
+    };
+  }
+  touchHudEl.style.display=on?'block':'none';
+}
+function touchLogText(){
+  return window.__touchLog.map(r=>Object.entries(r).map(([k,v])=>k+'='+v).join(' ')).join('\n');
+}
+
+/* 手机端把日志发回本机：游戏由本机 serve，所以同源请求能到。
+   开一个极小的接收端（campus-log-sink）即可。没开也不影响游戏。 */
+function touchSyncToServer(silent){
+  const body=touchLogText();
+  if(!body)return;
+  const ctrl=(typeof AbortController!=='undefined')?new AbortController():null;
+  if(ctrl)setTimeout(()=>ctrl.abort(),8000);
+  fetch('/touch-log',{
+    method:'POST',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body:body,
+    signal:ctrl?ctrl.signal:undefined
+  }).then(r=>{
+    if(!silent)console.log('[TOUCH_DEBUG] 同步结果',r.status);
+    if(r.ok&&touchHudSyncEl){touchHudSyncEl.textContent='已上传';setTimeout(function(){touchHudSyncEl.textContent='同步到电脑';},1500);}
+  }).catch(()=>{
+    if(!silent)console.log('[TOUCH_DEBUG] 同步失败，用「复制日志」手动复制');
+    if(touchHudSyncEl){touchHudSyncEl.textContent='上传失败·用复制';setTimeout(function(){touchHudSyncEl.textContent='同步到电脑';},1800);}
+  });
+}
+window.touchDebugDump=function(){
+  const logs=window.__touchLog.slice();
+  console.log('[TOUCH_DEBUG] 共 '+logs.length+' 条');
+  if(console.table){try{console.table(logs);}catch(e){}}
+  const txt=logs.map(r=>Object.entries(r).map(([k,v])=>k+'='+v).join(' ')).join('\n');
+  try{
+    const w=window.open('','_blank');
+    if(w){w.document.write('<pre style="font-size:12px">'+txt.replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))+'</pre>');w.document.title='touch-log';}
+  }catch(e){}
+  return logs;
+};
 /* Touch architecture (rebuilt):
    1. Stage geometry is CACHED. getBoundingClientRect() forces a synchronous
       layout pass; calling it inside touchstart/touchmove is what stalls the
@@ -2766,6 +2879,14 @@ function handleDown(clientX,clientY,id,stamp){
     if(startAudio())audioSyncPending=true;
   }
   const lane=laneFromClientX(clientX,true);
+  if(window.TOUCH_DEBUG){
+    const rawX=(clientX-stageGeo.left)/stageGeo.width*V.w;
+    tlog('down',{
+      id:id,ts:Number(stamp).toFixed(1),gap:(performance.now()-stamp).toFixed(1),
+      x:clientX.toFixed(0),rawX:rawX.toFixed(0),f:((rawX-V.x)/V.laneW).toFixed(3),lane:lane,
+      geoW:stageGeo.width.toFixed(0),geoLeft:stageGeo.left.toFixed(0),stale:stageGeo.stale
+    });
+  }
   if(lane>=0&&lane<4){
     pointerLanes[id]=lane;game.keyHold[lane]=true;
     judgeLane(lane,stamp,nowClock);       // judged immediately at press time
@@ -2808,6 +2929,15 @@ function laneHasActiveHold(lane){
 }
 stage.addEventListener('touchstart',e=>{
   if(e.cancelable)e.preventDefault();
+  if(window.TOUCH_DEBUG){
+    tlog('start',{
+      n:e.changedTouches.length,total:e.touches.length,
+      ids:[...e.changedTouches].map(t=>t.identifier).join('/'),
+      ts:Number(e.timeStamp).toFixed(1),now:performance.now().toFixed(1),
+      gap:(performance.now()-e.timeStamp).toFixed(1),
+      xs:[...e.changedTouches].map(t=>t.clientX.toFixed(0)).join('/')
+    });
+  }
   for(let i=0;i<e.changedTouches.length;i++){
     const t=e.changedTouches[i];
     handleDown(t.clientX,t.clientY,t.identifier,e.timeStamp);
@@ -2815,15 +2945,38 @@ stage.addEventListener('touchstart',e=>{
 },{passive:false});
 stage.addEventListener('touchmove',e=>{
   if(e.cancelable)e.preventDefault();
+  if(window.TOUCH_DEBUG){
+    tlog('move',{
+      n:e.changedTouches.length,total:e.touches.length,
+      ids:[...e.changedTouches].map(t=>t.identifier).join('/'),
+      ts:Number(e.timeStamp).toFixed(1),gap:(performance.now()-e.timeStamp).toFixed(1),
+      xs:[...e.changedTouches].map(t=>t.clientX.toFixed(0)).join('/'),
+      lanes:[...e.changedTouches].map(t=>{const l=pointerLanes[t.identifier];return l===undefined?'-':l;}).join('/')
+    });
+  }
   for(let i=0;i<e.changedTouches.length;i++){
     const t=e.changedTouches[i];
     handleSlide(t.clientX,t.identifier,e.timeStamp);
   }
 },{passive:false});
 window.addEventListener('touchend',e=>{
+  if(window.TOUCH_DEBUG){
+    tlog('end',{
+      n:e.changedTouches.length,left:e.touches.length,
+      ids:[...e.changedTouches].map(t=>t.identifier).join('/'),
+      ts:Number(e.timeStamp).toFixed(1),gap:(performance.now()-e.timeStamp).toFixed(1)
+    });
+  }
   for(let i=0;i<e.changedTouches.length;i++)handleUp(e.changedTouches[i].identifier);
 },{passive:true});
 window.addEventListener('touchcancel',e=>{
+  if(window.TOUCH_DEBUG){
+    tlog('CANCEL',{
+      n:e.changedTouches.length,left:e.touches.length,
+      ids:[...e.changedTouches].map(t=>t.identifier).join('/'),
+      lanes:[...e.changedTouches].map(t=>{const l=pointerLanes[t.identifier];return l===undefined?'-':l;}).join('/')
+    });
+  }
   for(let i=0;i<e.changedTouches.length;i++)handleUp(e.changedTouches[i].identifier);
 },{passive:true});
 
@@ -4264,6 +4417,16 @@ function init(){
   safe(()=>{
     try{preload();$('#loading').classList.add('active');}
     catch(e){try{$('#loading').classList.remove('active');afterLoad();}catch(_){}}
+  });
+  // 触屏诊断开关（手机/平板用，没有 F12 也能开日志）
+  safe(()=>{
+    const b=document.getElementById('touchDbgToggle');
+    if(!b)return;
+    b.addEventListener('click',e=>{
+      e.stopPropagation();
+      if(window.TOUCH_DEBUG){window.touchDebugOff();b.classList.remove('on');}
+      else{window.touchDebugOn();b.classList.add('on');}
+    },{passive:true});
   });
 }
 init();
