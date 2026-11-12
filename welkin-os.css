@@ -1570,6 +1570,18 @@ body.perf-lite .song-select.ch3 .ss-node.secret.locked:after{animation:none;opac
 .sel-loading .sl2-bar i{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,#0c8fc0,#7ff4ff,#ffd166);box-shadow:0 0 14px rgba(90,235,255,.6);transition:width .18s ease}
 .sel-loading .sl2-bar span{position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 14px,rgba(255,255,255,.12) 14px 15px);animation:sl2Scan 1.1s linear infinite}
 .sel-loading .sl2-txt{display:flex;justify-content:space-between;margin-top:12px;font:600 9px/1.6 var(--font-m);letter-spacing:.22em;color:#6fa8c2}
+/* 承章 loading 跟着 ASCENT 章节的冷灰走，别一进第二章还是初章那套青色 */
+.sel-loading.ch2{background:radial-gradient(120% 90% at 50% 30%,#121617 0%,#07090a 55%,#020303 100%)}
+.sel-loading.ch2 .sl2-grid{background-image:linear-gradient(rgba(205,218,222,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(205,218,222,.045) 1px,transparent 1px)}
+.sel-loading.ch2 .sl2-shell{border-color:rgba(205,218,222,.26);background:linear-gradient(160deg,rgba(24,28,30,.93),rgba(5,7,8,.96));box-shadow:0 0 60px rgba(190,205,210,.10),inset 0 0 40px rgba(190,205,210,.04)}
+.sel-loading.ch2 .sl2-shell::before,.sel-loading.ch2 .sl2-shell::after{border-color:rgba(215,228,232,.5)}
+.sel-loading.ch2 .sl2-kicker{color:#93a3a8}
+.sel-loading.ch2 h2{color:#eef3f5;text-shadow:0 0 24px rgba(210,224,228,.28)}
+.sel-loading.ch2 .sl2-bar{border-color:rgba(200,214,218,.3);background:rgba(40,48,52,.4)}
+.sel-loading.ch2 .sl2-bar i{background:linear-gradient(90deg,#4c565a,#c9d4d7,#eef3f5);box-shadow:0 0 14px rgba(210,224,228,.55)}
+.sel-loading.ch2 .sl2-txt{color:#93a3a8}
+/* 窄屏给承章那行 kicker 收一点字号，别在 COVER / STREAM 中间断成两行 */
+@media (max-width:560px){.sel-loading.ch2 .sl2-kicker{font-size:8.5px;letter-spacing:.18em}}
 @keyframes sl2Grid{to{background-position:44px 44px}}
 @keyframes sl2Scan{to{background-position:15px 0}}
 body.perf-lite .sel-loading .sl2-grid{animation-duration:10s}

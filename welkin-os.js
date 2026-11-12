@@ -885,6 +885,21 @@ function makeMainSongs(prefix,levels,bossLevel){
   }));
   return [{id:prefix+'-boss',chapterId:prefix,no:'TRACK 06',title:'—',artist:'—',charter:'—',bpm:'—',length:'—',notes:0,level:bossLevel,boss:true,chart:null,cover:null,state:'locked'},...normal];
 }
+/* 承章六首：曲绘全部到位，顺序是 TRACK 01→05 = init / an / bn / pen / fb，魔王曲 = ca。
+   曲名暂时不公开（选歌页里显示 ?），并且每张卡都罩一层黑雾（shroud），
+   和第一章没解锁的那几关同一个观感；等第一章收完尾再决定什么时候揭。
+   谱面都还没接，chart 保持 null。id 沿用 makeMainSongs 的 ch2-2…ch2-6 / ch2-boss，
+   这样以前存下来的通关记录不会因为改曲目表而对不上。 */
+const CH2_COVER_FILES=['init.jpg','an.jpg','bn.jpg','pen.jpg','fb.jpg','ca.jpg'];
+function makeCh2Songs(){
+  const levels=[4,6,7,8,10];
+  const normal=levels.map((level,i)=>({
+    id:'ch2-'+(i+2),chapterId:'ch2',no:'TRACK '+String(i+1).padStart(2,'0'),title:'?',
+    artist:'—',charter:'—',bpm:'—',length:'—',notes:0,level,boss:false,chart:null,
+    cover:CH2_COVER_FILES[i],state:'locked',shroud:true
+  }));
+  return [{id:'ch2-boss',chapterId:'ch2',no:'TRACK 06',title:'?',artist:'—',charter:'—',bpm:'—',length:'—',notes:0,level:14,boss:true,chart:null,cover:CH2_COVER_FILES[5],state:'locked',shroud:true},...normal];
+}
 const EFFULGENCE={
   id:'ch1-2',chapterId:'ch1',no:'TRACK 01',title:'Effulgence',artist:'WELKIN',charter:'Welkin',
   bpm:'—',length:'02:41',notes:495,level:5,boss:false,chart:'effulgence',audio:'Effulgence.mp3',cover:'Effulgence.jpg',state:'locked'
@@ -894,8 +909,9 @@ const SPARK={
   bpm:'175',length:'02:25',notes:1078,level:8,boss:false,chart:'spark',audio:'The Spark.mp3',cover:'The Spark.jpg',state:'locked'
 };
 /* 初章新增第三关：插在 The Spark(TRACK 02) 和 R.I.P.(原 TRACK 03) 之间，成为新的第三关。
-   占位曲（无谱面/无曲绘），和第二章一样锁在解锁链上，逐关解锁；id 用 ch1-7 避免撞号。 */
-const CH1_T3={id:'ch1-7',chapterId:'ch1',no:'TRACK 03',title:'—',artist:'—',charter:'—',bpm:'—',length:'—',notes:0,level:9,boss:false,chart:null,audio:null,cover:null,state:'locked'};
+   曲绘已到位（ltzz.jpg），曲名 テリトリーバトル；谱面还没做，所以 chart 仍是 null，
+   和第二章一样锁在解锁链上，逐关解锁；id 用 ch1-7 避免撞号。 */
+const CH1_T3={id:'ch1-7',chapterId:'ch1',no:'TRACK 03',title:'テリトリーバトル',artist:'—',charter:'—',bpm:'—',length:'—',notes:0,level:9,boss:false,chart:null,audio:null,cover:'ltzz.jpg',state:'locked'};
 const RIP={id:'ch1-4',chapterId:'ch1',no:'TRACK 04',title:'R.I.P.',artist:'—',charter:'—',bpm:'—',length:'—',notes:0,level:10,boss:false,chart:null,audio:null,cover:'R.I.P.jpg',state:'locked'};
 const WSONG={id:'ch1-5',chapterId:'ch1',no:'TRACK 05',title:'W',artist:'—',charter:'—',bpm:'—',length:'—',notes:0,level:11,boss:false,chart:null,audio:null,cover:'W.jpg',state:'locked'};
 const CORR={id:'ch1-6',chapterId:'ch1',no:'TRACK 06',title:'Corrupted Entity',artist:'—',charter:'WeIkin',bpm:'181',length:'02:45',notes:1387,level:15,boss:true,chart:'corr',audio:'Corrupted Entity.mp3',cover:'Corr.jpg',state:'locked'};
@@ -911,7 +927,7 @@ const CH3_FINALE={
 const CHAPTERS=[
   {id:'prologue',no:'00',cn:'主线 · 序章',en:'PROLOGUE',sub:'THE ORIGIN SIGNAL',theme:'prologue',layout:'SOLO',progress:'0 / 1',previewArt:'wel.jpg',songs:[PROLOGUE_W]},
   {id:'ch1',no:'01',cn:'主线 · 初章',en:'ORIGIN',sub:'THE FIRST SIGNAL',theme:'ch1',layout:'HELIX',progress:'0 / 6',songs:[CORR,EFFULGENCE,SPARK,CH1_T3,RIP,WSONG]},
-  {id:'ch2',no:'02',cn:'主线 · 承章',en:'ASCENT',sub:'THE SECOND CURRENT',theme:'ch2',layout:'ORBIT',progress:'0 / 6',songs:makeMainSongs('ch2',[4,6,7,8,10],14)},
+  {id:'ch2',no:'02',cn:'主线 · 承章',en:'ASCENT',sub:'THE SECOND CURRENT',theme:'ch2',layout:'ORBIT',progress:'0 / 6',songs:makeCh2Songs()},
   {id:'ch3',no:'03',cn:'主线 · 终章',en:'TERMINUS',sub:'THE LAST HORIZON',theme:'ch3',layout:'CIRCUIT',progress:'0 / 7',songs:[...makeMainSongs('ch3',[6,8,9,10,12],15),CH3_FINALE]},
   {id:'ex',no:'EX',cn:'EX 章节',en:'ANOMALY',sub:'BEYOND THE LINE',theme:'ex',layout:'DIRECT',progress:'LOCKED',locked:true,previewArt:'Still.jpg',songs:[STILL]}
 ];
@@ -1075,25 +1091,41 @@ function renderChapterSelect(){
     });
   });
 }
-const CH1_COVERS=['Effulgence.jpg','The Spark.jpg','R.I.P.jpg','W.jpg','Corr.jpg'];
+/* 进章前把该章所有曲绘先解码一遍，别让选歌页里的 <img> 一张张往外跳。
+   初章 5 张、承章 6 张；序章和 EX 是单曲页，各走自己的 gate，不在这里排队。 */
+const CHAPTER_COVER_GATES={
+  ch1:['Effulgence.jpg','The Spark.jpg','R.I.P.jpg','W.jpg','Corr.jpg'],
+  ch2:CH2_COVER_FILES
+};
 function gateChapterCovers(ch,done){
-  if(!ch||ch.id!=='ch1'){done();return;}
+  const covers=ch?CHAPTER_COVER_GATES[ch.id]:null;
+  if(!covers||!covers.length){done();return;}
   const layer=$('#selLoading');if(!layer){done();return;}
+  const isCh2=ch.id==='ch2';
   layer.classList.add('active');
+  layer.classList.toggle('ch2',isCh2);
+  const kick=$('#selLoadKicker'),title=$('#selLoadTitle');
+  if(kick)kick.textContent=isCh2?'ASCENT DATA LINK // COVER STREAM':'CHAPTER DATA LINK // COVER STREAM';
+  if(title)title.textContent=isCh2?'SIGNAL UPLINK':'ARCHIVE UPLINK';
   const bar=$('#selLoadBar'),txt=$('#selLoadTxt');
-  bar.style.width='0%';txt.textContent='COVER 0 / '+CH1_COVERS.length;
+  bar.style.width='0%';txt.textContent='COVER 0 / '+covers.length;
+  /* 承章的 6 张图在本机几乎是瞬间读完的，给 loading 留一个 650ms 的最短停留，
+     不然「SIGNAL UPLINK」只闪一帧就没了。初章保持原来的节奏不动。 */
+  const startedAt=performance.now();
+  const minShow=isCh2?650:0;
   let loaded=0,finished=false;
   const tick=()=>{
     if(finished)return;
     loaded++;
-    bar.style.width=Math.round(loaded/CH1_COVERS.length*100)+'%';
-    txt.textContent='COVER '+loaded+' / '+CH1_COVERS.length;
-    if(loaded>=CH1_COVERS.length){
+    bar.style.width=Math.round(loaded/covers.length*100)+'%';
+    txt.textContent='COVER '+loaded+' / '+covers.length;
+    if(loaded>=covers.length){
       finished=true;
-      setTimeout(()=>{layer.classList.remove('active');done();},220);
+      const wait=220+Math.max(0,minShow-(performance.now()-startedAt));
+      setTimeout(()=>{layer.classList.remove('active');done();},wait);
     }
   };
-  CH1_COVERS.forEach(src=>{
+  covers.forEach(src=>{
     const im=new Image();
     let t=false;
     const once=()=>{if(!t){t=true;tick();}};
@@ -1398,7 +1430,10 @@ function songNodeHTML(song,i,pos){
   const stateClass=song.state==='available'?'avail':song.state==='clear'?'clear':'locked';
   const disabled=(song.state==='available'||song.state==='clear')||(song.state==='locked'&&!(song.boss&&song.chart))?'':'disabled';
   const locked=song.state==='locked';
-  const mystery=locked&&song.chapterId==='ch1'&&trackNum(song)>=3;
+  /* shrouded：承章现在整章都不揭（曲名 ? + 黑雾），跟锁没锁无关；
+     初章从 TRACK 03 起仍是「没解锁就先藏」。 */
+  const shrouded=locked||!!song.shroud;
+  const mystery=!!song.shroud||(locked&&song.chapterId==='ch1'&&trackNum(song)>=3);
   const title=mystery?'?':(locked&&song.secret?'???':song.title);
   const best=getBestFor(song.id);
   const apCls=(best&&best.ap)?' ap':'';
@@ -1407,7 +1442,7 @@ function songNodeHTML(song,i,pos){
   const numLabel=song.boss?(tall?song.no:'FINAL / '+String(trackNum(song)).padStart(2,'0')):song.no;
   const stateText=song.state==='available'?'READY':song.state==='clear'?'CLEAR':(song.secret?'···':'LOCKED');
   return `<button type="button" class="ss-node ${stateClass} ${song.boss?'boss':''} ${song.secret?'secret':''}" data-i="${i}" ${disabled} style="left:${pos[0]}%;top:${pos[1]}%;height:${nodeH}%">
-    <span class="ss-cover ${song.cover?'art':''}${apCls}">${song.boss?'<i class="boss-frame"></i>':''}${song.cover?`<img src="${song.cover}" alt="">`:''}${locked?'<span class="ss-fog tf"></span><span class="ss-fog bf"></span>':''}</span><span class="ss-copy"><span class="ss-num">${numLabel}</span><h3>${title}</h3></span>
+    <span class="ss-cover ${song.cover?'art':''}${apCls}">${song.boss?'<i class="boss-frame"></i>':''}${song.cover?`<img src="${song.cover}" alt="">`:''}${shrouded?'<span class="ss-fog tf"></span><span class="ss-fog bf"></span>':''}</span><span class="ss-copy"><span class="ss-num">${numLabel}</span><h3>${title}</h3></span>
     <span class="ss-state">${stateText}</span>${song.boss?'<i class="glitch"></i>':''}
   </button>`;
 }
