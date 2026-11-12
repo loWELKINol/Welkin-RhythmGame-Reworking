@@ -361,7 +361,7 @@ h1,h2,h3,p{margin:0}
   animation:coverIn 1.1s var(--ease) both .1s}
 @keyframes coverIn{0%{opacity:0;transform:perspective(1400px) rotateY(-7deg) rotateX(1.5deg) translateY(30px)}100%{opacity:1;transform:perspective(1400px) rotateY(-7deg) rotateX(1.5deg)}}
 .cover-inner{position:absolute;inset:0;overflow:hidden;background:#050b14}
-.cover-inner img{width:100%;height:100%;object-fit:cover;object-position:50% 28%;transform:scale(1.03);transition:transform 8s var(--ease);filter:saturate(.95) contrast(1.05)}
+.cover-inner img{width:100%;height:100%;object-fit:cover;object-position:50% 0%;transform:scale(1.03);transition:transform 8s var(--ease);filter:saturate(.95) contrast(1.05)}
 .cover-plane:hover .cover-inner img{transform:scale(1.08)}
 .cover-grad{position:absolute;inset:0;background:linear-gradient(180deg,rgba(2,5,10,.08) 35%,rgba(2,5,10,.55) 72%,rgba(2,5,10,.95) 100%)}
 .cover-scan{position:absolute;left:-10%;right:-10%;height:2px;top:-4%;background:linear-gradient(90deg,transparent,rgba(34,228,255,.8),transparent);box-shadow:0 0 20px rgba(34,228,255,.5);opacity:.55;animation:coverScan 5.6s linear infinite}
@@ -590,7 +590,7 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border:0;border-radiu
   .cover-plane{order:-1;justify-self:center;width:min(100%,680px);height:31vh;clip-path:polygon(0 0,100% 0,100% 84%,0 100%);transform:none;filter:drop-shadow(0 24px 50px rgba(0,0,0,.5))}
   .cover-sign{display:none}
   @keyframes coverIn{0%{opacity:0;transform:translateY(20px)}100%{opacity:1;transform:none}}
-  .cover-inner img{object-position:50% 26%}
+  .cover-inner img{object-position:50% 0%}
   .song-title{font-size:clamp(74px,17vw,120px);margin-top:4px}
   .song-meta{gap:16px 26px;margin:16px 0 14px;padding-top:14px}
   .song-best{margin-bottom:16px}

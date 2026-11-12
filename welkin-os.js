@@ -941,13 +941,13 @@ CHAPTERS.forEach(ch=>ch.songs.forEach(s=>{s.chapterCn=ch.cn;s.chapterEn=ch.en;s.
    - 曲名横跨整幅、往哪边裁都会缺字（ca 的 Corrupted、an 的 かすみそう）
      → 这两张拉伸铺满（100% 100%）。ca 是故障噪点风、an 只压 4%，肉眼看不出变形。
    没列到的图没有会切字的曲名，走默认 50% 50% + cover。
-   detailPos 只给曲目详情页那块斜面板用（那里裁得更狠，只挑竖图这种几乎不裁的调），
-   没写 detailPos 的歌在详情页保持原来的 50% 28%。 */
+   详情页那块斜面板不吃这张表：那边一律从图片顶边往下截（object-position 50% 0%），
+   因为人脸基本都在图上方，曲名反倒被裁掉也无所谓——曲名屏幕上本来就有。 */
 const COVER_CROP={
-  'Effulgence.jpg':{pos:'50% 100%',detailPos:'50% 100%'},
-  'ltzz.jpg':{pos:'50% 100%',detailPos:'50% 100%'},
+  'Effulgence.jpg':{pos:'50% 100%'},
+  'ltzz.jpg':{pos:'50% 100%'},
   'The Spark.jpg':{pos:'80% 50%'},
-  'init.jpg':{pos:'50% 0%',detailPos:'50% 0%'},
+  'init.jpg':{pos:'50% 0%'},
   'an.jpg':{fit:'100% 100%'},
   'ca.jpg':{fit:'100% 100%'}
 };
@@ -1607,12 +1607,10 @@ function renderSongDetail(song){
   $('#badgeFC').classList.toggle('on',!!(hasBest&&best.fc&&!best.ap));
   $('#coverImg').style.display=blank?'none':'block';
   $('#coverImg').src=song.cover||'cover.jpg';
-  /* 详情页的大曲绘也是 object-fit:cover 铺在斜面板上，同样会裁边。
-     默认 50% 28%（偏上、保住脸），代价是印在底部的曲名被切掉半截；
-     所以只给「曲名贴边、而且竖图本来就没多少可裁」的几张单独定对准点
-     （COVER_CROP 里的 detailPos），宽幅图维持原来的 50% 28% 不动。 */
-  const detailCrop=song.cover?(COVER_CROP[song.cover]||null):null;
-  $('#coverImg').style.objectPosition=(detailCrop&&detailCrop.detailPos)?detailCrop.detailPos:'';
+  /* 详情页的大曲绘也是 object-fit:cover 铺在斜面板上，会裁边。
+     这里一律从图片顶边往下截（CSS 里 object-position:50% 0%），
+     理由是人脸基本都在图的上方，而曲名屏幕上本来就有，被裁掉不可惜。 */
+  $('#coverImg').style.objectPosition='';
   $('#coverInner').classList.toggle('blank',blank);
   $('#coverBlankText').textContent=`${song.chapterCn} / ${song.no}`;
   $('#coverRailRight').textContent=`${song.chapterNo} / ${song.no}`;
