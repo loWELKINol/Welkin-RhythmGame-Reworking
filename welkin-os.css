@@ -1369,8 +1369,26 @@ body.perf-lite .og-motes,body.perf-lite .og-rays{opacity:.25}
 .ch-card.locked:hover,.ch-card.locked.on{transform:none;border-color:rgba(150,160,164,.25);box-shadow:none}
 .ch-card.denied{animation:deniedShake .3s ease}
 @keyframes deniedShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}50%{transform:translateX(5px)}75%{transform:translateX(-3px)}}
-.ss-node .ss-cover{overflow:hidden}
-.ss-node .ss-cover img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:2}
+/* 曲绘不放进 <img>，改成 .ss-cover 的背景图：
+   移动端长按「歌曲曲绘」不会再弹出存图/拖出图片（背景图拿不到源文件），
+   黑雾和锁定也就守住内容了；卡片本身的点击（进曲目详情/打歌）完全不受影响。 */
+.ss-node .ss-cover{overflow:hidden;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-user-drag:none}
+/* 曲绘是背景图，铺法＝铺满裁边（cover + 深色底）：
+   图放大填满整个方框，比例对不上的地方裁掉，方框里不会再有黑边。
+   裁哪里由 welkin-os.js 里 COVER_CROP 给的 pos / fit 决定，
+   写进 --cover-pos / --cover-size 这个行内变量里，默认 50% 50% + cover：
+   曲名印在底部的就对底边、印在右边的就对右边，保证曲绘上印着的曲名裁完还是整的。
+   各章（尤其魔王曲）都有更高优先级的 background 简写，这里用 !important 盖住，
+   免得曲绘被那个渐变压成 auto（原图尺寸）或被平铺。 */
+.song-select .ss-node .ss-cover.art,
+.song-select .ss-node.boss .ss-cover.art{
+  background-color:#03080d!important;
+  background-repeat:no-repeat!important;
+  background-position:var(--cover-pos,50% 50%)!important;
+  background-size:var(--cover-size,cover)!important
+}
+/* 整张卡也不许长按选中/拖拽，只留点击 */
+.song-select .ss-node{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-user-drag:none}
 .ss-node .ss-cover.art:before,.ss-node .ss-cover.art:after{display:none}
 .ss-node .ss-cover.art{border-color:rgba(190,240,255,.4);box-shadow:0 0 14px rgba(34,228,255,.18)}
 .ss-node .ss-cover.ap{border-color:rgba(255,207,106,.85);box-shadow:0 0 0 1px rgba(255,207,106,.35),0 0 18px rgba(255,190,60,.55)}
@@ -1554,6 +1572,10 @@ body.perf-lite .song-select.ch3 .ss-node.secret.locked:after{animation:none;opac
 /* 底部黑雾：下沿几乎全黑、往上渐隐，比顶部那层更重，保证曲绘里印的曲名被吃掉 */
 .ss-node .ss-fog.bf{bottom:0;height:62%;background:linear-gradient(0deg,rgba(0,0,1,1),rgba(0,0,2,.995) 30%,rgba(0,1,3,.975) 55%,rgba(0,1,4,.86) 72%,rgba(0,2,5,.46) 88%,rgba(0,2,5,0) 100%);box-shadow:inset 0 -20px 28px -8px rgba(0,0,0,.98),inset 0 -2px 0 rgba(0,0,0,.95)}
 .ss-node .ss-fog.bf::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(120,220,255,.05) 0 1px,transparent 1px 4px);opacity:.55;-webkit-mask-image:linear-gradient(0deg,#000 0 48%,transparent 100%);mask-image:linear-gradient(0deg,#000 0 48%,transparent 100%)}
+/* 承章整章都是「? + 雾」，原来上下两层各盖 58%/62% 叠起来把曲绘糊成一整块黑。
+   这里把承章的两层各收一圈、中间留出一条能看见曲绘的缝，雾还在但不再是一团黑。 */
+.song-select.ch2 .ss-node .ss-fog.tf{height:47%;background:linear-gradient(180deg,rgba(0,0,2,.97),rgba(0,1,3,.82) 40%,rgba(0,2,5,.40) 64%,rgba(0,2,5,.10) 84%,rgba(0,2,5,0) 100%);box-shadow:inset 0 -20px 24px -14px rgba(0,0,0,.85),inset 0 8px 18px rgba(0,0,0,.85)}
+.song-select.ch2 .ss-node .ss-fog.bf{height:50%;background:linear-gradient(0deg,rgba(0,0,1,.98),rgba(0,0,2,.94) 30%,rgba(0,1,3,.80) 58%,rgba(0,1,4,.52) 76%,rgba(0,2,5,.24) 90%,rgba(0,2,5,0) 100%);box-shadow:inset 0 -14px 22px -8px rgba(0,0,0,.9),inset 0 -2px 0 rgba(0,0,0,.85)}
 /* 无曲绘的占位卡（NO ART / BOSS 角标）压在黑雾上面，别被糊掉；
    有 <img> 的曲绘保持原样（角标本来就压在图片下面） */
 .ss-node .ss-cover:not(.art):after{z-index:4}

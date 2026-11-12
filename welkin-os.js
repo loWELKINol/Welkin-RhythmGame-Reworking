@@ -932,6 +932,25 @@ const CHAPTERS=[
   {id:'ex',no:'EX',cn:'EX 章节',en:'ANOMALY',sub:'BEYOND THE LINE',theme:'ex',layout:'DIRECT',progress:'LOCKED',locked:true,previewArt:'Still.jpg',songs:[STILL]}
 ];
 CHAPTERS.forEach(ch=>ch.songs.forEach(s=>{s.chapterCn=ch.cn;s.chapterEn=ch.en;s.chapterNo=ch.no;}));
+/* 曲绘铺满（cover）以后，每张图的裁切对准点都记在这里，键就是曲绘文件名。
+   规则只有一条：印在曲绘上的曲名，裁完必须还是完整的字。
+   - 曲名在底部 → 对准底边 50% 100%（自上往下裁，裁掉的是上半截）
+   - 曲名在右侧 → 往右偏（The Spark 的 THE SPARK 在右边，偏 80% 既留住整行字，
+     也不会把她半张脸切在框外）
+   - 曲名在顶上 → 对准顶边 50% 0%（init 的 logo 在右上角）
+   - 曲名横跨整幅、往哪边裁都会缺字（ca 的 Corrupted、an 的 かすみそう）
+     → 这两张拉伸铺满（100% 100%）。ca 是故障噪点风、an 只压 4%，肉眼看不出变形。
+   没列到的图没有会切字的曲名，走默认 50% 50% + cover。
+   detailPos 只给曲目详情页那块斜面板用（那里裁得更狠，只挑竖图这种几乎不裁的调），
+   没写 detailPos 的歌在详情页保持原来的 50% 28%。 */
+const COVER_CROP={
+  'Effulgence.jpg':{pos:'50% 100%',detailPos:'50% 100%'},
+  'ltzz.jpg':{pos:'50% 100%',detailPos:'50% 100%'},
+  'The Spark.jpg':{pos:'80% 50%'},
+  'init.jpg':{pos:'50% 0%',detailPos:'50% 0%'},
+  'an.jpg':{fit:'100% 100%'},
+  'ca.jpg':{fit:'100% 100%'}
+};
 const CLEAR_KEY='welkin_os_clears_v1';
 let clears={};
 try{const raw=JSON.parse(localStorage.getItem(CLEAR_KEY)||'{}');if(raw&&typeof raw==='object')clears=raw;}catch(e){}
@@ -1092,10 +1111,21 @@ function renderChapterSelect(){
   });
 }
 /* 进章前把该章所有曲绘先解码一遍，别让选歌页里的 <img> 一张张往外跳。
-   初章 5 张、承章 6 张；序章和 EX 是单曲页，各走自己的 gate，不在这里排队。 */
+   列表直接从该章的 songs 里按顺序取（去重、跳过没曲绘的），
+   以后初章/承章再加歌、换曲绘，这里的张数自动跟着走，不会再停在 5。
+   序章和 EX 是单曲页，各走自己的 gate，不在这里排队。 */
+function chapterCoverList(id){
+  const ch=CHAPTERS.find(c=>c.id===id);
+  if(!ch||!ch.songs)return null;
+  const no=s=>Number(String(s.no||'').replace(/\D+/g,''))||99;
+  const out=[];
+  ch.songs.filter(s=>s.cover).sort((a,b)=>no(a)-no(b))
+    .forEach(s=>{if(out.indexOf(s.cover)<0)out.push(s.cover);});
+  return out.length?out:null;
+}
 const CHAPTER_COVER_GATES={
-  ch1:['Effulgence.jpg','The Spark.jpg','R.I.P.jpg','W.jpg','Corr.jpg'],
-  ch2:CH2_COVER_FILES
+  ch1:chapterCoverList('ch1'),
+  ch2:chapterCoverList('ch2')||CH2_COVER_FILES
 };
 function gateChapterCovers(ch,done){
   const covers=ch?CHAPTER_COVER_GATES[ch.id]:null;
@@ -1441,8 +1471,12 @@ function songNodeHTML(song,i,pos){
   const nodeH=songNodeH(song);
   const numLabel=song.boss?(tall?song.no:'FINAL / '+String(trackNum(song)).padStart(2,'0')):song.no;
   const stateText=song.state==='available'?'READY':song.state==='clear'?'CLEAR':(song.secret?'···':'LOCKED');
+  /* 曲绘铺法：按 COVER_CROP 里的对准点写行内变量，CSS 那边只认这两个变量。
+     变量直接挂在 inline style 上——背景图本来就在这儿，位置和缩放跟着一起走。 */
+  const coverCrop=song.cover?(COVER_CROP[song.cover]||null):null;
+  const coverVars=coverCrop?`${coverCrop.pos?`--cover-pos:${coverCrop.pos};`:''}${coverCrop.fit?`--cover-size:${coverCrop.fit};`:''}`:'';
   return `<button type="button" class="ss-node ${stateClass} ${song.boss?'boss':''} ${song.secret?'secret':''}" data-i="${i}" ${disabled} style="left:${pos[0]}%;top:${pos[1]}%;height:${nodeH}%">
-    <span class="ss-cover ${song.cover?'art':''}${apCls}">${song.boss?'<i class="boss-frame"></i>':''}${song.cover?`<img src="${song.cover}" alt="">`:''}${shrouded?'<span class="ss-fog tf"></span><span class="ss-fog bf"></span>':''}</span><span class="ss-copy"><span class="ss-num">${numLabel}</span><h3>${title}</h3></span>
+    <span class="ss-cover ${song.cover?'art':''}${apCls}"${song.cover?` style="background-image:url('${song.cover}');${coverVars}"`:''}>${song.boss?'<i class="boss-frame"></i>':''}${shrouded?'<span class="ss-fog tf"></span><span class="ss-fog bf"></span>':''}</span><span class="ss-copy"><span class="ss-num">${numLabel}</span><h3>${title}</h3></span>
     <span class="ss-state">${stateText}</span>${song.boss?'<i class="glitch"></i>':''}
   </button>`;
 }
@@ -1534,6 +1568,20 @@ function renderSongSelect(){
       if(song&&(song.state==='available'||song.state==='clear')){selectedChapter=ch;openSongDetail(song,'songselect');}
     });
   });
+  fitSongTitles();
+}
+/* 卡片窄的时候（手机 180px）长曲名会被 ellipsis 截成「テリトリーバ…」。
+   这里量一下实际宽度，超了就一档一档缩字号，宁可小一号也要把曲名整个摆出来。 */
+function fitSongTitles(){
+  $$('#ssNodes .ss-node h3').forEach(h=>{
+    h.style.fontSize='';
+    let size=parseFloat(getComputedStyle(h).fontSize)||14;
+    let guard=0;
+    while(h.scrollWidth>h.clientWidth+1&&size>9&&guard++<14){
+      size-=1;
+      h.style.fontSize=size+'px';
+    }
+  });
 }
 function renderSongDetail(song){
   const blank=!song.cover;
@@ -1559,6 +1607,12 @@ function renderSongDetail(song){
   $('#badgeFC').classList.toggle('on',!!(hasBest&&best.fc&&!best.ap));
   $('#coverImg').style.display=blank?'none':'block';
   $('#coverImg').src=song.cover||'cover.jpg';
+  /* 详情页的大曲绘也是 object-fit:cover 铺在斜面板上，同样会裁边。
+     默认 50% 28%（偏上、保住脸），代价是印在底部的曲名被切掉半截；
+     所以只给「曲名贴边、而且竖图本来就没多少可裁」的几张单独定对准点
+     （COVER_CROP 里的 detailPos），宽幅图维持原来的 50% 28% 不动。 */
+  const detailCrop=song.cover?(COVER_CROP[song.cover]||null):null;
+  $('#coverImg').style.objectPosition=(detailCrop&&detailCrop.detailPos)?detailCrop.detailPos:'';
   $('#coverInner').classList.toggle('blank',blank);
   $('#coverBlankText').textContent=`${song.chapterCn} / ${song.no}`;
   $('#coverRailRight').textContent=`${song.chapterNo} / ${song.no}`;
@@ -4895,6 +4949,7 @@ function wireUI(){
   window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{
     layoutGame();buildCity();
     if(state==='GAME'||state==='PAUSED'||state==='RESUMING')drawGame(0);
+    if(songSelectScreen.classList.contains('active'))fitSongTitles();
   },140);});
   window.addEventListener('orientationchange',()=>setTimeout(()=>{layoutGame();buildCity();},260));
 }
