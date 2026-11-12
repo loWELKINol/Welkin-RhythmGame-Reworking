@@ -893,11 +893,14 @@ const SPARK={
   id:'ch1-3',chapterId:'ch1',no:'TRACK 02',title:'The Spark',artist:'WELKIN',charter:'Welkin',
   bpm:'175',length:'02:25',notes:1078,level:8,boss:false,chart:'spark',audio:'The Spark.mp3',cover:'The Spark.jpg',state:'locked'
 };
-const RIP={id:'ch1-4',chapterId:'ch1',no:'TRACK 03',title:'R.I.P.',artist:'—',charter:'—',bpm:'—',length:'—',notes:0,level:10,boss:false,chart:null,audio:null,cover:'R.I.P.jpg',state:'locked'};
-const WSONG={id:'ch1-5',chapterId:'ch1',no:'TRACK 04',title:'W',artist:'—',charter:'—',bpm:'—',length:'—',notes:0,level:11,boss:false,chart:null,audio:null,cover:'W.jpg',state:'locked'};
-const CORR={id:'ch1-6',chapterId:'ch1',no:'TRACK 05',title:'Corrupted Entity',artist:'—',charter:'WeIkin',bpm:'181',length:'02:45',notes:1387,level:14,boss:true,chart:'corr',audio:'Corrupted Entity.mp3',cover:'Corr.jpg',state:'locked'};
+/* 初章新增第三关：插在 The Spark(TRACK 02) 和 R.I.P.(原 TRACK 03) 之间，成为新的第三关。
+   占位曲（无谱面/无曲绘），和第二章一样锁在解锁链上，逐关解锁；id 用 ch1-7 避免撞号。 */
+const CH1_T3={id:'ch1-7',chapterId:'ch1',no:'TRACK 03',title:'—',artist:'—',charter:'—',bpm:'—',length:'—',notes:0,level:9,boss:false,chart:null,audio:null,cover:null,state:'locked'};
+const RIP={id:'ch1-4',chapterId:'ch1',no:'TRACK 04',title:'R.I.P.',artist:'—',charter:'—',bpm:'—',length:'—',notes:0,level:10,boss:false,chart:null,audio:null,cover:'R.I.P.jpg',state:'locked'};
+const WSONG={id:'ch1-5',chapterId:'ch1',no:'TRACK 05',title:'W',artist:'—',charter:'—',bpm:'—',length:'—',notes:0,level:11,boss:false,chart:null,audio:null,cover:'W.jpg',state:'locked'};
+const CORR={id:'ch1-6',chapterId:'ch1',no:'TRACK 06',title:'Corrupted Entity',artist:'—',charter:'WeIkin',bpm:'181',length:'02:45',notes:1387,level:15,boss:true,chart:'corr',audio:'Corrupted Entity.mp3',cover:'Corr.jpg',state:'locked'};
 const STILL={id:'ex-1',chapterId:'ex',no:'TRACK 01',title:'Still (piano version)',artist:'—',charter:'Welkin',bpm:'130',length:'01:48',notes:365,level:6,boss:true,chart:'still',audio:'Still.mp3',cover:'Still.jpg',state:'locked'};
-/* 主线序章：单曲章节，曲目 W。它有自己的选歌页（DATAFALL），和初章 TRACK 04 的占位互不影响。 */
+/* 主线序章：单曲章节，曲目 W。它有自己的选歌页（DATAFALL），和初章 TRACK 05 的占位互不影响。 */
 const PROLOGUE_W={id:'prologue-1',chapterId:'prologue',no:'TRACK 01',title:'W.',artist:'WELKIN',charter:'Welkin',bpm:'152',length:'01:26',notes:84,level:2,boss:false,chart:'w',audio:'w.（.mp3',cover:'wel.jpg',state:'available'};
 /* 终章收尾曲：魔王曲之后的第 7 首。选歌页里放在魔王曲正上方，未解锁时几乎透明（secret）。
    它排在 TRACK 07，解锁链上自然变成「清完魔王曲才出现」。 */
@@ -907,7 +910,7 @@ const CH3_FINALE={
 };
 const CHAPTERS=[
   {id:'prologue',no:'00',cn:'主线 · 序章',en:'PROLOGUE',sub:'THE ORIGIN SIGNAL',theme:'prologue',layout:'SOLO',progress:'0 / 1',previewArt:'wel.jpg',songs:[PROLOGUE_W]},
-  {id:'ch1',no:'01',cn:'主线 · 初章',en:'ORIGIN',sub:'THE FIRST SIGNAL',theme:'ch1',layout:'HELIX',progress:'0 / 5',songs:[CORR,EFFULGENCE,SPARK,RIP,WSONG]},
+  {id:'ch1',no:'01',cn:'主线 · 初章',en:'ORIGIN',sub:'THE FIRST SIGNAL',theme:'ch1',layout:'HELIX',progress:'0 / 6',songs:[CORR,EFFULGENCE,SPARK,CH1_T3,RIP,WSONG]},
   {id:'ch2',no:'02',cn:'主线 · 承章',en:'ASCENT',sub:'THE SECOND CURRENT',theme:'ch2',layout:'ORBIT',progress:'0 / 6',songs:makeMainSongs('ch2',[4,6,7,8,10],14)},
   {id:'ch3',no:'03',cn:'主线 · 终章',en:'TERMINUS',sub:'THE LAST HORIZON',theme:'ch3',layout:'CIRCUIT',progress:'0 / 7',songs:[...makeMainSongs('ch3',[6,8,9,10,12],15),CH3_FINALE]},
   {id:'ex',no:'EX',cn:'EX 章节',en:'ANOMALY',sub:'BEYOND THE LINE',theme:'ex',layout:'DIRECT',progress:'LOCKED',locked:true,previewArt:'Still.jpg',songs:[STILL]}
@@ -988,8 +991,12 @@ function unlockExIfPossible(){
 unlockExIfPossible();
 let currentChapter=CHAPTERS[0],chapterFocus=0,selectedChapter=CHAPTERS[0];
 let selectedSong=EFFULGENCE,detailSource='songselect',detailReadyAt=0,uiLockUntil=0;
+/* 第一章 6 张卡：画布 150%，普通卡 12%、魔王曲 14%（物理尺寸和 130% 时的 14/16 一样），
+   彼此留 3.4% 空隙（约 37px），不再一张贴一张。
+   下标即 ch1.songs 的数组序：[魔王曲, TRACK01, 02, 03, 04, 05]，
+   所以 index0 在最上面，index1(TRACK01) 压到 80% 收尾，从 01 往上逐关爬。 */
 const SS_POS={
-  ch1:[[50,1],[67,79],[33,60],[67,41],[33,22]],
+  ch1:[[50,1],[67,80],[33,64.6],[67,49.2],[33,33.8],[67,18.4]],
   ch2:[[50,1],[67,73],[33,59],[67,45],[33,31],[67,17]],
   /* 终章 7 首：ch3.songs 的顺序是 [boss, 01,02,03,04,05, secret]，boss 在 index 0，
      所以这里按「数组下标」给位置：index0 魔王曲居中在最上面，index1=TRACK01 贴最下沿，
@@ -1000,7 +1007,7 @@ const SS_POS={
   ch3:[[50,11],[50,81.6],[67,68.3],[33,55],[67,41.7],[33,28.4],[50,1]]
 };
 const SS_POS_M={
-  ch1:[[50,1],[70,80],[30,61],[70,42],[30,23]],
+  ch1:[[50,1],[70,80],[30,64.6],[70,49.2],[30,33.8],[70,18.4]],
   ch2:[[50,1],[70,74],[30,60],[70,46],[30,32],[70,18]],
   /* 窄屏同一套间距思路，卡片高度 11%，所以间距按比例收到 3.4% / 4.6% */
   ch3:[[50,11],[50,85.7],[70,71.3],[30,56.9],[70,42.5],[30,28.1],[50,1]]
@@ -1381,6 +1388,9 @@ function songNodeH(song){
     if(song.boss)return narrow?12.5:11.5;
     return narrow?11:9;
   }
+  /* 第一章画布抬到 150%，卡片按比例从 14/16 收到 12/14，物理尺寸和原来一模一样，
+     省下来的高度全给卡片之间那 3.4% 的空隙。 */
+  if(song.chapterId==='ch1')return song.boss?14:12;
   const tall=song.chapterId==='ch2';
   return song.boss?(tall?16:21):(tall?14:18);
 }
@@ -1394,7 +1404,7 @@ function songNodeHTML(song,i,pos){
   const apCls=(best&&best.ap)?' ap':'';
   const tall=song.chapterId==='ch2'||song.chapterId==='ch3';
   const nodeH=songNodeH(song);
-  const numLabel=song.boss?(tall?song.no:'FINAL / 05'):song.no;
+  const numLabel=song.boss?(tall?song.no:'FINAL / '+String(trackNum(song)).padStart(2,'0')):song.no;
   const stateText=song.state==='available'?'READY':song.state==='clear'?'CLEAR':(song.secret?'···':'LOCKED');
   return `<button type="button" class="ss-node ${stateClass} ${song.boss?'boss':''} ${song.secret?'secret':''}" data-i="${i}" ${disabled} style="left:${pos[0]}%;top:${pos[1]}%;height:${nodeH}%">
     <span class="ss-cover ${song.cover?'art':''}${apCls}">${song.boss?'<i class="boss-frame"></i>':''}${song.cover?`<img src="${song.cover}" alt="">`:''}${locked?'<span class="ss-fog tf"></span><span class="ss-fog bf"></span>':''}</span><span class="ss-copy"><span class="ss-num">${numLabel}</span><h3>${title}</h3></span>
@@ -1503,8 +1513,8 @@ function renderSongDetail(song){
   $('#songBpm').textContent=song.notes||'—';
   $('#songLength').textContent=song.length;
   $('#songCharter').textContent=song.charter;
-  $('#songLevel').textContent=song.level+' / 16';
-  $('#songDiff').innerHTML=Array.from({length:16},(_,i)=>`<i class="${i<song.level?'on':''}"></i>`).join('');
+  $('#songLevel').textContent=song.level+' / 20';
+  $('#songDiff').innerHTML=Array.from({length:20},(_,i)=>`<i class="${i<song.level?'on':''}"></i>`).join('');
   const hasBest=!!song.chart&&best&&best.score>0;
   $('#songBest').textContent=hasBest?pad7(best.score):'0000000';
   $('#songRank').textContent=hasBest?rankOf(best.score):'—';
