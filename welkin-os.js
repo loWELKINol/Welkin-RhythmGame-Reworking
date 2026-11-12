@@ -1785,6 +1785,11 @@ const IM_POSTS=[
     id:'jirong',name:'季绒',role:'OPERATOR',avatar:'bb.im.jpg',time:'3H AGO',likes:8,pinned:false,
     text:'jj加油！',
     comments:[{name:'NEKO',avatar:'🐱',bg:'#ffb6c1',text:'哇库^o^'}]
+  },
+  {
+    id:'wvw',name:'w●ｖ●w',role:'OPERATOR',avatar:'wvw.jpg',time:'4H AGO',likes:6,pinned:false,
+    text:'zz厉害w～',
+    comments:[{name:'NEKO',avatar:'🐱',bg:'#ffb6c1',text:'为他打Call！030'}]
   }
 ];
 function updatePhonePanels(){
