@@ -908,10 +908,10 @@ const SPARK={
   id:'ch1-3',chapterId:'ch1',no:'TRACK 02',title:'The Spark',artist:'WELKIN',charter:'Welkin',
   bpm:'175',length:'02:25',notes:1078,level:8,boss:false,chart:'spark',audio:'The Spark.mp3',cover:'The Spark.jpg',state:'locked'
 };
-/* 初章新增第三关：插在 The Spark(TRACK 02) 和 R.I.P.(原 TRACK 03) 之间，成为新的第三关。
-   曲绘已到位（ltzz.jpg），曲名 テリトリーバトル；谱面还没做，所以 chart 仍是 null，
-   和第二章一样锁在解锁链上，逐关解锁；id 用 ch1-7 避免撞号。 */
-const CH1_T3={id:'ch1-7',chapterId:'ch1',no:'TRACK 03',title:'テリトリーバトル',artist:'—',charter:'—',bpm:'—',length:'—',notes:0,level:9,boss:false,chart:null,audio:null,cover:'ltzz.jpg',state:'locked'};
+/* 初章第三关：插在 The Spark(TRACK 02) 和 R.I.P.(原 TRACK 03) 之间，成为新的第三关。
+   曲绘 ltzz.jpg、曲名 テリトリーバトル、铺面 ltzz.qua、音乐 ltzz.mp3、难度 11；
+   仍锁在解锁链上逐关解锁；id 用 ch1-7 避免撞号。 */
+const CH1_T3={id:'ch1-7',chapterId:'ch1',no:'TRACK 03',title:'テリトリーバトル',artist:'WELKIN',charter:'Welkin',bpm:'140',length:'02:32',notes:857,level:11,boss:false,chart:'ltzz',audio:'ltzz.mp3',cover:'ltzz.jpg',state:'locked'};
 const RIP={id:'ch1-4',chapterId:'ch1',no:'TRACK 04',title:'R.I.P.',artist:'—',charter:'—',bpm:'—',length:'—',notes:0,level:10,boss:false,chart:null,audio:null,cover:'R.I.P.jpg',state:'locked'};
 const WSONG={id:'ch1-5',chapterId:'ch1',no:'TRACK 05',title:'W',artist:'—',charter:'—',bpm:'—',length:'—',notes:0,level:11,boss:false,chart:null,audio:null,cover:'W.jpg',state:'locked'};
 const CORR={id:'ch1-6',chapterId:'ch1',no:'TRACK 06',title:'Corrupted Entity',artist:'—',charter:'WeIkin',bpm:'181',length:'02:45',notes:1387,level:15,boss:true,chart:'corr',audio:'Corrupted Entity.mp3',cover:'Corr.jpg',state:'locked'};
@@ -1293,9 +1293,16 @@ function decodePrologueTitle(){
   };
   requestAnimationFrame(step);
 }
+/* 曲绘统一走背景图：元素上没有 <img>，长按/拖拽都拿不到图片文件。 */
+function setCoverArt(el,src,fallback){
+  if(!el)return;
+  const u=String(src||fallback||'').replace(/["\\]/g,'');
+  if(!u){el.style.backgroundImage='';return;}
+  el.style.backgroundImage='url("'+u+'")';
+}
 function renderPrologue(){
   const s=PROLOGUE_W;
-  const cover=$('#proCover');if(cover)cover.src=s.cover||'W.jpg';
+  setCoverArt($('#proCover'),s.cover,'wel.jpg');
   const title=$('#proTitle');if(title)title.textContent=s.title||'W';
   const ap=!!(getBestFor(s.id).ap);
   const core=$('#proCore');if(core)core.classList.toggle('ap',ap);
@@ -1342,7 +1349,7 @@ function closeSolo(){
 /* ---------- EX · HOLO ---------- */
 function renderExScreen(){
   const s=STILL;
-  const cover=$('#exCover');if(cover)cover.src=s.cover||'Still.jpg';
+  setCoverArt($('#exCover'),s.cover,'Still.jpg');
   const ap=!!(getBestFor(s.id).ap);
   const frame=$('#exFrame');if(frame)frame.classList.toggle('ap',ap);
   const base=String(s.title||'Still').replace(/\s*\(.*?\)\s*/g,'').trim();
@@ -2136,7 +2143,8 @@ const CHART_META={
   spark:{duration:146,final:145.3},
   corr:{duration:164.9,final:161.505},
   still:{duration:108,final:101.769},
-  w:{duration:86.34,final:82.006}
+  w:{duration:86.34,final:82.006},
+  ltzz:{duration:152.1,final:148.621}
 };
 const KEYS=['c','v','b','n'];
 
@@ -2185,6 +2193,7 @@ function finalizeChart(){
     }
     game.notes[i].is_chord=c>=2;
     game.notes[i].is_multi=c>=3;
+    game.notes[i].chordSize=c;
   }
 }
 /* EFFULGENCE — all notes except the opening double hold land 0.1s earlier. */
@@ -2309,6 +2318,7 @@ function generateBeatmap(){
   else if(selectedSong&&selectedSong.chart==='corr')buildCorrChart();
   else if(selectedSong&&selectedSong.chart==='still')buildStillChart();
   else if(selectedSong&&selectedSong.chart==='w')buildWChart();
+  else if(selectedSong&&selectedSong.chart==='ltzz')buildLtzzChart();
   finalizeChart();
   if(selectedSong)selectedSong.notes=game.notes.reduce((a,n)=>a+(n.perform?0:1),0);
 }
@@ -2421,7 +2431,7 @@ function judgeBreak(n){
   game.perfect++;game.weightSum+=1;game.combo++;
   game.feedback='PERFECT';game.feedbackType='P';game.feedbackTimer=.62;game.comboScale=1.5;feedbackYOffset=0;
   game.judgeLineGlow=1;game.screenShake=Math.max(game.screenShake,2);
-  addHitFx(n.lane,0,n.is_chord,n.is_multi);playBreakSfx(n.lane);
+  addHitFx(n.lane,0,n.is_chord,n.is_multi);ltzzChordShake(n);playBreakSfx(n.lane);
   if(game.combo>game.maxCombo)game.maxCombo=game.combo;
   if(Math.abs(n.time-FINAL_CHORD_TIME)<.05)game.flashAlpha=.5;
 }
@@ -2432,7 +2442,7 @@ function startHold(n,quality){
   game.feedback=quality==='P'?'PERFECT':'GOOD';game.feedbackType=quality==='P'?'P':'G';
   game.feedbackTimer=.62;game.comboScale=1.5;feedbackYOffset=0;
   game.judgeLineGlow=quality==='P'?1:.6;game.screenShake=quality==='P'?2:1.5;
-  addHitFx(n.lane,quality==='P'?0:1,n.is_chord,n.is_multi);
+  addHitFx(n.lane,quality==='P'?0:1,n.is_chord,n.is_multi);ltzzChordShake(n);
   playHitSfx(n.lane,quality==='P'?0:1);
   if(game.combo>game.maxCombo)game.maxCombo=game.combo;
 }
@@ -2505,11 +2515,11 @@ function judgeLane(lane,stamp){
     if(bestDt<=PERFECT_WINDOW){
       game.perfect++;game.weightSum+=1;game.combo++;
       game.feedback='PERFECT';game.feedbackType='P';game.judgeLineGlow=1;game.screenShake=2.0;
-      addHitFx(lane,0,n.is_chord,n.is_multi);playHitSfx(lane,0);
+      addHitFx(lane,0,n.is_chord,n.is_multi);ltzzChordShake(n);playHitSfx(lane,0);
     }else if(bestDt<=GOOD_WINDOW){
       game.good++;game.weightSum+=.65;game.combo++;
       game.feedback='GOOD';game.feedbackType='G';game.judgeLineGlow=.6;game.screenShake=1.5;
-      addHitFx(lane,1,n.is_chord,n.is_multi);playHitSfx(lane,1);
+      addHitFx(lane,1,n.is_chord,n.is_multi);ltzzChordShake(n);playHitSfx(lane,1);
     }else{
       game.bad++;game.combo=0;game.feedback='BAD';game.feedbackType='B';
       addHitFx(lane,2,n.is_chord,n.is_multi);
@@ -2617,6 +2627,22 @@ function addHitFx(lane,type,chord,multi){
   game.effects.push({k:'beam',lane,life:.4,max:.4,type});
   if(game.effects.length>620)game.effects.splice(0,game.effects.length-620);
   if(type===0)game.whiteFlash=Math.min(.2,game.whiteFlash+.022);
+}
+/* LTZZ (テリトリーバトル) — 双押/三押/四押按时间段触发屏幕抖动，增强手感。
+   只在命中(P/G)时触发；同一次和弦靠 ltzzChordShakeAt 去重，双押的两个键不会各抖一次。 */
+function ltzzChordShake(n){
+  if(!selectedSong||selectedSong.chart!=='ltzz')return;
+  const size=n.chordSize||1;
+  if(size<2)return;
+  const mt=n.time-MUSIC_DELAY;
+  if(Math.abs(mt-game.ltzzChordShakeAt)<0.03)return;
+  game.ltzzChordShakeAt=mt;
+  let amt=0;
+  if(mt>=0&&mt<=13.017)amt=9;
+  else if(mt>=16.6&&mt<=19.6)amt=size>=3?14:10;
+  else if(mt>=55&&mt<=59)amt=size>=3?15:11;
+  else if(mt>=62)amt=size>=4?15:size>=3?12:9;
+  if(amt>0)game.screenShake=Math.max(game.screenShake,amt);
 }
 function addMissFx(lane){
   const x=V.x+lane*V.laneW+V.laneW/2;
@@ -2881,7 +2907,7 @@ function resetGameData(){
     feedback:'',feedbackType:'',feedbackTimer:0,comboScale:1,screenShake:0,
     judgeLineGlow:0,bpmPulse:0,flashAlpha:0,whiteFlash:0,
     notes:[],effects:[],keyHold:[false,false,false,false],laneFlash:[0,0,0,0],
-    lastDelta:0,lastType:'',lastShakeBeat:-1,lanePtr:[0,0,0,0]
+    lastDelta:0,lastType:'',lastShakeBeat:-1,ltzzChordShakeAt:-999,lanePtr:[0,0,0,0]
   };
   generateBeatmap();
   // Mirror：谱面沿 y 轴左右翻转（只翻转显示/判定用的轨道，不改谱面配置与计分）。
@@ -3470,6 +3496,7 @@ function drawGame(dt){
   const isCorr=selectedSong&&selectedSong.chart==='corr';
   const isStill=selectedSong&&selectedSong.chart==='still';
   const isW=selectedSong&&selectedSong.chart==='w';
+  const isLtzz=selectedSong&&selectedSong.chart==='ltzz';
   const mt=game.clock-MUSIC_DELAY;
   // Corr: lanes + background go grayscale (0 -> 70% over the countdown, stays 70%).
   // Notes/receptors/judgement stay full color, so we only wrap the backdrop+playfield.
@@ -3479,11 +3506,13 @@ function drawGame(dt){
   c.globalCompositeOperation='source-over';c.globalAlpha=1;
   if(mono>0.001)c.filter='grayscale('+mono.toFixed(3)+')';
   drawBackdrop();
+  if(isLtzz&&!V.ultraFx)drawLtzzNobleLight();
 
   const shake=game.screenShake*(V.h/720);
   c.save();
   if(shake>.2)c.translate(rand(-shake,shake),rand(-shake,shake));
   if(isStill){const wa=stillWaveAmp(mt);if(wa>0)c.translate(Math.sin(mt*2.2)*wa*5,Math.sin(mt*1.6)*wa*4);}
+  if(isLtzz){const wa=ltzzWaterAmp(mt);if(wa>0){const s=V.h/720;c.translate(Math.sin(mt*2.0)*wa*10*s,Math.sin(mt*1.4)*wa*8*s);}}
   drawPlayfield();
   c.filter='none';
   if(settings.dim>0){
@@ -4451,6 +4480,58 @@ function drawStillRays(){
   }
   c.restore();
 }
+/* LTZZ (テリトリーバトル) exclusive FX — water sway + noble light, never drawn for other charts. */
+function ltzzWaterAmp(mt){
+  if(mt<19.714||mt>27)return 0;
+  return fxEnv(mt,19.714,27,1.0);
+}
+function drawLtzzNobleLight(){
+  const mt=game.clock-MUSIC_DELAY;
+  if(mt<30||mt>36)return;
+  const env=fxEnv(mt,30,36,1.3);
+  if(env<=.01)return;
+  const c=sctx,w=V.w,h=V.h;
+  c.save();c.globalCompositeOperation='lighter';c.globalAlpha=env;
+  // 中央暖金核心光晕（高贵金+白，边缘带一点冷蓝）
+  const cx=w*.5,cy=h*.42;
+  const core=c.createRadialGradient(cx,cy,0,cx,cy,Math.max(w,h)*.62);
+  core.addColorStop(0,'rgba(255,234,178,.20)');
+  core.addColorStop(.38,'rgba(255,208,124,.09)');
+  core.addColorStop(.68,'rgba(150,200,255,.05)');
+  core.addColorStop(1,'rgba(150,200,255,0)');
+  c.fillStyle=core;c.fillRect(0,0,w,h);
+  // 轨道上方垂落的柔光柱（金白，缓缓摇摆，无硬边）
+  const n=V.lowFx?3:5;
+  for(let i=0;i<n;i++){
+    const f=i/(n-1);
+    const x0=V.x+V.trackW*(.14+f*.72)+Math.sin(mt*.4+i*2.1)*V.trackW*.018;
+    const bw=V.laneW*(.5+.18*Math.sin(mt*.32+i*1.4));
+    const len=h*(.38+.18*Math.sin(mt*.36+i*2.6));
+    const sway=Math.sin(mt*.28+i*1.7)*.05;
+    c.save();c.translate(x0,h*.72);c.rotate(sway-Math.PI/2);
+    const g=c.createLinearGradient(0,0,0,-len);
+    g.addColorStop(0,'rgba(255,236,180,0)');
+    g.addColorStop(.5,'rgba(255,228,158,'+(.09+.05*Math.sin(mt*.7+i)).toFixed(3)+')');
+    g.addColorStop(1,'rgba(255,246,216,'+(.18+.06*Math.sin(mt*.5+i*2)).toFixed(3)+')');
+    c.fillStyle=g;c.fillRect(-bw,0,bw*2,-len);
+    c.restore();
+  }
+  // 上升的金色光尘
+  for(let k=0;k<(V.lowFx?10:20);k++){
+    const px=V.x+((k*137+mt*7)%V.trackW);
+    const py=((k*83+mt*14)%(h*.72));
+    const tw=.5+.5*Math.sin(mt*2+k*1.7);
+    c.fillStyle='rgba(255,242,204,'+(.10+.14*tw).toFixed(3)+')';
+    c.fillRect(px,py,1.4,1.4);
+  }
+  // 底部一条优雅的金色地平线光带
+  const band=c.createLinearGradient(0,h*.7,0,h*.88);
+  band.addColorStop(0,'rgba(255,226,150,0)');
+  band.addColorStop(.5,'rgba(255,226,150,'+(.08+.03*Math.sin(mt*1.1)).toFixed(3)+')');
+  band.addColorStop(1,'rgba(255,226,150,0)');
+  c.fillStyle=band;c.fillRect(0,h*.7,w,h*.18);
+  c.restore();
+}
 /* W. (prologue) exclusive FX — black fog + corruption, never drawn for other charts. */
 function wFogLevel(mt){
   let f=0;
@@ -4747,6 +4828,7 @@ function revealResult(){
 /* ============================================================
    18. wiring
    ============================================================ */
+/* 序章 / EX 的曲绘和主线章节一样是「保护」的：没有长按存图，也没有下载入口。 */
 function wireUI(){
   bind('#avatarPick','click',()=>$('#avatarFile').click());
   bind('#avatarFile','change',e=>{
