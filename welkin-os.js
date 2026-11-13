@@ -911,7 +911,7 @@ const SPARK={
 /* 初章第三关：插在 The Spark(TRACK 02) 和 R.I.P.(原 TRACK 03) 之间，成为新的第三关。
    曲绘 ltzz.jpg、曲名 テリトリーバトル、铺面 ltzz.qua、音乐 ltzz.mp3、难度 11；
    仍锁在解锁链上逐关解锁；id 用 ch1-7 避免撞号。 */
-const CH1_T3={id:'ch1-7',chapterId:'ch1',no:'TRACK 03',title:'テリトリーバトル',artist:'WELKIN',charter:'Welkin',bpm:'140',length:'02:32',notes:857,level:11,boss:false,chart:'ltzz',audio:'ltzz.mp3',cover:'ltzz.jpg',state:'locked'};
+const CH1_T3={id:'ch1-7',chapterId:'ch1',no:'TRACK 03',title:'テリトリーバトル',artist:'WELKIN',charter:'Welkin',bpm:'140',length:'02:32',notes:851,level:11,boss:false,chart:'ltzz',audio:'ltzz.mp3',cover:'ltzz.jpg',state:'locked'};
 const RIP={id:'ch1-4',chapterId:'ch1',no:'TRACK 04',title:'R.I.P.',artist:'—',charter:'—',bpm:'—',length:'—',notes:0,level:10,boss:false,chart:null,audio:null,cover:'R.I.P.jpg',state:'locked'};
 const WSONG={id:'ch1-5',chapterId:'ch1',no:'TRACK 05',title:'W',artist:'—',charter:'—',bpm:'—',length:'—',notes:0,level:11,boss:false,chart:null,audio:null,cover:'W.jpg',state:'locked'};
 const CORR={id:'ch1-6',chapterId:'ch1',no:'TRACK 06',title:'Corrupted Entity',artist:'—',charter:'WeIkin',bpm:'181',length:'02:45',notes:1387,level:15,boss:true,chart:'corr',audio:'Corrupted Entity.mp3',cover:'Corr.jpg',state:'locked'};
@@ -2901,6 +2901,7 @@ function buildStars(){
 function resetGameData(){
   const meta=CHART_META[selectedSong&&selectedSong.chart]||CHART_META.effulgence;
   SONG_DURATION=meta.duration;FINAL_CHORD_TIME=meta.final;
+  LTZZ_END_FOG.ready=false; // 尾杀黑雾的区间每局按当前谱面重新算
   AUDIO_DELAY=(selectedSong&&selectedSong.chart==='corr')?0.2:0;
   game={
     clock:-3,perfect:0,good:0,bad:0,miss:0,combo:0,maxCombo:0,weightSum:0,
@@ -3528,6 +3529,7 @@ function drawGame(dt){
   drawTopFade();
   drawHitLine();
   if(!V.ultraFx)drawFx();
+  if(isLtzz)drawLtzzEndFog();
   drawReceptors();
   c.restore();
   c.filter='none';
@@ -3543,6 +3545,7 @@ function drawGame(dt){
 
   if(game.flashAlpha>0){c.fillStyle='rgba(225,250,255,'+(game.flashAlpha*.3).toFixed(3)+')';c.fillRect(0,0,V.w,V.h);}
   if(game.whiteFlash>0){c.fillStyle='rgba(170,235,255,'+game.whiteFlash.toFixed(3)+')';c.fillRect(0,0,V.w,V.h);}
+  if(isLtzz)drawLtzzEndFogVeil();
   const dimHud=false;
   gameHud.classList.toggle('dim',dimHud);
 }
@@ -4530,6 +4533,74 @@ function drawLtzzNobleLight(){
   band.addColorStop(.5,'rgba(255,226,150,'+(.08+.03*Math.sin(mt*1.1)).toFixed(3)+')');
   band.addColorStop(1,'rgba(255,226,150,0)');
   c.fillStyle=band;c.fillRect(0,h*.7,w,h*.18);
+  c.restore();
+}
+/* LTZZ 尾杀黑雾 — 最后一组双押长条一按住，黑雾就从判定线往上漫过铺面，
+   长条到尾判的那一刻整块屏幕吃黑（完全盖住）。
+   起止时间不写死：直接取谱面里最晚结束的那根长条，以后改 .qua 也不会错位。 */
+const LTZZ_END_FOG={start:0,end:0,ready:false};
+function ltzzEndFogWindow(){
+  if(LTZZ_END_FOG.ready)return LTZZ_END_FOG;
+  let start=Infinity,end=0;
+  if(selectedSong&&selectedSong.chart==='ltzz'){
+    for(let i=0;i<game.notes.length;i++){
+      const n=game.notes[i];
+      if(n.type!=='hold')continue;
+      const tail=Math.max(n.end||0,n.time);
+      if(tail>end){end=tail;start=n.time;}
+    }
+  }
+  LTZZ_END_FOG.ready=end>0;
+  LTZZ_END_FOG.start=end>0?start-MUSIC_DELAY:0;
+  LTZZ_END_FOG.end=end>0?end-MUSIC_DELAY:0;
+  return LTZZ_END_FOG;
+}
+function ltzzEndFogProgress(mt){
+  const w=ltzzEndFogWindow();
+  if(!w.ready)return 0;
+  const span=Math.max(.25,w.end-w.start);
+  return clamp((mt-w.start)/span,0,1);
+}
+function drawLtzzEndFog(){
+  if(!selectedSong||selectedSong.chart!=='ltzz')return;
+  const p=ltzzEndFogProgress(game.clock-MUSIC_DELAY);
+  if(p<=.002)return;
+  const c=sctx,h=V.h,x=V.x,tw=V.trackW;
+  // 铺面里的雾：整体先压暗（判定线那侧最厚，往上淡出去），
+  // 再叠三道从底下慢慢漫上来的雾带，让「涨」这件事看得出来
+  const d=Math.pow(p,1.35)*.85;
+  const mt=game.clock-MUSIC_DELAY;
+  c.save();
+  c.beginPath();c.rect(x,0,tw,h);c.clip();
+  const g=c.createLinearGradient(0,V.judgeY,0,0);
+  g.addColorStop(0,'rgba(0,0,0,'+Math.min(1,d).toFixed(3)+')');
+  g.addColorStop(.5,'rgba(0,0,0,'+Math.min(1,d*.6).toFixed(3)+')');
+  g.addColorStop(1,'rgba(0,0,0,'+Math.min(1,d*.18).toFixed(3)+')');
+  c.fillStyle=g;c.fillRect(x,0,tw,h);
+  const edge0=V.judgeY-(V.judgeY+h*.3)*Math.min(1,p*1.1);
+  const bands=V.lowFx?2:3;
+  for(let i=0;i<bands;i++){
+    const e=edge0+(i-1)*h*.06*Math.sin(mt*.6+i*1.9);
+    const y0=Math.max(0,e-h*.06);
+    const bg=c.createLinearGradient(0,y0,0,y0+h*.24);
+    const a=Math.min(1,d*(i?.72:.95));
+    bg.addColorStop(0,'rgba(0,0,0,0)');
+    bg.addColorStop(1,'rgba(0,0,0,'+a.toFixed(3)+')');
+    c.fillStyle=bg;c.fillRect(x,y0,tw,h);
+  }
+  c.restore();
+}
+/* 收尾那一下：黑雾越过铺面边界，把整块屏幕（连 UI 一起）吃掉 */
+function drawLtzzEndFogVeil(){
+  if(!selectedSong||selectedSong.chart!=='ltzz')return;
+  const p=ltzzEndFogProgress(game.clock-MUSIC_DELAY);
+  const s=clamp((p-.55)/.45,0,1);
+  if(s<=.002)return;
+  const v=s*s*(3-2*s);
+  const c=sctx;
+  c.save();
+  c.fillStyle='rgba(0,0,0,'+v.toFixed(3)+')';
+  c.fillRect(0,0,V.w,V.h);
   c.restore();
 }
 /* W. (prologue) exclusive FX — black fog + corruption, never drawn for other charts. */
