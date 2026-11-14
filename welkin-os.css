@@ -306,7 +306,7 @@ h1,h2,h3,p{margin:0}
 
 /* ================= SONG START ================= */
 .song{z-index:50;background:#02050a;overflow:hidden;display:flex;flex-direction:column}
-.song-bg{position:absolute;inset:-12%;background:url('cover.jpg') center/cover no-repeat;filter:blur(58px) brightness(.32) saturate(1.25);transform:scale(1.08);opacity:.8}
+.song-bg{position:absolute;inset:-12%;background:radial-gradient(ellipse at 32% 38%,#0b1e2b 0%,#02050a 68%);filter:blur(58px) brightness(.32) saturate(1.25);transform:scale(1.08);opacity:.8}
 .song-veil{position:absolute;inset:0;background:
   linear-gradient(90deg,rgba(2,5,10,.94) 0%,rgba(2,5,10,.72) 36%,rgba(2,5,10,.2) 70%,rgba(2,5,10,.6) 100%),
   radial-gradient(ellipse at 22% 46%,rgba(20,90,130,.18),transparent 55%),
@@ -1692,7 +1692,7 @@ body.perf-lite .sel-loading .sl2-grid{animation-duration:10s}
 .pro-core{position:relative;width:100%;aspect-ratio:16/9;max-height:56vh;overflow:hidden;border:1px solid rgba(168,85,247,.28);background:#020106;box-shadow:0 0 46px rgba(76,29,149,.32),inset 0 0 44px rgba(76,29,149,.16)}
 /* 序章曲绘不再是 <img>，改成 .pro-art 的背景图（跟主线章节一样）：
    长按拿不到源文件，也就不会弹存图/拖图；视觉参数与原来的 img 一致。 */
-.pro-core .pro-art{position:absolute;inset:0;background-color:#020106;background-image:url(wel.jpg);background-repeat:no-repeat;background-position:50% 32%;background-size:cover;filter:saturate(.84) contrast(1.06) brightness(.82);transform:scale(1.015);pointer-events:none}
+.pro-core .pro-art{position:absolute;inset:0;background-color:#020106;background-image:url(wel.avif);background-repeat:no-repeat;background-position:50% 32%;background-size:cover;filter:saturate(.84) contrast(1.06) brightness(.82);transform:scale(1.015);pointer-events:none}
 /* 序章 / EX 的曲绘一律不许长按存图、不许拖拽、不许选中（对齐主线章节的保护） */
 .pro-core,.pro-core .pro-art,.ex-frame,.ex-frame .ex-art{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-user-drag:none}
 .pro-veil{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(3,2,9,.34) 0%,rgba(3,2,9,.06) 34%,rgba(3,2,9,.22) 62%,rgba(3,2,9,.86) 100%)}
@@ -1753,7 +1753,7 @@ body.perf-lite .sel-loading .sl2-grid{animation-duration:10s}
 .ex-frame:before{content:"";position:absolute;inset:6px;border:1px solid rgba(242,199,106,.34);pointer-events:none;z-index:5}
 .ex-frame:after{content:"";position:absolute;inset:0;pointer-events:none;z-index:4;background:linear-gradient(180deg,rgba(2,8,20,.14) 0%,rgba(2,8,20,0) 34%,rgba(2,8,20,.22) 74%,rgba(2,8,20,.62) 100%)}
 /* EX 曲绘同样改成背景图（见上），长按不弹存图。 */
-.ex-frame .ex-art{position:absolute;inset:0;background-color:#020914;background-image:url(Still.jpg);background-repeat:no-repeat;background-position:50% 54%;background-size:cover;filter:saturate(1.06) contrast(1.05) brightness(.98);transform:scale(1.01);pointer-events:none}
+.ex-frame .ex-art{position:absolute;inset:0;background-color:#020914;background-image:url(Still.avif);background-repeat:no-repeat;background-position:50% 54%;background-size:cover;filter:saturate(1.06) contrast(1.05) brightness(.98);transform:scale(1.01);pointer-events:none}
 /* AP gold-plated frames (prologue W. + EX Still) */
 .pro-core.ap{border-color:rgba(255,207,106,.95);box-shadow:0 0 0 1px rgba(255,207,106,.5),0 0 52px rgba(255,190,60,.55),inset 0 0 46px rgba(255,190,60,.16)}
 .ex-frame.ap{border-color:rgba(255,207,106,.95);box-shadow:0 0 0 1px rgba(255,207,106,.55),0 0 64px rgba(255,190,60,.6),inset 0 0 54px rgba(255,190,60,.2)}

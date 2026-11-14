@@ -737,10 +737,9 @@ function preload(){
     {label:'CONFIG CHANNEL',w:.08,run:()=>waitAudioReady(getUITrack('setting'),10000)},
     {label:'NEURAL FEED',w:.18,run:()=>waitAudioReady(getUITrack('im'),10000)},
     {label:'UI AUDIO BUS',w:.02,run:()=>{try{uiPlayer.src=UI_TRACK_FILES.select;uiPlayer.load();uiPlayerKey='select';}catch(e){}}},
-    {label:'VISUAL ARCHIVE',w:.16,run:()=>waitImage('cover.jpg')},
-    {label:'OPERATOR 01',w:.05,run:()=>waitImage('avatar_im.jpg')},
-    {label:'OPERATOR 02',w:.04,run:()=>waitImage('nick_avatar.jpg')},
-    {label:'OPERATOR 03',w:.03,run:()=>waitImage('bb.im.jpg')}
+    {label:'OPERATOR 01',w:.05,run:()=>waitImage('avatar_im.avif')},
+    {label:'OPERATOR 02',w:.04,run:()=>waitImage('nick_avatar.avif')},
+    {label:'OPERATOR 03',w:.03,run:()=>waitImage('bb.im.avif')}
   ];
   return new Promise(resolve=>{
     const started=performance.now();
@@ -890,7 +889,7 @@ function makeMainSongs(prefix,levels,bossLevel){
    和第一章没解锁的那几关同一个观感；等第一章收完尾再决定什么时候揭。
    谱面都还没接，chart 保持 null。id 沿用 makeMainSongs 的 ch2-2…ch2-6 / ch2-boss，
    这样以前存下来的通关记录不会因为改曲目表而对不上。 */
-const CH2_COVER_FILES=['init.jpg','an.jpg','bn.jpg','pen.jpg','fb.jpg','ca.jpg'];
+const CH2_COVER_FILES=['init.avif','an.avif','bn.avif','pen.avif','fb.avif','ca.avif'];
 function makeCh2Songs(){
   const levels=[4,6,7,8,10];
   const normal=levels.map((level,i)=>({
@@ -902,22 +901,22 @@ function makeCh2Songs(){
 }
 const EFFULGENCE={
   id:'ch1-2',chapterId:'ch1',no:'TRACK 01',title:'Effulgence',artist:'WELKIN',charter:'Welkin',
-  bpm:'—',length:'02:41',notes:495,level:5,boss:false,chart:'effulgence',audio:'Effulgence.mp3',cover:'Effulgence.jpg',state:'locked'
+  bpm:'—',length:'02:41',notes:495,level:5,boss:false,chart:'effulgence',audio:'Effulgence.mp3',cover:'Effulgence.avif',state:'locked'
 };
 const SPARK={
   id:'ch1-3',chapterId:'ch1',no:'TRACK 02',title:'The Spark',artist:'WELKIN',charter:'Welkin',
-  bpm:'175',length:'02:25',notes:1078,level:8,boss:false,chart:'spark',audio:'The Spark.mp3',cover:'The Spark.jpg',state:'locked'
+  bpm:'175',length:'02:25',notes:1078,level:8,boss:false,chart:'spark',audio:'The Spark.mp3',cover:'The Spark.avif',state:'locked'
 };
 /* 初章第三关：插在 The Spark(TRACK 02) 和 R.I.P.(原 TRACK 03) 之间，成为新的第三关。
-   曲绘 ltzz.jpg、曲名 テリトリーバトル、铺面 ltzz.qua、音乐 ltzz.mp3、难度 11；
+   曲绘 ltzz.avif、曲名 テリトリーバトル、铺面 ltzz.qua、音乐 ltzz.mp3、难度 11；
    仍锁在解锁链上逐关解锁；id 用 ch1-7 避免撞号。 */
-const CH1_T3={id:'ch1-7',chapterId:'ch1',no:'TRACK 03',title:'テリトリーバトル',artist:'WELKIN',charter:'Welkin',bpm:'140',length:'02:32',notes:851,level:11,boss:false,chart:'ltzz',audio:'ltzz.mp3',cover:'ltzz.jpg',state:'locked'};
-const RIP={id:'ch1-4',chapterId:'ch1',no:'TRACK 04',title:'R.I.P.',artist:'—',charter:'—',bpm:'—',length:'—',notes:0,level:10,boss:false,chart:null,audio:null,cover:'R.I.P.jpg',state:'locked'};
-const WELKIN={id:'ch1-5',chapterId:'ch1',no:'TRACK 06',title:'WELKIN',artist:'WELKIN',charter:'Welkin',bpm:'150',length:'04:12',notes:1677,level:16,boss:true,chart:'welkin',audio:'WELKIN.mp3',cover:'W.jpg',state:'locked'};
-const CORR={id:'ch1-6',chapterId:'ch1',no:'TRACK 05',title:'Corrupted Entity',artist:'—',charter:'WeIkin',bpm:'181',length:'02:45',notes:1387,level:15,boss:false,chart:'corr',audio:'Corrupted Entity.mp3',cover:'Corr.jpg',state:'locked'};
-const STILL={id:'ex-1',chapterId:'ex',no:'TRACK 01',title:'Still (piano version)',artist:'—',charter:'Welkin',bpm:'130',length:'01:48',notes:365,level:6,boss:true,chart:'still',audio:'Still.mp3',cover:'Still.jpg',state:'locked'};
+const CH1_T3={id:'ch1-7',chapterId:'ch1',no:'TRACK 03',title:'テリトリーバトル',artist:'WELKIN',charter:'Welkin',bpm:'140',length:'02:32',notes:851,level:11,boss:false,chart:'ltzz',audio:'ltzz.mp3',cover:'ltzz.avif',state:'locked'};
+const RIP={id:'ch1-4',chapterId:'ch1',no:'TRACK 04',title:'R.I.P.',artist:'—',charter:'—',bpm:'—',length:'—',notes:0,level:10,boss:false,chart:null,audio:null,cover:'R.I.P.avif',state:'locked'};
+const WELKIN={id:'ch1-5',chapterId:'ch1',no:'TRACK 06',title:'WELKIN',artist:'WELKIN',charter:'Welkin',bpm:'150',length:'04:12',notes:1677,level:16,boss:true,chart:'welkin',audio:'WELKIN.mp3',cover:'W.avif',state:'locked'};
+const CORR={id:'ch1-6',chapterId:'ch1',no:'TRACK 05',title:'Corrupted Entity',artist:'—',charter:'WeIkin',bpm:'181',length:'02:45',notes:1387,level:15,boss:false,chart:'corr',audio:'Corrupted Entity.mp3',cover:'Corr.avif',state:'locked'};
+const STILL={id:'ex-1',chapterId:'ex',no:'TRACK 01',title:'Still (piano version)',artist:'—',charter:'Welkin',bpm:'130',length:'01:48',notes:365,level:6,boss:true,chart:'still',audio:'Still.mp3',cover:'Still.avif',state:'locked'};
 /* 主线序章：单曲章节，曲目 W。它有自己的选歌页（DATAFALL），和初章 TRACK 05 的占位互不影响。 */
-const PROLOGUE_W={id:'prologue-1',chapterId:'prologue',no:'TRACK 01',title:'W.',artist:'WELKIN',charter:'Welkin',bpm:'152',length:'01:26',notes:84,level:2,boss:false,chart:'w',audio:'w.（.mp3',cover:'wel.jpg',state:'available'};
+const PROLOGUE_W={id:'prologue-1',chapterId:'prologue',no:'TRACK 01',title:'W.',artist:'WELKIN',charter:'Welkin',bpm:'152',length:'01:26',notes:84,level:2,boss:false,chart:'w',audio:'w.（.mp3',cover:'wel.avif',state:'available'};
 /* 终章收尾曲：魔王曲之后的第 7 首。选歌页里放在魔王曲正上方，未解锁时几乎透明（secret）。
    它排在 TRACK 07，解锁链上自然变成「清完魔王曲才出现」。 */
 const CH3_FINALE={
@@ -925,11 +924,11 @@ const CH3_FINALE={
   bpm:'—',length:'—',notes:0,level:15,boss:false,secret:true,chart:null,audio:null,cover:null,state:'locked'
 };
 const CHAPTERS=[
-  {id:'prologue',no:'00',cn:'主线 · 序章',en:'PROLOGUE',sub:'THE ORIGIN SIGNAL',theme:'prologue',layout:'SOLO',progress:'0 / 1',previewArt:'wel.jpg',songs:[PROLOGUE_W]},
+  {id:'prologue',no:'00',cn:'主线 · 序章',en:'PROLOGUE',sub:'THE ORIGIN SIGNAL',theme:'prologue',layout:'SOLO',progress:'0 / 1',previewArt:'wel.avif',songs:[PROLOGUE_W]},
   {id:'ch1',no:'01',cn:'主线 · 初章',en:'ORIGIN',sub:'THE FIRST SIGNAL',theme:'ch1',layout:'HELIX',progress:'0 / 6',songs:[WELKIN,EFFULGENCE,SPARK,CH1_T3,RIP,CORR]},
   {id:'ch2',no:'02',cn:'主线 · 承章',en:'ASCENT',sub:'THE SECOND CURRENT',theme:'ch2',layout:'ORBIT',progress:'0 / 6',songs:makeCh2Songs()},
   {id:'ch3',no:'03',cn:'主线 · 终章',en:'TERMINUS',sub:'THE LAST HORIZON',theme:'ch3',layout:'CIRCUIT',progress:'0 / 7',songs:[...makeMainSongs('ch3',[6,8,9,10,12],15),CH3_FINALE]},
-  {id:'ex',no:'EX',cn:'EX 章节',en:'ANOMALY',sub:'BEYOND THE LINE',theme:'ex',layout:'DIRECT',progress:'LOCKED',locked:true,previewArt:'Still.jpg',songs:[STILL]}
+  {id:'ex',no:'EX',cn:'EX 章节',en:'ANOMALY',sub:'BEYOND THE LINE',theme:'ex',layout:'DIRECT',progress:'LOCKED',locked:true,previewArt:'Still.avif',songs:[STILL]}
 ];
 CHAPTERS.forEach(ch=>ch.songs.forEach(s=>{s.chapterCn=ch.cn;s.chapterEn=ch.en;s.chapterNo=ch.no;}));
 /* 曲绘铺满（cover）以后，每张图的裁切对准点都记在这里，键就是曲绘文件名。
@@ -944,12 +943,12 @@ CHAPTERS.forEach(ch=>ch.songs.forEach(s=>{s.chapterCn=ch.cn;s.chapterEn=ch.en;s.
    详情页那块斜面板不吃这张表：那边一律从图片顶边往下截（object-position 50% 0%），
    因为人脸基本都在图上方，曲名反倒被裁掉也无所谓——曲名屏幕上本来就有。 */
 const COVER_CROP={
-  'Effulgence.jpg':{pos:'50% 100%'},
-  'ltzz.jpg':{pos:'50% 100%'},
-  'The Spark.jpg':{pos:'80% 50%'},
-  'init.jpg':{pos:'50% 0%'},
-  'an.jpg':{fit:'100% 100%'},
-  'ca.jpg':{fit:'100% 100%'}
+  'Effulgence.avif':{pos:'50% 100%'},
+  'ltzz.avif':{pos:'50% 100%'},
+  'The Spark.avif':{pos:'80% 50%'},
+  'init.avif':{pos:'50% 0%'},
+  'an.avif':{fit:'100% 100%'},
+  'ca.avif':{fit:'100% 100%'}
 };
 const CLEAR_KEY='welkin_os_clears_v1';
 let clears={};
@@ -1199,7 +1198,7 @@ function gateSoloCover(src,label,done){
   setTimeout(once,6000);
   im.src=src;
 }
-function gateStillCover(done){gateSoloCover(STILL.cover||'Still.jpg','STILL',done);}
+function gateStillCover(done){gateSoloCover(STILL.cover||'Still.avif','STILL',done);}
 function gatePrologue(done){
   const layer=$('#proLoading');if(!layer){done();return;}
   const startedAt=performance.now();
@@ -1217,7 +1216,7 @@ function gatePrologue(done){
   };
   im.onload=finish;im.onerror=finish;
   setTimeout(finish,5000);
-  im.src=PROLOGUE_W.cover||'wel.jpg';
+  im.src=PROLOGUE_W.cover||'wel.avif';
 }
 
 /* ---------- PROLOGUE · DATAFALL ---------- */
@@ -1311,7 +1310,7 @@ function setCoverArt(el,src,fallback){
 }
 function renderPrologue(){
   const s=PROLOGUE_W;
-  setCoverArt($('#proCover'),s.cover,'wel.jpg');
+  setCoverArt($('#proCover'),s.cover,'wel.avif');
   const title=$('#proTitle');if(title)title.textContent=s.title||'W';
   const ap=!!(getBestFor(s.id).ap);
   const core=$('#proCore');if(core)core.classList.toggle('ap',ap);
@@ -1358,7 +1357,7 @@ function closeSolo(){
 /* ---------- EX · HOLO ---------- */
 function renderExScreen(){
   const s=STILL;
-  setCoverArt($('#exCover'),s.cover,'Still.jpg');
+  setCoverArt($('#exCover'),s.cover,'Still.avif');
   const ap=!!(getBestFor(s.id).ap);
   const frame=$('#exFrame');if(frame)frame.classList.toggle('ap',ap);
   const base=String(s.title||'Still').replace(/\s*\(.*?\)\s*/g,'').trim();
@@ -1622,7 +1621,7 @@ function renderSongDetail(song){
   $('#badgeAP').classList.toggle('on',!!(hasBest&&best.ap));
   $('#badgeFC').classList.toggle('on',!!(hasBest&&best.fc&&!best.ap));
   $('#coverImg').style.display=blank?'none':'block';
-  $('#coverImg').src=song.cover||'cover.jpg';
+  if(song.cover)$('#coverImg').src=song.cover;
   /* 详情页的大曲绘也是 object-fit:cover 铺在斜面板上，会裁边。
      这里一律从图片顶边往下截（CSS 里 object-position:50% 0%），
      理由是人脸基本都在图的上方，而曲名屏幕上本来就有，被裁掉不可惜。 */
@@ -1630,7 +1629,7 @@ function renderSongDetail(song){
   $('#coverInner').classList.toggle('blank',blank);
   $('#coverBlankText').textContent=`${song.chapterCn} / ${song.no}`;
   $('#coverRailRight').textContent=`${song.chapterNo} / ${song.no}`;
-  $('#songBg').style.backgroundImage=blank?'none':`url('${song.cover||'cover.jpg'}')`;
+  $('#songBg').style.backgroundImage=blank?'none':`url('${song.cover}')`;
   $('#songMarquee').textContent=`WELKIN AUDIO SYSTEM · ${song.chapterEn} · NOTES ${song.notes||'—'} · FOUR LANES · ${song.chart?'ALL SYSTEMS NOMINAL':'CHART DATA PENDING'} ·`;
   $('#songState').textContent=song.chart?'READY':'DATA PENDING';
   const btn=$('#btnStartGame');
@@ -1872,7 +1871,7 @@ function applySettings(){
    ============================================================ */
 const IM_POSTS=[
   {
-    id:'welkin',name:'WELKIN',role:'CREATOR',avatar:'avatar_im.jpg',time:'JUST NOW',likes:99,pinned:true,
+    id:'welkin',name:'WELKIN',role:'CREATOR',avatar:'avatar_im.avif',time:'JUST NOW',likes:99,pinned:true,
     text:'大家好！欢迎来到我制作的小音游，以后会加油更新，希望大家多多支持！该网址可以电脑打开游玩，按键控制是cvbn键，对应四个轨道！谢谢大家！',
     comments:[
       {name:'SYSTEM',avatar:'📡',bg:'#9fb6c2',text:'正在更新中！'},
@@ -1880,17 +1879,17 @@ const IM_POSTS=[
     ]
   },
   {
-    id:'nick',name:'Nick',role:'OPERATOR',avatar:'nick_avatar.jpg',time:'1H AGO',likes:12,pinned:false,
+    id:'nick',name:'Nick',role:'OPERATOR',avatar:'nick_avatar.avif',time:'1H AGO',likes:12,pinned:false,
     text:'祝Welkin天天开心，永远不死',
     comments:[{name:'NEKO',avatar:'🐱',bg:'#ffb6c1',text:'带我一个！(⁎⁍̴̛ᴗ⁍̴̛⁎)'}]
   },
   {
-    id:'jirong',name:'季绒',role:'OPERATOR',avatar:'bb.im.jpg',time:'3H AGO',likes:8,pinned:false,
+    id:'jirong',name:'季绒',role:'OPERATOR',avatar:'bb.im.avif',time:'3H AGO',likes:8,pinned:false,
     text:'jj加油！',
     comments:[{name:'NEKO',avatar:'🐱',bg:'#ffb6c1',text:'哇库^o^'}]
   },
   {
-    id:'wvw',name:'w●ｖ●w',role:'OPERATOR',avatar:'wvw.jpg',time:'4H AGO',likes:6,pinned:false,
+    id:'wvw',name:'w●ｖ●w',role:'OPERATOR',avatar:'wvw.avif',time:'4H AGO',likes:6,pinned:false,
     text:'zz厉害w～',
     comments:[{name:'NEKO',avatar:'🐱',bg:'#ffb6c1',text:'为他打Call！030'}]
   }
