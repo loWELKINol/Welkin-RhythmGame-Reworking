@@ -913,7 +913,7 @@ const SPARK={
    仍锁在解锁链上逐关解锁；id 用 ch1-7 避免撞号。 */
 const CH1_T3={id:'ch1-7',chapterId:'ch1',no:'TRACK 03',title:'テリトリーバトル',artist:'WELKIN',charter:'Welkin',bpm:'140',length:'02:32',notes:851,level:11,boss:false,chart:'ltzz',audio:'ltzz.mp3',cover:'ltzz.jpg',state:'locked'};
 const RIP={id:'ch1-4',chapterId:'ch1',no:'TRACK 04',title:'R.I.P.',artist:'—',charter:'—',bpm:'—',length:'—',notes:0,level:10,boss:false,chart:null,audio:null,cover:'R.I.P.jpg',state:'locked'};
-const WELKIN={id:'ch1-5',chapterId:'ch1',no:'TRACK 06',title:'WELKIN',artist:'WELKIN',charter:'Welkin',bpm:'150',length:'04:12',notes:1695,level:16,boss:true,chart:'welkin',audio:'WELKIN.mp3',cover:'W.jpg',state:'locked'};
+const WELKIN={id:'ch1-5',chapterId:'ch1',no:'TRACK 06',title:'WELKIN',artist:'WELKIN',charter:'Welkin',bpm:'150',length:'04:12',notes:1688,level:16,boss:true,chart:'welkin',audio:'WELKIN.mp3',cover:'W.jpg',state:'locked'};
 const CORR={id:'ch1-6',chapterId:'ch1',no:'TRACK 05',title:'Corrupted Entity',artist:'—',charter:'WeIkin',bpm:'181',length:'02:45',notes:1387,level:15,boss:false,chart:'corr',audio:'Corrupted Entity.mp3',cover:'Corr.jpg',state:'locked'};
 const STILL={id:'ex-1',chapterId:'ex',no:'TRACK 01',title:'Still (piano version)',artist:'—',charter:'Welkin',bpm:'130',length:'01:48',notes:365,level:6,boss:true,chart:'still',audio:'Still.mp3',cover:'Still.jpg',state:'locked'};
 /* 主线序章：单曲章节，曲目 W。它有自己的选歌页（DATAFALL），和初章 TRACK 05 的占位互不影响。 */
@@ -3537,12 +3537,13 @@ function drawGame(dt){
   // Notes/receptors/judgement stay full color, so we only wrap the backdrop+playfield.
   const gp=clamp((game.clock+3)/3,0,1);
   const mono=isCorr?0.7*gp*gp*(3-2*gp):0;
-  const sat=isWelkin?welkinSaturation(mt):1;
+  // WELKIN 的去饱和不在这里做：它要吃掉整帧（按键/音符/判定特效/粒子全都算），
+  // 所以放到 drawGame 最后一步用 saturation 混合模式一次性套上去。
+  clearWelkinDesat();
   c.setTransform(V.dpr,0,0,V.dpr,0,0);
   c.globalCompositeOperation='source-over';c.globalAlpha=1;
   let bgFilter='';
   if(mono>0.001)bgFilter='grayscale('+mono.toFixed(3)+')';
-  if(sat<0.999)bgFilter+=(bgFilter?' ':'')+'saturate('+sat.toFixed(3)+')';
   if(bgFilter)c.filter=bgFilter;
   drawBackdrop();
   if(isLtzz&&!V.ultraFx)drawLtzzNobleLight();
@@ -3588,6 +3589,29 @@ function drawGame(dt){
   if(game.flashAlpha>0){c.fillStyle='rgba(225,250,255,'+(game.flashAlpha*.3).toFixed(3)+')';c.fillRect(0,0,V.w,V.h);}
   if(game.whiteFlash>0){c.fillStyle='rgba(170,235,255,'+game.whiteFlash.toFixed(3)+')';c.fillRect(0,0,V.w,V.h);}
   if(isLtzz)drawLtzzEndFogVeil();
+  /* WELKIN 203s→208s：整帧去饱和到 70%（之后停在 70%）。
+     用 saturation 混合模式铺一层灰：B(Cb,Cs) 会把底色的饱和度换成源色的饱和度(0)，
+     即「保亮度、去颜色」，按键、音符、长条、判定/PERFECT 特效、粒子、黑雾暗角一起变黑白。 */
+  if(isWelkin){
+    const desat=clamp(1-welkinSaturation(mt),0,1);
+    if(desat>0.001){
+      if(welkinBlendOk(c)){
+        c.save();
+        c.globalCompositeOperation='saturation';
+        c.globalAlpha=desat;
+        c.fillStyle='#808080';
+        c.fillRect(0,0,V.w,V.h);
+        c.restore();
+        // 画布外还有一层 HUD（进度/分数），一并压成灰，做到「整个屏幕」
+        const q=Math.round(desat*100)/100;
+        if(q!==welkinHudDesat){welkinHudDesat=q;gameHud.style.filter='grayscale('+q+')';}
+      }else{
+        stage.style.filter='grayscale('+desat.toFixed(3)+')';
+        gameHud.style.filter='grayscale('+desat.toFixed(3)+')';
+        welkinHudDesat=-1;
+      }
+    }
+  }
   const dimHud=false;
   gameHud.classList.toggle('dim',dimHud);
 }
@@ -4763,6 +4787,20 @@ function welkinSaturation(mt){
   if(mt<203)return 1;
   if(mt>=208)return 0.3;
   return 1-0.7*clamp((mt-203)/5,0,1);
+}
+/* 老浏览器不支持 canvas 的 saturation 混合模式时，退化成给 canvas 挂 CSS grayscale。 */
+let welkinDesatOk=null,welkinHudDesat=-1;
+function welkinBlendOk(c){
+  if(welkinDesatOk!==null)return welkinDesatOk;
+  const prev=c.globalCompositeOperation;
+  c.globalCompositeOperation='saturation';
+  welkinDesatOk=(c.globalCompositeOperation==='saturation');
+  c.globalCompositeOperation=prev;
+  return welkinDesatOk;
+}
+function clearWelkinDesat(){
+  if(welkinHudDesat!==-1){welkinHudDesat=-1;gameHud.style.filter='';}
+  if(stage.style.filter)stage.style.filter='';
 }
 /* 收尾乱码弹窗：最后四押长条结束后屏幕拉满变黑，之后一直冒「不同风格」的小尺寸乱码弹窗。
    频率高、尺寸小、同时上限 8 个，每个只画 1 块底 + 1 圈边 + 3 行乱码，开销极小，避免掉帧/发热。 */
