@@ -634,13 +634,13 @@
       <div class="gd-meta"><i></i>SEED_00 · OPERATOR BRIEFING</div>
       <button type="button" class="gd-close" id="gdClose" onclick="closeProGuide()" aria-label="关闭引导">✕</button>
     </header>
-    <div class="gd-ticker" aria-hidden="true"><div class="gd-ticker-track"><span>SYNC 100% // LANE ALIGN OK // HOLD FULL-LENGTH // YELLOW KEY = HOLD TO JUDGE // JUDGE ±120MS // 4 LANES // </span><span>SYNC 100% // LANE ALIGN OK // HOLD FULL-LENGTH // YELLOW KEY = HOLD TO JUDGE // JUDGE ±120MS // 4 LANES // </span></div></div>
+    <div class="gd-ticker" aria-hidden="true"><div class="gd-ticker-track"><span>SYNC 100% // LANE ALIGN OK // HOLD FULL-LENGTH // YELLOW KEY = DRAG TO JUDGE // JUDGE ±120MS // 4 LANES // </span><span>SYNC 100% // LANE ALIGN OK // HOLD FULL-LENGTH // YELLOW KEY = DRAG TO JUDGE // JUDGE ±120MS // 4 LANES // </span></div></div>
 
     <div class="gd-hero">
       <div class="gd-hero-l">
         <div class="gd-kicker">PROLOGUE // OPERATOR BRIEFING</div>
         <h2 id="gdTitle">操作引导<span>·</span>评级说明</h2>
-        <p>四轨落键。看准判定线，按在拍点上——比按得快更重要。</p>
+        <p>四轨制谱面。判定以音符抵达判定线的时刻为准，按键时机的精度优先于按键速度。</p>
       </div>
       <div class="gd-hero-r" aria-hidden="true">
         <div class="gd-stat"><b>4</b><span>LANES</span></div>
@@ -660,21 +660,21 @@
             <div><kbd>N</kbd><span>LANE 4</span></div>
           </div>
           <ul class="gd-list">
-            <li><b>落键</b>音符落到判定线的一瞬按下。键盘 <kbd>C</kbd><kbd>V</kbd><kbd>B</kbd><kbd>N</kbd> 从左到右对应四条轨道，触屏直接点或按住轨道。</li>
-            <li><b>多指</b>可以同时按多条轨道。双押、三押用两只手分开按最稳；黄键密集时把手放在轨道上别抬，等它落线。</li>
-            <li><b>提前量</b>设置里的 FAST / SLOW 会告诉你按早了还是按晚；设备音频有延迟时用 JUDGE OFFSET 微调。</li>
-            <li><b>手感</b>先调 NOTE SPEED（0.5×–1.5×）。速度以「看得清」为准，不是越快越好。</li>
+            <li><b>落键</b>音符抵达判定线时按下对应轨道。键盘 <kbd>C</kbd><kbd>V</kbd><kbd>B</kbd><kbd>N</kbd> 由左至右依次对应四条轨道；触屏操作可直接点击或按住轨道。</li>
+            <li><b>多指</b>支持多轨道同时输入。双押与三押由双手分工完成；黄键连续出现时保持手指按在轨道上，待音符抵达判定线。</li>
+            <li><b>提前量</b>设置中的 FAST / SLOW 显示按键相对判定线偏早或偏晚；设备音频存在延迟时，通过 JUDGE OFFSET 校准。</li>
+            <li><b>速度</b>NOTE SPEED 调节范围 0.5×–1.5×，取值以谱面可辨认为准，与判定结果无关。</li>
           </ul>
         </section>
 
         <section class="gd-sec">
           <div class="gd-sec-h"><b>02</b><h3>音符图鉴</h3><em>NOTE TYPES</em></div>
           <ul class="gd-notes">
-            <li><i class="gd-chip tap" aria-hidden="true"></i><div><b>蓝键 · TAP</b><span>最普通的一下：落到判定线，点一下对应轨道。</span></div></li>
-            <li><i class="gd-chip hold" aria-hidden="true"></i><div><b>长条 · HOLD</b><span>青色长条：头部命中后按住到尾，尾巴走完之前松手就直接 MISS 并断连。</span></div></li>
-            <li><i class="gd-chip brk" aria-hidden="true"></i><div><b>黄键 · BREAK</b><span>黄色六边形。落到判定线时，只要那一瞬手指按在轨道上就判 PERFECT，不用点击；没按住就是 MISS。只有 PERFECT / MISS 两档。</span></div></li>
-            <li><i class="gd-chip chord" aria-hidden="true"><span></span><span></span><b></b></i><div><b>双押 · CHORD</b><span>两个键同时落线，音符下方带金线；左右手一起按。</span></div></li>
-            <li><i class="gd-chip multi" aria-hidden="true"><span></span><span></span><span></span><b></b></i><div><b>三押 · MULTI</b><span>三个键同时落线，金线更亮；三根手指一起落下。</span></div></li>
+            <li><i class="gd-chip tap" aria-hidden="true"></i><div><b>蓝键 · TAP</b><span>基础音符。音符抵达判定线时，点击对应轨道一次。</span></div></li>
+            <li><i class="gd-chip hold" aria-hidden="true"></i><div><b>长条 · HOLD</b><span>青色长条。头部命中后须持续按住至尾部结束；尾部结束前松手，判定为 MISS 并中断连击。</span></div></li>
+            <li><i class="gd-chip brk" aria-hidden="true"></i><div><b>黄键 · DRAG</b><span>黄色六边形。音符抵达判定线时，该轨道处于按住状态即判定 PERFECT，无需点击；未按住判定为 MISS。仅设置 PERFECT 与 MISS 两档。</span></div></li>
+            <li><i class="gd-chip chord" aria-hidden="true"><span></span><span></span><b></b></i><div><b>双押 · CHORD</b><span>两枚音符同时抵达判定线，音符下方附金色标识，需双手同时按下。</span></div></li>
+            <li><i class="gd-chip multi" aria-hidden="true"><span></span><span></span><span></span><b></b></i><div><b>三押 · MULTI</b><span>三枚音符同时抵达判定线，金色标识亮度提高，需三指同时落下。</span></div></li>
           </ul>
         </section>
       </div>
@@ -687,13 +687,13 @@
             <div class="gw-axis"><span>-200ms</span><span>0</span><span>+200ms</span></div>
           </div>
           <ul class="gd-judge">
-            <li class="p"><b>PERFECT</b><span>±120ms</span><em>满分，权重 1.00</em></li>
+            <li class="p"><b>PERFECT</b><span>±120ms</span><em>权重 1.00，连击不断</em></li>
             <li class="g"><b>GOOD</b><span>±180ms</span><em>权重 0.65，连击不断</em></li>
-            <li class="b"><b>BAD</b><span>±200ms</span><em>0 分，连击断</em></li>
-            <li class="m"><b>MISS</b><span>漏掉 / 超时</span><em>0 分，连击断</em></li>
+            <li class="b"><b>BAD</b><span>±200ms</span><em>权重 0，连击中断</em></li>
+            <li class="m"><b>MISS</b><span>漏判 / 超时</span><em>权重 0，连击中断</em></li>
           </ul>
-          <p class="gd-note">判定只看「按下瞬间」和「音符到线」之间的时间差；超过判定窗口还没按到，这个音符就判 MISS。</p>
-          <p class="gd-note"><b>黄键例外</b>：不看时间差，只看落线那一瞬轨道有没有被按住——按住即 PERFECT，没按住即 MISS。</p>
+          <p class="gd-note">判定依据为按键时刻与音符抵达判定线时刻的时间差；超出判定窗口仍未按下，该音符判定为 MISS。</p>
+          <p class="gd-note"><b>黄键例外</b>：不计算时间差，仅检测音符抵达判定线时该轨道是否处于按住状态。按住判定 PERFECT，未按住判定 MISS。</p>
         </section>
 
         <section class="gd-sec">
@@ -706,30 +706,29 @@
             <li><b>BAD</b><span>0</span></li>
             <li><b>MISS</b><span>0</span></li>
           </ul>
-          <p class="gd-note">想摸到 1,000,000，只能全 PERFECT 且不断连：断一次连击，后 10 万分里的份额就已经扣掉了。</p>
+          <p class="gd-note">满分要求全部音符判定为 PERFECT 且连击全程不中断；连击一旦中断，连击分部分的额度即已损失。</p>
         </section>
 
         <section class="gd-sec">
           <div class="gd-sec-h"><b>05</b><h3>评级</h3><em>RANK</em></div>
           <ul class="gd-ranks">
-            <li class="ap"><b>AP</b><span>1,000,000</span><em>全 PERFECT</em></li>
-            <li class="sss"><b>SSS</b><span>960,001 +</span><em>准度极高</em></li>
-            <li class="s"><b>S</b><span>900,001 +</span><em>稳定全连</em></li>
-            <li class="a"><b>A</b><span>800,001 +</span><em>只有小失误</em></li>
-            <li class="b"><b>B</b><span>600,000 +</span><em>已通关</em></li>
-            <li class="c"><b>C</b><span>600,000 以下</span><em>先熟谱</em></li>
+            <li class="ap"><b>AP</b><span>1,000,000</span><em></em></li>
+            <li class="sss"><b>SSS</b><span>960,001 +</span><em></em></li>
+            <li class="s"><b>S</b><span>900,001 +</span><em></em></li>
+            <li class="a"><b>A</b><span>800,001 +</span><em></em></li>
+            <li class="b"><b>B</b><span>600,000 +</span><em></em></li>
+            <li class="c"><b>C</b><span>600,000 以下</span><em></em></li>
           </ul>
-          <p class="gd-note">全 PERFECT 点亮金色 <b class="gd-badge ap">AP</b> 徽章；零 MISS、零 BAD 点亮紫色 <b class="gd-badge fc">FULL COMBO</b> 徽章，记录存在本地档案里。</p>
+          <p class="gd-note">全部音符判定为 PERFECT 时点亮金色 <b class="gd-badge ap">AP</b> 徽章；MISS 与 BAD 判定数均为零时点亮紫色 <b class="gd-badge fc">FULL COMBO</b> 徽章。记录保存于本地档案。</p>
         </section>
       </div>
 
       <div class="gd-tips">
         <span class="gd-tips-k">TIPS</span>
         <ul>
-          <li>第一次先打序章《W.》——84 音符 / 1:26 / LV.2，拿来熟悉落键节奏正好。</li>
-          <li>总按早或总按晚，去设置里拉 JUDGE OFFSET（±150ms），别硬改手速。</li>
-          <li>曲绘页的 MIRROR 可以左右镜像铺面，习惯右手先起时可以试试。</li>
-          <li>打歌时可按 ESC 暂停；暂停里能调设置、重开或回到选曲。</li>
+          <li>按键持续偏早或偏晚时，于设置中调整 JUDGE OFFSET（±150ms），不建议以改变按键节奏的方式补偿。</li>
+          <li>曲绘页的 MIRROR 可将谱面左右镜像，适用于右手先起的操作习惯。</li>
+          <li>演奏过程中可按 ESC 暂停。暂停界面可调整设置、重新开始或返回选曲。</li>
         </ul>
       </div>
     </div>
