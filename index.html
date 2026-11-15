@@ -32,7 +32,7 @@
     <div class="desk-lamp"></div>
   </div>
 
-  <div class="decor-poster" aria-hidden="true"><span>E.</span><b>SESSION 001<br>ORIGIN ARCHIVE</b><i></i></div>
+  <div class="decor-poster" aria-hidden="true"><span>W.</span><b>SESSION 001<br>ORIGIN ARCHIVE</b><i></i></div>
 
   <div class="decor-plant" aria-hidden="true"><i></i><i></i><i></i><b></b></div>
 
@@ -74,7 +74,7 @@
               <button type="button" class="pw-msg" id="pwMsg" aria-label="打开 iM 最新消息" onpointerdown="window.__dockAct&&window.__dockAct('pwMsg')" ontouchstart="window.__dockAct&&window.__dockAct('pwMsg')" onclick="if(window.openIM){var r=document.getElementById('phoneRig');if(r)r.classList.remove('is-hidden');openIM();}">
                 <span class="msg-label">iM <i>//</i> LATEST</span>
                 <span class="msg-body">
-                  <img id="msgAvatar" src="avatar_im.avif" alt="" loading="eager" decoding="sync">
+                  <img id="msgAvatar" src="avatar_im.avif" alt="" loading="eager" decoding="sync" onerror="this.onerror=null;this.src='avatar_im.webp'">
                   <span><b id="msgName">WELKIN</b><small>NEW SIGNAL</small></span>
                 </span>
                 <i class="msg-dot"></i>
@@ -146,7 +146,7 @@
   <div class="boot-center">
     <div class="boot-mark"><span>W</span><i></i></div>
     <div class="boot-title">WELKIN <em>//</em> OS</div>
-    <div class="boot-sub">ORBITAL TERMINAL · BUILD 2.2</div>
+    <div class="boot-sub">ORBITAL TERMINAL · BUILD 1.0</div>
     <div class="boot-meter">
       <div class="boot-bar"><i id="bootFill"></i></div>
       <div class="boot-pct" id="bootPct">0%</div>

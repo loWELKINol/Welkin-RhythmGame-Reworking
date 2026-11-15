@@ -19,6 +19,38 @@ const rand=(a,b)=>a+Math.random()*(b-a);
 const FONT_D="'Bahnschrift SemiCondensed','Bahnschrift','Arial Narrow','Segoe UI',sans-serif";
 const FONT_M="'Consolas','Cascadia Mono','SF Mono',monospace";
 
+/* ---------- 图片格式降级：AVIF → WebP ----------
+   仓库里每张图都并存放了 X.avif 和 X.webp。AVIF 体积小得多，但 Safari/iOS 要
+   16.1、Edge 要 121 才认，老手机和老 Edge 直接白图。开机探一次解码能力，
+   不支持就把所有 .avif 引用换成同名 .webp；地址栏 ?img=webp / ?img=avif 可强制。
+   探测结果还会写进 <html data-img="avif|webp">，CSS 里那两张纯背景曲绘靠它选格式。 */
+const AVIF_PROBE='data:image/avif;base64,AAAAIGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZk1BMUIAAADybWV0YQAAAAAAAAAoaGRscgAAAAAAAAAAcGljdAAAAAAAAAAAAAAAAGxpYmF2aWYAAAAADnBpdG0AAAAAAAEAAAAeaWxvYwAAAABEAAABAAEAAAABAAABGgAAAB0AAAAoaWluZgAAAAAAAQAAABppbmZlAgAAAAABAABhdjAxQ29sb3IAAAAAamlwcnAAAABLaXBjbwAAABRpc3BlAAAAAAAAAAIAAAACAAAAEHBpeGkAAAAAAwgICAAAAAxhdjFDgQAMAAAAABNjb2xybmNseAACAAIABoAAAAAXaXBtYQAAAAAAAAABAAEEAQKDBAAAACVtZGF0EgAKCBgABogQEDQgMgkQAAAAB8dSLfI=';
+let IMG_CAN_AVIF=false;
+const IMG_PROBE=new Promise(resolve=>{
+  let settled=false;
+  const done=ok=>{
+    if(settled)return;settled=true;IMG_CAN_AVIF=ok;
+    try{document.documentElement.dataset.img=ok?'avif':'webp';}catch(e){}
+    resolve(ok);
+  };
+  let forced='';
+  try{forced=(new URLSearchParams(location.search).get('img')||'').toLowerCase();}catch(e){}
+  if(forced==='webp'||forced==='noavif'){done(false);return;}
+  if(forced==='avif'){done(true);return;}
+  let probe=null;
+  try{probe=new Image();}catch(e){done(false);return;}
+  probe.onload=()=>done(true);
+  probe.onerror=()=>done(false);
+  try{probe.src=AVIF_PROBE;}catch(e){done(false);return;}
+  setTimeout(()=>done(false),1500);
+});
+/* 只换扩展名，不动目录和大小写；data:/blob:/http 外链一律原样返回 */
+function imgUrl(u){
+  const s=u==null?'':String(u);
+  if(!s||IMG_CAN_AVIF)return s;
+  return s.replace(/\.avif\b/gi,'.webp');
+}
+
 const room=$('#room');
 const cityCanvas=$('#city');
 const cityCtx=cityCanvas.getContext('2d');
@@ -727,7 +759,7 @@ function waitImage(src){
       else finish();
     };
     img.onerror=finish;
-    img.src=src;
+    img.src=imgUrl(src);
   });
 }
 function preload(){
@@ -1071,21 +1103,24 @@ const SS_POS={
      彼此留 2% 空隙。下标即 ch2.songs 数组序：[魔王曲, 01,02,03,04,05,06]。 */
   ch2:[[50,1],[67,81],[33,68],[67,55],[33,42],[67,29],[33,16]],
   /* 终章 8 首：ch3.songs 的顺序是 [boss, 01,02,03,04,05,06, secret]，boss 在 index 0，
-     所以这里按「数组下标」给位置：index0 魔王曲居中在上，index1=TRACK01 贴最下沿，
+     所以这里按「数组下标」给位置：index0 魔王曲居中在上，index1=TRACK01 在最下，
      依次往上爬，index7 收尾曲(secret)再压到魔王曲之上、居中。
-     卡片高度 8%（魔王曲 10%、secret 8%）：01~06 之间每档空 3%，
-     06 和魔王曲之间空 5%，魔王曲到收尾曲空 1%。 */
-  ch3:[[50,10],[50,80],[67,69],[33,58],[67,47],[33,36],[67,25],[50,1]]
+     画布 170%、卡片 7.3%（魔王曲 9.1%、secret 7.3%）——按 155% 那套等比换算，
+     卡片的物理尺寸和间距一点没变，多出来的 15% 全垫在 TRACK 01 底下：
+     滚到底时 01 的底边停在 80.2%，刚好在内容底雾(82%)上面。 */
+  ch3:[[50,9.1],[50,72.9],[67,62.9],[33,52.9],[67,42.9],[33,32.8],[67,22.8],[50,0.9]]
 };
 const SS_POS_M={
   ch1:[[50,1],[70,80],[30,64.6],[70,49.2],[30,33.8],[70,18.4]],
   ch2:[[50,1],[70,81],[30,68],[70,55],[30,42],[70,29],[30,16]],
-  /* 窄屏同一套间距思路，卡片高度 10%（魔王曲 11%、secret 7%），间距收到 3% / 5% */
-  ch3:[[50,9],[50,90],[70,77],[30,64],[70,51],[30,38],[70,25],[50,1]]
+  /* 窄屏：画布 185%，8 张卡按 8.4%（魔王曲 9.2%、secret 5.9%）重排，间距收到 2.3%。
+     原来 TRACK 01 贴在 100% 底边、整张泡在底雾里，这里把它收到 81.9% 收尾，
+     刚好停在雾(82%)上面。 */
+  ch3:[[50,8.5],[50,73.5],[70,62.8],[30,52.1],[70,41.4],[30,30.7],[70,20.0],[50,0.3]]
 };
 function chapterPreviewHTML(ch){
   const art=ch.previewArt
-    ?`<div class="ch-art img" style="background-image:url('${ch.previewArt}')"></div><div class="ch-veil"></div>`
+    ?`<div class="ch-art img" style="background-image:url('${imgUrl(ch.previewArt)}')"></div><div class="ch-veil"></div>`
     :'<div class="ch-art"></div>';
   const only=ch.songs&&ch.songs.length===1?ch.songs[0]:null;
   const track=only?`<p class="ch-track"><em>${only.no}</em> ${only.title}</p>`:'';
@@ -1197,7 +1232,7 @@ function gateChapterCovers(ch,done){
     const once=()=>{if(!t){t=true;tick();}};
     im.onload=once;im.onerror=once;
     setTimeout(once,6000);
-    im.src=src;
+    im.src=imgUrl(src);
   });
 }
 /* EX chapter: tech notice + separate cover preload + direct song entry */
@@ -1224,7 +1259,7 @@ function gateSoloCover(src,label,done){
   const once=()=>{if(t)return;t=true;if(bar)bar.style.width='100%';setTimeout(()=>{layer.classList.remove('active');done();},220);};
   im.onload=once;im.onerror=once;
   setTimeout(once,6000);
-  im.src=src;
+  im.src=imgUrl(src);
 }
 function gateStillCover(done){gateSoloCover(STILL.cover||'Still.avif','STILL',done);}
 function gatePrologue(done){
@@ -1244,7 +1279,7 @@ function gatePrologue(done){
   };
   im.onload=finish;im.onerror=finish;
   setTimeout(finish,5000);
-  im.src=PROLOGUE_W.cover||'wel.avif';
+  im.src=imgUrl(PROLOGUE_W.cover||'wel.avif');
 }
 
 /* ---------- PROLOGUE · DATAFALL ---------- */
@@ -1332,7 +1367,7 @@ function decodePrologueTitle(){
 /* 曲绘统一走背景图：元素上没有 <img>，长按/拖拽都拿不到图片文件。 */
 function setCoverArt(el,src,fallback){
   if(!el)return;
-  const u=String(src||fallback||'').replace(/["\\]/g,'');
+  const u=imgUrl(String(src||fallback||'').replace(/["\\]/g,''));
   if(!u){el.style.backgroundImage='';return;}
   el.style.backgroundImage='url("'+u+'")';
 }
@@ -1488,10 +1523,12 @@ function closeSongSelect(){
    普通曲从 9.8 收到 9（窄屏 12 → 11），把省下来的高度让给卡片之间的空隙。 */
 function songNodeH(song){
   const narrow=window.innerWidth<=900;
+  /* 终章：宽屏画布 170%、窄屏 185%（窄屏判定和 SS_POS_M 的 <700px 对齐，不能用上面的
+     narrow），两组高度各按自己的画布换算，卡片的物理尺寸和 155% 那版完全一致。 */
   if(song.chapterId==='ch3'){
-    if(song.secret)return narrow?7:8;
-    if(song.boss)return narrow?11:10;
-    return narrow?10:8;
+    const slim=window.innerWidth<700;
+    if(slim)return song.secret?5.9:(song.boss?9.2:8.4);
+    return song.secret?7.3:(song.boss?9.1:7.3);
   }
   /* 第一章画布抬到 150%，卡片按比例从 14/16 收到 12/14，物理尺寸和原来一模一样，
      省下来的高度全给卡片之间那 3.4% 的空隙。 */
@@ -1521,7 +1558,7 @@ function songNodeHTML(song,i,pos){
   const coverCrop=song.cover?(COVER_CROP[song.cover]||null):null;
   const coverVars=coverCrop?`${coverCrop.pos?`--cover-pos:${coverCrop.pos};`:''}${coverCrop.fit?`--cover-size:${coverCrop.fit};`:''}`:'';
   return `<button type="button" class="ss-node ${stateClass} ${song.boss?'boss':''} ${song.secret?'secret':''}" data-i="${i}" ${disabled} style="left:${pos[0]}%;top:${pos[1]}%;height:${nodeH}%">
-    <span class="ss-cover ${song.cover?'art':''}${apCls}"${song.cover?` style="background-image:url('${song.cover}');${coverVars}"`:''}>${song.boss?'<i class="boss-frame"></i>':''}${shrouded?'<span class="ss-fog tf"></span><span class="ss-fog bf"></span>':''}</span><span class="ss-copy"><span class="ss-num">${numLabel}</span><h3>${title}</h3></span>
+    <span class="ss-cover ${song.cover?'art':''}${apCls}"${song.cover?` style="background-image:url('${imgUrl(song.cover)}');${coverVars}"`:''}>${song.boss?'<i class="boss-frame"></i>':''}${shrouded?'<span class="ss-fog tf"></span><span class="ss-fog bf"></span>':''}</span><span class="ss-copy"><span class="ss-num">${numLabel}</span><h3>${title}</h3></span>
     <span class="ss-state">${stateText}</span>${song.boss?'<i class="glitch"></i>':''}
   </button>`;
 }
@@ -1651,7 +1688,7 @@ function renderSongDetail(song){
   $('#badgeAP').classList.toggle('on',!!(hasBest&&best.ap));
   $('#badgeFC').classList.toggle('on',!!(hasBest&&best.fc&&!best.ap));
   $('#coverImg').style.display=blank?'none':'block';
-  if(song.cover)$('#coverImg').src=song.cover;
+  if(song.cover)$('#coverImg').src=imgUrl(song.cover);
   /* 详情页的大曲绘也是 object-fit:cover 铺在斜面板上，会裁边。
      这里一律从图片顶边往下截（CSS 里 object-position:50% 0%），
      理由是人脸基本都在图的上方，而曲名屏幕上本来就有，被裁掉不可惜。 */
@@ -1659,7 +1696,7 @@ function renderSongDetail(song){
   $('#coverInner').classList.toggle('blank',blank);
   $('#coverBlankText').textContent=`${song.chapterCn} / ${song.no}`;
   $('#coverRailRight').textContent=`${song.chapterNo} / ${song.no}`;
-  $('#songBg').style.backgroundImage=blank?'none':`url('${song.cover}')`;
+  $('#songBg').style.backgroundImage=blank?'none':`url('${imgUrl(song.cover)}')`;
   $('#songMarquee').textContent=`WELKIN AUDIO SYSTEM · ${song.chapterEn} · NOTES ${song.notes||'—'} · FOUR LANES · ${song.chart?'ALL SYSTEMS NOMINAL':'CHART DATA PENDING'} ·`;
   $('#songState').textContent=song.chart?'READY':'DATA PENDING';
   const btn=$('#btnStartGame');
@@ -1929,7 +1966,7 @@ function updatePhonePanels(){
   if(!p)return;
   const n=$('#msgName'),a=$('#msgAvatar');
   if(n)n.textContent=p.name;
-  if(a){a.src=p.avatar;a.onerror=()=>{a.style.display='none';};}
+  if(a){a.src=imgUrl(p.avatar);a.onerror=()=>{a.style.display='none';};}
 }
 const LIKE_KEY='welkin_os_likes_v1';
 let likes={};
@@ -5355,5 +5392,7 @@ function init(){
     catch(e){try{$('#loading').classList.remove('active');afterLoad();}catch(_){}}
   });
 }
-init();
+/* 先等一次 AVIF 探测：init 之后各处才渲染图片，必须让 IMG_CAN_AVIF 先落定，
+   否则老机器第一帧会用错扩展名。探测本身是 data URI，几十毫秒，还在 loading 里。 */
+IMG_PROBE.then(init,init);
 

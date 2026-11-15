@@ -978,11 +978,16 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border:0;border-radiu
    视口上下的雾交给 ss-mapfog（只跟视口走），内容底边这一层负责"滚到底时把第 1 关也压进雾里"。 */
 .song-select.ch1 .ss-map{--ss-map-h:150%}
 .song-select.ch2 .ss-map{--ss-map-h:150%}
-/* 终章多了一首收尾曲（压在魔王曲上面），画布再拔高一截，卡片按比例收窄，避免超出边框 */
-.song-select.ch3 .ss-map{--ss-map-h:155%}
+/* 终章多了一首收尾曲（压在魔王曲上面），画布再拔高一截，卡片按比例收窄，避免超出边框。
+   155% 时 TRACK 01 的下沿会掉进 ss-nodes::after 那层底雾里；画布拉到 170%、
+   卡片位置一起等比缩小，多出来的高度全垫在 01 下面，滚到底时它就停在雾上方了。
+   窄屏 8 张卡又要拉开又要留出雾的高度，画布得再长一截，185%。 */
+.song-select.ch3 .ss-map{--ss-map-h:170%}
 .song-select.ch1 .ss-map .ss-path,.song-select.ch1 .ss-map .ss-nodes,.song-select.ch1 .ss-map .ss-bigframe,
 .song-select.ch2 .ss-map .ss-path,.song-select.ch2 .ss-map .ss-nodes,.song-select.ch2 .ss-map .ss-bigframe,
 .song-select.ch3 .ss-map .ss-path,.song-select.ch3 .ss-map .ss-nodes,.song-select.ch3 .ss-map .ss-bigframe{height:var(--ss-map-h)}
+/* 窄屏（和 JS 里 SS_POS_M 的 <700px 判定对齐）单独把终章画布再拉长，卡片位置见 SS_POS_M.ch3 */
+@media (max-width:700px){.song-select.ch3 .ss-map{--ss-map-h:185%}}
 .song-select.ch1 .ss-nodes:after,.song-select.ch2 .ss-nodes:after,.song-select.ch3 .ss-nodes:after{content:"";position:absolute;left:0;right:0;bottom:0;height:18%;z-index:9;pointer-events:none;background:linear-gradient(0deg,#02060d 0%,rgba(2,6,13,.82) 26%,rgba(2,6,13,.45) 56%,rgba(2,6,13,.14) 82%,rgba(2,6,13,0) 100%)}
 /* 第一章画布 150%、最低那张卡收到 92% 收尾，底部黑雾只留 10%，否则会把整张 TRACK 01 糊掉 */
 .song-select.ch1 .ss-nodes:after{height:10%}
@@ -1691,9 +1696,15 @@ body.perf-lite .sel-loading .sl2-grid{animation-duration:10s}
 .pro-scanlines{position:absolute;inset:0;pointer-events:none;opacity:.5;background:repeating-linear-gradient(0deg,rgba(3,2,9,.22) 0 1px,transparent 1px 4px);mix-blend-mode:multiply}
 .pro-wrap{position:absolute;inset:0;z-index:6;display:grid;grid-template-columns:minmax(0,1.4fr) minmax(320px,.8fr);gap:clamp(28px,4vw,80px);align-items:center;padding:clamp(80px,11vh,124px) clamp(24px,6vw,110px) clamp(62px,9vh,100px)}
 .pro-core{position:relative;width:100%;aspect-ratio:16/9;max-height:56vh;overflow:hidden;border:1px solid rgba(168,85,247,.28);background:#020106;box-shadow:0 0 46px rgba(76,29,149,.32),inset 0 0 44px rgba(76,29,149,.16)}
+/* 序章 / EX 的曲绘是纯 CSS 背景，拿不到 onerror 兜底，所以按 <html data-img> 选格式：
+   值由 welkin-os.js 的 IMG_PROBE 写入（avif 解码失败就是 webp）。两个都还没定之前
+   用 none，免得老机器先白请求一遍 AVIF 再换。 */
+html{--cover-wel:none;--cover-still:none}
+html[data-img="avif"]{--cover-wel:url("wel.avif");--cover-still:url("Still.avif")}
+html[data-img="webp"]{--cover-wel:url("wel.webp");--cover-still:url("Still.webp")}
 /* 序章曲绘不再是 <img>，改成 .pro-art 的背景图（跟主线章节一样）：
    长按拿不到源文件，也就不会弹存图/拖图；视觉参数与原来的 img 一致。 */
-.pro-core .pro-art{position:absolute;inset:0;background-color:#020106;background-image:url(wel.avif);background-repeat:no-repeat;background-position:50% 32%;background-size:cover;filter:saturate(.84) contrast(1.06) brightness(.82);transform:scale(1.015);pointer-events:none}
+.pro-core .pro-art{position:absolute;inset:0;background-color:#020106;background-image:var(--cover-wel,none);background-repeat:no-repeat;background-position:50% 32%;background-size:cover;filter:saturate(.84) contrast(1.06) brightness(.82);transform:scale(1.015);pointer-events:none}
 /* 序章 / EX 的曲绘一律不许长按存图、不许拖拽、不许选中（对齐主线章节的保护） */
 .pro-core,.pro-core .pro-art,.ex-frame,.ex-frame .ex-art{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-user-drag:none}
 .pro-veil{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(3,2,9,.34) 0%,rgba(3,2,9,.06) 34%,rgba(3,2,9,.22) 62%,rgba(3,2,9,.86) 100%)}
@@ -1754,7 +1765,7 @@ body.perf-lite .sel-loading .sl2-grid{animation-duration:10s}
 .ex-frame:before{content:"";position:absolute;inset:6px;border:1px solid rgba(242,199,106,.34);pointer-events:none;z-index:5}
 .ex-frame:after{content:"";position:absolute;inset:0;pointer-events:none;z-index:4;background:linear-gradient(180deg,rgba(2,8,20,.14) 0%,rgba(2,8,20,0) 34%,rgba(2,8,20,.22) 74%,rgba(2,8,20,.62) 100%)}
 /* EX 曲绘同样改成背景图（见上），长按不弹存图。 */
-.ex-frame .ex-art{position:absolute;inset:0;background-color:#020914;background-image:url(Still.avif);background-repeat:no-repeat;background-position:50% 54%;background-size:cover;filter:saturate(1.06) contrast(1.05) brightness(.98);transform:scale(1.01);pointer-events:none}
+.ex-frame .ex-art{position:absolute;inset:0;background-color:#020914;background-image:var(--cover-still,none);background-repeat:no-repeat;background-position:50% 54%;background-size:cover;filter:saturate(1.06) contrast(1.05) brightness(.98);transform:scale(1.01);pointer-events:none}
 /* AP gold-plated frames (prologue W. + EX Still) */
 .pro-core.ap{border-color:rgba(255,207,106,.95);box-shadow:0 0 0 1px rgba(255,207,106,.5),0 0 52px rgba(255,190,60,.55),inset 0 0 46px rgba(255,190,60,.16)}
 .ex-frame.ap{border-color:rgba(255,207,106,.95);box-shadow:0 0 0 1px rgba(255,207,106,.55),0 0 64px rgba(255,190,60,.6),inset 0 0 54px rgba(255,190,60,.2)}
