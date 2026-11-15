@@ -1402,6 +1402,31 @@ function startPrologueSession(){
   if(performance.now()<uiLockUntil)return;
   openSongDetail(PROLOGUE_W,'prologue');
 }
+/* 序章 → 紫色 GUIDE：操作 / 音符 / 判定 / 分数 / 评级 一份说明。
+   只是覆盖层，不动 state，也不拦触屏输入层（面板自己吃掉事件）。 */
+function openProGuide(){
+  const g=$('#proGuide');
+  if(!g||g.classList.contains('active'))return;
+  const body=$('.gd-body',g);
+  if(body){
+    if(!body.__gdBound){
+      body.__gdBound=true;
+      body.addEventListener('scroll',()=>{body.classList.toggle('is-scrolled',body.scrollTop>2);},{passive:true});
+    }
+    body.scrollTop=0;
+    body.classList.remove('is-scrolled');
+  }
+  g.classList.add('active');
+  g.setAttribute('aria-hidden','false');
+  uiSound(1.2);
+}
+function closeProGuide(){
+  const g=$('#proGuide');
+  if(!g||!g.classList.contains('active'))return;
+  g.classList.remove('active');
+  g.setAttribute('aria-hidden','true');
+  uiSound(.9);
+}
 function closeSolo(){
   if(!prologueScreen.classList.contains('active')&&!exScreen.classList.contains('active'))return;
   prologueScreen.classList.remove('active');
@@ -3567,6 +3592,8 @@ window.addEventListener('keydown',e=>{
       else closeIM();
       return;
     }
+    const gdEl=$('#proGuide');
+    if(gdEl&&gdEl.classList.contains('active')){closeProGuide();return;}
     if(prologueScreen.classList.contains('active')||exScreen.classList.contains('active')){closeSolo();return;}
     if(songScreen.classList.contains('active')){closeSong();return;}
     if(songSelectScreen.classList.contains('active')){closeSongSelect();return;}
