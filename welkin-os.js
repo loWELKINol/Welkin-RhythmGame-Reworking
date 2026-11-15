@@ -901,7 +901,7 @@ function makeCh2Songs(){
 }
 const EFFULGENCE={
   id:'ch1-2',chapterId:'ch1',no:'TRACK 01',title:'Effulgence',artist:'WELKIN',charter:'Welkin',
-  bpm:'—',length:'02:41',notes:495,level:5,boss:false,chart:'effulgence',audio:'Effulgence.mp3',cover:'Effulgence.avif',state:'locked'
+  bpm:'—',length:'02:41',notes:493,level:5,boss:false,chart:'effulgence',audio:'Effulgence.mp3',cover:'Effulgence.avif',state:'locked'
 };
 const SPARK={
   id:'ch1-3',chapterId:'ch1',no:'TRACK 02',title:'The Spark',artist:'WELKIN',charter:'Welkin',
@@ -910,7 +910,7 @@ const SPARK={
 /* 初章第三关：插在 The Spark(TRACK 02) 和 R.I.P.(原 TRACK 03) 之间，成为新的第三关。
    曲绘 ltzz.avif、曲名 テリトリーバトル、铺面 ltzz.qua、音乐 ltzz.mp3、难度 11；
    仍锁在解锁链上逐关解锁；id 用 ch1-7 避免撞号。 */
-const CH1_T3={id:'ch1-7',chapterId:'ch1',no:'TRACK 03',title:'テリトリーバトル',artist:'WELKIN',charter:'Welkin',bpm:'140',length:'02:32',notes:851,level:11,boss:false,chart:'ltzz',audio:'ltzz.mp3',cover:'ltzz.avif',state:'locked'};
+const CH1_T3={id:'ch1-7',chapterId:'ch1',no:'TRACK 03',title:'テリトリーバトル',artist:'WELKIN',charter:'Welkin',bpm:'140',length:'02:32',notes:849,level:11,boss:false,chart:'ltzz',audio:'ltzz.mp3',cover:'ltzz.avif',state:'locked'};
 const RIP={id:'ch1-4',chapterId:'ch1',no:'TRACK 04',title:'R.I.P.',artist:'—',charter:'—',bpm:'—',length:'—',notes:0,level:10,boss:false,chart:null,audio:null,cover:'R.I.P.avif',state:'locked'};
 const WELKIN={id:'ch1-5',chapterId:'ch1',no:'TRACK 06',title:'WELKIN',artist:'WELKIN',charter:'Welkin',bpm:'150',length:'04:12',notes:1677,level:16,boss:true,chart:'welkin',audio:'WELKIN.mp3',cover:'W.avif',state:'locked'};
 const CORR={id:'ch1-6',chapterId:'ch1',no:'TRACK 05',title:'Corrupted Entity',artist:'—',charter:'WeIkin',bpm:'181',length:'02:45',notes:1387,level:15,boss:false,chart:'corr',audio:'Corrupted Entity.mp3',cover:'Corr.avif',state:'locked'};
@@ -2257,12 +2257,12 @@ function EFF(){
   D(0,1,55,'hold',56.8);
   tap(3,57.1);tap(2,57.5);tap(0,57.9);tap(1,58.1);tap(2,58.3);tap(2,58.7);tap(1,59.2);tap(2,59.5);tap(1,59.8);tap(2,60);
   D(1,2,60.2,'hold',72.7);
-  // 73.6-91: gaps +0.2s, config every 1s, continuous 5-double groups
+  // 73.6-89.8: gaps +0.2s, config every 1s, continuous double groups
   const pairs=[[1,2],[0,3],[1,3],[0,2],[2,3],[0,1]];
   t=73.6;
   let guard=0;
-  while(t<90.95&&guard++<80){
-    for(let k=0;k<5&&t<90.95;k++){
+  while(t<90&&guard++<80){
+    for(let k=0;k<5&&t<90;k++){
       const et=t;
       const cfg=pairs[Math.floor((et-73.6)/1)%pairs.length];
       D(cfg[0],cfg[1],et,'tap');
@@ -2270,9 +2270,13 @@ function EFF(){
       t+=0.6;
     }
   }
-  D(1,2,90.8,'tap');
-  for(i=0;i<3;i++)tap(2,90.9+i*0.225);
-  for(i=0;i<3;i++)tap(1,91.4+i*0.225);
+  // 最后一拍 2/3 轨道双押保留；原来跟在后头的 1 轨道单键（90.7）已删，
+  // 原本 90.8 的 2/3 双押顶到它的时间上。
+  D(2,3,90.4,'tap');
+  D(1,2,90.7,'tap');
+  // 两组三连对调：先 2 轨道，再 3 轨道。
+  for(i=0;i<3;i++)tap(1,90.9+i*0.225);
+  for(i=0;i<3;i++)tap(2,91.4+i*0.225);
   // 1↔4 lane interaction: +0.05s instead of +0.1s (0.15s spacing) so it stays harder than the last pass
   {let k=0;for(t=91.9;t<=93.351;t+=0.15,k++)tap(k%2===0?0:3,t);}
   // floating performance yellow keys, no judgement
@@ -2303,8 +2307,9 @@ function EFF(){
   D(1,2,140.3,'tap');
   tap(1,143.5);tap(2,143.8);D(1,2,144.7,'tap');
   hold(3,145.7,148.2);
-  brk(1,152.8);brk(2,154.7);brk(3,155.4);
-  D(1,2,155.6,'tap');
+  // 2:34 那个 3 轨道黄键提前 0.8s；2:35 后的 4 轨道黄键删掉，原 2/3 双押顶到它的时间上。
+  brk(1,152.8);brk(2,153.9);
+  D(1,2,155.4,'tap');
   D(0,3,157,'hold',159);
 
 }
