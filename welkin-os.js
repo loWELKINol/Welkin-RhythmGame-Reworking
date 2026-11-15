@@ -884,20 +884,28 @@ function makeMainSongs(prefix,levels,bossLevel){
   }));
   return [{id:prefix+'-boss',chapterId:prefix,no:'TRACK 06',title:'—',artist:'—',charter:'—',bpm:'—',length:'—',notes:0,level:bossLevel,boss:true,chart:null,cover:null,state:'locked'},...normal];
 }
-/* 承章六首：曲绘全部到位，顺序是 TRACK 01→05 = init / an / bn / pen / fb，魔王曲 = ca。
+/* 承章七首：曲绘全部到位，顺序是 TRACK 01→06 = init / an / La / bn / pen / fb，魔王曲 = ca。
+   La 插在 an(TRACK 02) 和 bn(原 TRACK 03) 之间，成为新的第三关，曲绘 La.avif。
    曲名暂时不公开（选歌页里显示 ?），并且每张卡都罩一层黑雾（shroud），
    和第一章没解锁的那几关同一个观感；等第一章收完尾再决定什么时候揭。
-   谱面都还没接，chart 保持 null。id 沿用 makeMainSongs 的 ch2-2…ch2-6 / ch2-boss，
-   这样以前存下来的通关记录不会因为改曲目表而对不上。 */
-const CH2_COVER_FILES=['init.avif','an.avif','bn.avif','pen.avif','fb.avif','ca.avif'];
+   谱面都还没接，chart 保持 null。id 沿用旧的 ch2-2…ch2-6 / ch2-boss，
+   新插入的 La 用独立 id ch2-7，这样以前存下来的通关记录不会因为改曲目表而对不上。 */
+const CH2_COVER_FILES=['init.avif','an.avif','La.avif','bn.avif','pen.avif','fb.avif','ca.avif'];
 function makeCh2Songs(){
-  const levels=[4,6,7,8,10];
-  const normal=levels.map((level,i)=>({
-    id:'ch2-'+(i+2),chapterId:'ch2',no:'TRACK '+String(i+1).padStart(2,'0'),title:'?',
-    artist:'—',charter:'—',bpm:'—',length:'—',notes:0,level,boss:false,chart:null,
+  const rows=[
+    {id:'ch2-2',no:'TRACK 01',level:4},
+    {id:'ch2-3',no:'TRACK 02',level:6},
+    {id:'ch2-7',no:'TRACK 03',level:7},
+    {id:'ch2-4',no:'TRACK 04',level:7},
+    {id:'ch2-5',no:'TRACK 05',level:8},
+    {id:'ch2-6',no:'TRACK 06',level:10}
+  ];
+  const normal=rows.map((r,i)=>({
+    id:r.id,chapterId:'ch2',no:r.no,title:'?',
+    artist:'—',charter:'—',bpm:'—',length:'—',notes:0,level:r.level,boss:false,chart:null,
     cover:CH2_COVER_FILES[i],state:'locked',shroud:true
   }));
-  return [{id:'ch2-boss',chapterId:'ch2',no:'TRACK 06',title:'?',artist:'—',charter:'—',bpm:'—',length:'—',notes:0,level:14,boss:true,chart:null,cover:CH2_COVER_FILES[5],state:'locked',shroud:true},...normal];
+  return [{id:'ch2-boss',chapterId:'ch2',no:'TRACK 07',title:'?',artist:'—',charter:'—',bpm:'—',length:'—',notes:0,level:14,boss:true,chart:null,cover:CH2_COVER_FILES[6],state:'locked',shroud:true},...normal];
 }
 const EFFULGENCE={
   id:'ch1-2',chapterId:'ch1',no:'TRACK 01',title:'Effulgence',artist:'WELKIN',charter:'Welkin',
@@ -917,17 +925,36 @@ const CORR={id:'ch1-6',chapterId:'ch1',no:'TRACK 05',title:'Corrupted Entity',ar
 const STILL={id:'ex-1',chapterId:'ex',no:'TRACK 01',title:'Still (piano version)',artist:'—',charter:'Welkin',bpm:'130',length:'01:48',notes:365,level:6,boss:true,chart:'still',audio:'Still.mp3',cover:'Still.avif',state:'locked'};
 /* 主线序章：单曲章节，曲目 W。它有自己的选歌页（DATAFALL），和初章 TRACK 05 的占位互不影响。 */
 const PROLOGUE_W={id:'prologue-1',chapterId:'prologue',no:'TRACK 01',title:'W.',artist:'WELKIN',charter:'Welkin',bpm:'152',length:'01:26',notes:84,level:2,boss:false,chart:'w',audio:'w.（.mp3',cover:'wel.avif',state:'available'};
-/* 终章收尾曲：魔王曲之后的第 7 首。选歌页里放在魔王曲正上方，未解锁时几乎透明（secret）。
-   它排在 TRACK 07，解锁链上自然变成「清完魔王曲才出现」。 */
+/* 终章普通曲（占位）：TRACK 01→06，魔王曲 TRACK 07，收尾曲 TRACK 08(secret)。
+   新插的第三关暂无曲绘，cover 保持 null；插在 TRACK 02 和 TRACK 03 之间，
+   独立 id ch3-8 避免撞号，其余沿用 ch3-2…ch3-6 / ch3-boss。 */
+function makeCh3Songs(){
+  const rows=[
+    {id:'ch3-2',no:'TRACK 01',level:6},
+    {id:'ch3-3',no:'TRACK 02',level:8},
+    {id:'ch3-8',no:'TRACK 03',level:8},
+    {id:'ch3-4',no:'TRACK 04',level:9},
+    {id:'ch3-5',no:'TRACK 05',level:10},
+    {id:'ch3-6',no:'TRACK 06',level:12}
+  ];
+  const normal=rows.map(r=>({
+    id:r.id,chapterId:'ch3',no:r.no,title:'—',
+    artist:'—',charter:'—',bpm:'—',length:'—',notes:0,level:r.level,boss:false,chart:null,
+    cover:null,state:'locked'
+  }));
+  return [{id:'ch3-boss',chapterId:'ch3',no:'TRACK 07',title:'—',artist:'—',charter:'—',bpm:'—',length:'—',notes:0,level:15,boss:true,chart:null,cover:null,state:'locked'},...normal];
+}
+/* 终章收尾曲：魔王曲之后的最后一首。选歌页里放在魔王曲正上方，未解锁时几乎透明（secret）。
+   它排在 TRACK 08，解锁链上自然变成「清完魔王曲才出现」。 */
 const CH3_FINALE={
-  id:'ch3-7',chapterId:'ch3',no:'TRACK 07',title:'The Last Horizon',artist:'—',charter:'—',
+  id:'ch3-7',chapterId:'ch3',no:'TRACK 08',title:'The Last Horizon',artist:'—',charter:'—',
   bpm:'—',length:'—',notes:0,level:15,boss:false,secret:true,chart:null,audio:null,cover:null,state:'locked'
 };
 const CHAPTERS=[
   {id:'prologue',no:'00',cn:'主线 · 序章',en:'PROLOGUE',sub:'THE ORIGIN SIGNAL',theme:'prologue',layout:'SOLO',progress:'0 / 1',previewArt:'wel.avif',songs:[PROLOGUE_W]},
   {id:'ch1',no:'01',cn:'主线 · 初章',en:'ORIGIN',sub:'THE FIRST SIGNAL',theme:'ch1',layout:'HELIX',progress:'0 / 6',songs:[WELKIN,EFFULGENCE,SPARK,CH1_T3,RIP,CORR]},
-  {id:'ch2',no:'02',cn:'主线 · 承章',en:'ASCENT',sub:'THE SECOND CURRENT',theme:'ch2',layout:'ORBIT',progress:'0 / 6',songs:makeCh2Songs()},
-  {id:'ch3',no:'03',cn:'主线 · 终章',en:'TERMINUS',sub:'THE LAST HORIZON',theme:'ch3',layout:'CIRCUIT',progress:'0 / 7',songs:[...makeMainSongs('ch3',[6,8,9,10,12],15),CH3_FINALE]},
+  {id:'ch2',no:'02',cn:'主线 · 承章',en:'ASCENT',sub:'THE SECOND CURRENT',theme:'ch2',layout:'ORBIT',progress:'0 / 7',songs:makeCh2Songs()},
+  {id:'ch3',no:'03',cn:'主线 · 终章',en:'TERMINUS',sub:'THE LAST HORIZON',theme:'ch3',layout:'CIRCUIT',progress:'0 / 8',songs:[...makeCh3Songs(),CH3_FINALE]},
   {id:'ex',no:'EX',cn:'EX 章节',en:'ANOMALY',sub:'BEYOND THE LINE',theme:'ex',layout:'DIRECT',progress:'LOCKED',locked:true,previewArt:'Still.avif',songs:[STILL]}
 ];
 CHAPTERS.forEach(ch=>ch.songs.forEach(s=>{s.chapterCn=ch.cn;s.chapterEn=ch.en;s.chapterNo=ch.no;}));
@@ -1040,20 +1067,21 @@ let selectedSong=EFFULGENCE,detailSource='songselect',detailReadyAt=0,uiLockUnti
    所以 index0 在最上面，index1(TRACK01) 压到 80% 收尾，从 01 往上逐关爬。 */
 const SS_POS={
   ch1:[[50,1],[67,80],[33,64.6],[67,49.2],[33,33.8],[67,18.4]],
-  ch2:[[50,1],[67,73],[33,59],[67,45],[33,31],[67,17]],
-  /* 终章 7 首：ch3.songs 的顺序是 [boss, 01,02,03,04,05, secret]，boss 在 index 0，
-     所以这里按「数组下标」给位置：index0 魔王曲居中在最上面，index1=TRACK01 贴最下沿，
-     依次往上爬，index6 收尾曲(secret)再压到魔王曲之上、居中。
-     间距规则（卡片高度 9%）：01~05 之间每档空 4.3%（约 48px），
-     05 和魔王曲之间空 5.9%（约 66px）——比普通档稍大一点；
-     TRACK01 的底边落在 90.6%，底部那点位置交给黑雾渐隐，其它观感不变。 */
-  ch3:[[50,11],[50,81.6],[67,68.3],[33,55],[67,41.7],[33,28.4],[50,1]]
+  /* 承章 7 首：画布 150%，普通卡 11%、魔王曲 13%（物理尺寸和原来 130% 时的 14/16 一致），
+     彼此留 2% 空隙。下标即 ch2.songs 数组序：[魔王曲, 01,02,03,04,05,06]。 */
+  ch2:[[50,1],[67,81],[33,68],[67,55],[33,42],[67,29],[33,16]],
+  /* 终章 8 首：ch3.songs 的顺序是 [boss, 01,02,03,04,05,06, secret]，boss 在 index 0，
+     所以这里按「数组下标」给位置：index0 魔王曲居中在上，index1=TRACK01 贴最下沿，
+     依次往上爬，index7 收尾曲(secret)再压到魔王曲之上、居中。
+     卡片高度 8%（魔王曲 10%、secret 8%）：01~06 之间每档空 3%，
+     06 和魔王曲之间空 5%，魔王曲到收尾曲空 1%。 */
+  ch3:[[50,10],[50,80],[67,69],[33,58],[67,47],[33,36],[67,25],[50,1]]
 };
 const SS_POS_M={
   ch1:[[50,1],[70,80],[30,64.6],[70,49.2],[30,33.8],[70,18.4]],
-  ch2:[[50,1],[70,74],[30,60],[70,46],[30,32],[70,18]],
-  /* 窄屏同一套间距思路，卡片高度 11%，所以间距按比例收到 3.4% / 4.6% */
-  ch3:[[50,11],[50,85.7],[70,71.3],[30,56.9],[70,42.5],[30,28.1],[50,1]]
+  ch2:[[50,1],[70,81],[30,68],[70,55],[30,42],[70,29],[30,16]],
+  /* 窄屏同一套间距思路，卡片高度 10%（魔王曲 11%、secret 7%），间距收到 3% / 5% */
+  ch3:[[50,9],[50,90],[70,77],[30,64],[70,51],[30,38],[70,25],[50,1]]
 };
 function chapterPreviewHTML(ch){
   const art=ch.previewArt
@@ -1461,15 +1489,17 @@ function closeSongSelect(){
 function songNodeH(song){
   const narrow=window.innerWidth<=900;
   if(song.chapterId==='ch3'){
-    if(song.secret)return narrow?8:9;
-    if(song.boss)return narrow?12.5:11.5;
-    return narrow?11:9;
+    if(song.secret)return narrow?7:8;
+    if(song.boss)return narrow?11:10;
+    return narrow?10:8;
   }
   /* 第一章画布抬到 150%，卡片按比例从 14/16 收到 12/14，物理尺寸和原来一模一样，
      省下来的高度全给卡片之间那 3.4% 的空隙。 */
   if(song.chapterId==='ch1')return song.boss?14:12;
+  /* 承章也抬到 150%，7 首按 11/13 收（物理尺寸和 130% 时的 14/16 一致），
+     留出的高度给 7 张卡之间那 2% 的空隙。 */
   const tall=song.chapterId==='ch2';
-  return song.boss?(tall?16:21):(tall?14:18);
+  return song.boss?(tall?13:21):(tall?11:18);
 }
 function songNodeHTML(song,i,pos){
   const stateClass=song.state==='available'?'avail':song.state==='clear'?'clear':'locked';
