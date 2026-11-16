@@ -979,18 +979,21 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border:0;border-radiu
 .song-select.ch1 .ss-map{--ss-map-h:150%}
 .song-select.ch2 .ss-map{--ss-map-h:150%}
 /* 终章多了一首收尾曲（压在魔王曲上面），画布再拔高一截，卡片按比例收窄，避免超出边框。
-   155% 时 TRACK 01 的下沿会掉进 ss-nodes::after 那层底雾里；画布拉到 170%、
-   卡片位置一起等比缩小，多出来的高度全垫在 01 下面，滚到底时它就停在雾上方了。
-   窄屏 8 张卡又要拉开又要留出雾的高度，画布得再长一截，185%。 */
+   ↑ 以上是 11-15 那版写死 170% 的说明。11-16 起终章的卡片位置/高度/画布高都改成运行时现算：
+   卡片高度按「曲绘 + 内边距 + 一点余量」定，画布高再反推（见 JS 的 ch3Stack / applyCh3MapScale），
+   行内 var 会盖掉下面这两个值；它们只是 JS 还没跑起来的兜底。 */
 .song-select.ch3 .ss-map{--ss-map-h:170%}
 .song-select.ch1 .ss-map .ss-path,.song-select.ch1 .ss-map .ss-nodes,.song-select.ch1 .ss-map .ss-bigframe,
 .song-select.ch2 .ss-map .ss-path,.song-select.ch2 .ss-map .ss-nodes,.song-select.ch2 .ss-map .ss-bigframe,
 .song-select.ch3 .ss-map .ss-path,.song-select.ch3 .ss-map .ss-nodes,.song-select.ch3 .ss-map .ss-bigframe{height:var(--ss-map-h)}
-/* 窄屏（和 JS 里 SS_POS_M 的 <700px 判定对齐）单独把终章画布再拉长，卡片位置见 SS_POS_M.ch3 */
+/* 窄屏兜底（已被 applyCh3MapScale 的行内 var 覆盖，仅 JS 未生效时用） */
 @media (max-width:700px){.song-select.ch3 .ss-map{--ss-map-h:185%}}
 .song-select.ch1 .ss-nodes:after,.song-select.ch2 .ss-nodes:after,.song-select.ch3 .ss-nodes:after{content:"";position:absolute;left:0;right:0;bottom:0;height:18%;z-index:9;pointer-events:none;background:linear-gradient(0deg,#02060d 0%,rgba(2,6,13,.82) 26%,rgba(2,6,13,.45) 56%,rgba(2,6,13,.14) 82%,rgba(2,6,13,0) 100%)}
 /* 第一章画布 150%、最低那张卡收到 92% 收尾，底部黑雾只留 10%，否则会把整张 TRACK 01 糊掉 */
 .song-select.ch1 .ss-nodes:after{height:10%}
+/* 终章宽屏的新堆叠把 TRACK 01 收在 90%，底雾留 8% 就够压住边，
+   18% 会从 82% 就开始往下压，第一关整张都发灰。 */
+.song-select.ch3 .ss-nodes:after{height:8%}
 /* 第一章的卡片整体按 150% 画布重算过高度，魔王曲原来靠 min-height:16% 撑住，这里跟着收到 14% */
 .song-select.ch1 .ss-node.boss{min-height:14%}
 /* 承章同理：7 首收窄到 13% 高，把 .ss-node.boss 的全局 min-height:16% 一起压到 13%，否则魔王曲会被顶回 16% 高、压到下一张卡 */
@@ -2116,13 +2119,35 @@ body.perf-lite .gd-body.is-scrolled{-webkit-mask-image:none;mask-image:none}
   .gd-tips ul{grid-template-columns:1fr}
   .gd-sec-h h3{font-size:11.5px}
 }
+/* 平板/iPadOS 的「减弱动态效果」以前是把引导面板的动画整片 animation:none，
+   结果平板上打开 GUIDE 就成了一张静态图（状态带不滚、粒子不飘、卡片不浮）。
+   和上面 prologue/EX 那段同一个处理：保留动效，只是放慢。 */
 @media (prefers-reduced-motion: reduce){
-  .gd-sweep,.gd-bg i:nth-child(1),.pg-scan,.pro-guide::after,
-  .gd-panel::before,.gd-panel::after,.gd-scanv,.gd-sparks i,.gd-ticker-track,.gd-cn,
-  .gd-hero h2,.gd-chip.brk,.gw-track::after,.gw-perfect,.gw-track b,
-  .gd-stat::before,.gd-stat::after,.gd-foot::after,
-  .gd.active .gd-hero,.gd.active .gd-sec,.gd.active .gd-tips,.gd.active .gd-foot{animation:none}
+  .gd-ticker-track{animation-duration:40s!important}
+  .gd-sweep{animation-duration:13s!important}
+  .gd-scanv{animation-duration:12s!important}
+  .gd-sparks i{animation-duration:14s!important}
+  .gd-cn{animation-duration:7s!important}
+  .gd-bg i:nth-child(1){animation-duration:72s!important}
+  .gd-hero h2{animation-duration:13s!important}
+  .gd-chip.brk{animation-duration:4.6s!important}
+  .gw-track::after{animation-duration:8s!important}
+  .gw-perfect{animation-duration:4s!important}
+  .gw-track b{animation-duration:3.2s!important}
+  .gd-stat::before,.gd-stat::after{animation-duration:6s!important}
+  .gd-foot::after{animation-duration:2s!important}
+  .gd-panel::before{animation-duration:1.6s!important}
+  .gd-panel::after{animation-duration:16s!important}
+  .pg-scan{animation-duration:7.5s!important}
+  .pro-guide::after{animation-duration:7.6s!important}
+  /* 打开时各块依次浮上来这一步是必要的入场提示，保留，只拉长一点 */
+  .gd.active .gd-hero,.gd.active .gd-sec,.gd.active .gd-tips,.gd.active .gd-foot{animation-duration:.9s!important}
 }
-/* 低配机：去掉重叠的大面积动效，只留颜色和结构 */
-body.perf-lite .gd-panel::after,body.perf-lite .gd-scanv,body.perf-lite .gd-sparks,body.perf-lite .gd-panel::before{display:none}
-body.perf-lite .gd-ticker-track{animation-duration:48s}
+/* 低配机/平板：perf-lite 现在几乎在所有触屏设备上都是开的（见 JS 的 PERF_LITE），
+   如果照旧把粒子、扫描线、上电扫光、反光整块 display:none，平板上的引导就只剩静态排版了。
+   这些都是几十像素的小元素，改成「放慢但保留」比直接消失更像成品。 */
+body.perf-lite .gd-ticker-track{animation-duration:34s}
+body.perf-lite .gd-sweep{animation-duration:11s}
+body.perf-lite .gd-scanv{animation-duration:10s}
+body.perf-lite .gd-sparks i{animation-duration:12s}
+body.perf-lite .gd-panel::after{animation-duration:15s}

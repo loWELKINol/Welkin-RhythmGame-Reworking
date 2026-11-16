@@ -952,8 +952,8 @@ const SPARK={
    仍锁在解锁链上逐关解锁；id 用 ch1-7 避免撞号。 */
 const CH1_T3={id:'ch1-7',chapterId:'ch1',no:'TRACK 03',title:'テリトリーバトル',artist:'WELKIN',charter:'Welkin',bpm:'140',length:'02:32',notes:849,level:11,boss:false,chart:'ltzz',audio:'ltzz.mp3',cover:'ltzz.avif',state:'locked'};
 const RIP={id:'ch1-4',chapterId:'ch1',no:'TRACK 04',title:'R.I.P.',artist:'—',charter:'—',bpm:'—',length:'—',notes:0,level:10,boss:false,chart:null,audio:null,cover:'R.I.P.avif',state:'locked'};
-const WELKIN={id:'ch1-5',chapterId:'ch1',no:'TRACK 06',title:'WELKIN',artist:'WELKIN',charter:'Welkin',bpm:'150',length:'04:12',notes:1677,level:16,boss:true,chart:'welkin',audio:'WELKIN.mp3',cover:'W.avif',state:'locked'};
-const CORR={id:'ch1-6',chapterId:'ch1',no:'TRACK 05',title:'Corrupted Entity',artist:'—',charter:'WeIkin',bpm:'181',length:'02:45',notes:1387,level:15,boss:false,chart:'corr',audio:'Corrupted Entity.mp3',cover:'Corr.avif',state:'locked'};
+const WELKIN={id:'ch1-5',chapterId:'ch1',no:'TRACK 06',title:'WELKIN',artist:'WELKIN',charter:'Welkin',bpm:'150',length:'04:12',notes:1662,level:16,boss:true,chart:'welkin',audio:'WELKIN.mp3',cover:'W.avif',state:'locked'};
+const CORR={id:'ch1-6',chapterId:'ch1',no:'TRACK 05',title:'Corrupted Entity',artist:'—',charter:'WeIkin',bpm:'181',length:'02:45',notes:1382,level:15,boss:false,chart:'corr',audio:'Corrupted Entity.mp3',cover:'Corr.avif',state:'locked'};
 const STILL={id:'ex-1',chapterId:'ex',no:'TRACK 01',title:'Still (piano version)',artist:'—',charter:'Welkin',bpm:'130',length:'01:48',notes:365,level:6,boss:true,chart:'still',audio:'Still.mp3',cover:'Still.avif',state:'locked'};
 /* 主线序章：单曲章节，曲目 W。它有自己的选歌页（DATAFALL），和初章 TRACK 05 的占位互不影响。 */
 const PROLOGUE_W={id:'prologue-1',chapterId:'prologue',no:'TRACK 01',title:'W.',artist:'WELKIN',charter:'Welkin',bpm:'152',length:'01:26',notes:84,level:2,boss:false,chart:'w',audio:'w.（.mp3',cover:'wel.avif',state:'available'};
@@ -1102,20 +1102,15 @@ const SS_POS={
   /* 承章 7 首：画布 150%，普通卡 11%、魔王曲 13%（物理尺寸和原来 130% 时的 14/16 一致），
      彼此留 2% 空隙。下标即 ch2.songs 数组序：[魔王曲, 01,02,03,04,05,06]。 */
   ch2:[[50,1],[67,81],[33,68],[67,55],[33,42],[67,29],[33,16]],
-  /* 终章 8 首：ch3.songs 的顺序是 [boss, 01,02,03,04,05,06, secret]，boss 在 index 0，
-     所以这里按「数组下标」给位置：index0 魔王曲居中在上，index1=TRACK01 在最下，
-     依次往上爬，index7 收尾曲(secret)再压到魔王曲之上、居中。
-     画布 170%、卡片 7.3%（魔王曲 9.1%、secret 7.3%）——按 155% 那套等比换算，
-     卡片的物理尺寸和间距一点没变，多出来的 15% 全垫在 TRACK 01 底下：
-     滚到底时 01 的底边停在 80.2%，刚好在内容底雾(82%)上面。 */
+  /* 终章 8 首：11-16 起位置/高度不再用这张表，改由 ch3Stack 按视口现算（见下面的 ch3Stack），
+     这里留一份旧数据只是兜底（ch3Stack 万一取不到 songs 时的退路）。
+     旧口径：画布 170%、普通卡 7.3%、魔王曲 9.1%，TRACK 01 收在 80.2%。 */
   ch3:[[50,9.1],[50,72.9],[67,62.9],[33,52.9],[67,42.9],[33,32.8],[67,22.8],[50,0.9]]
 };
 const SS_POS_M={
   ch1:[[50,1],[70,80],[30,64.6],[70,49.2],[30,33.8],[70,18.4]],
   ch2:[[50,1],[70,81],[30,68],[70,55],[30,42],[70,29],[30,16]],
-  /* 窄屏：画布 185%，8 张卡按 8.4%（魔王曲 9.2%、secret 5.9%）重排，间距收到 2.3%。
-     原来 TRACK 01 贴在 100% 底边、整张泡在底雾里，这里把它收到 81.9% 收尾，
-     刚好停在雾(82%)上面。 */
+  /* 窄屏终章同样改走 ch3Stack，这张表只是兜底。旧口径：画布 185%、普通卡 8.4%。 */
   ch3:[[50,8.5],[50,73.5],[70,62.8],[30,52.1],[70,41.4],[30,30.7],[70,20.0],[50,0.3]]
 };
 function chapterPreviewHTML(ch){
@@ -1548,8 +1543,7 @@ function closeSongSelect(){
    普通曲从 9.8 收到 9（窄屏 12 → 11），把省下来的高度让给卡片之间的空隙。 */
 function songNodeH(song){
   const narrow=window.innerWidth<=900;
-  /* 终章：宽屏画布 170%、窄屏 185%（窄屏判定和 SS_POS_M 的 <700px 对齐，不能用上面的
-     narrow），两组高度各按自己的画布换算，卡片的物理尺寸和 155% 那版完全一致。 */
+  /* 终章所有宽度都不走这里：位置/高度由 ch3Stack 出，见下面。 */
   if(song.chapterId==='ch3'){
     const slim=window.innerWidth<700;
     if(slim)return song.secret?5.9:(song.boss?9.2:8.4);
@@ -1563,7 +1557,69 @@ function songNodeH(song){
   const tall=song.chapterId==='ch2';
   return song.boss?(tall?13:21):(tall?11:18);
 }
-function songNodeHTML(song,i,pos){
+/* ---------- 终章卡片堆叠（手机/平板/桌面同一套） ----------
+   旧写法把 8 张卡的位置/高度写死在 SS_POS.ch3，百分比挂在一条固定 170% 高的画布上：
+   画布高随窗口高走，卡片高只听画布百分比，于是平板这种「窗口矮、卡还宽」的比例下
+   卡片被压成 271×82 的扁条，连曲绘（82px）都塞不进内边距，上下被裁掉一截。
+   现在改成：卡片高度统一给百分比，纵向从 CH3_TOP 排到 CH3_BOTTOM、间距均分（卡片整体下移、
+   底部留白收窄）；画布高度不写死，由「卡片至少要多高才装得下曲绘」反推（applyCh3MapScale）。
+   数组序是 ch3.songs：[魔王曲, TRACK01..06, 收尾曲]，纵向从上到下则是
+   收尾曲 → 魔王曲 → TRACK 06 → … → TRACK 01（01 在最下面，和 CIRCUIT 连线走向一致）。 */
+const CH3_TOP=1,CH3_BOTTOM=90,CH3_H=8.6,CH3_BOSS_H=10.4;
+const CH3_SCALE_MIN=1.5,CH3_SCALE_MAX=2.35;
+function ch3Stack(songs){
+  const idx=songs.map((s,i)=>i);
+  const secret=idx.filter(i=>songs[i].secret);
+  const boss=idx.filter(i=>songs[i].boss);
+  /* 普通曲按 TRACK 号倒序：06 在上、01 在最下 */
+  const rest=idx.filter(i=>!songs[i].secret&&!songs[i].boss)
+    .sort((a,b)=>trackNum(songs[b])-trackNum(songs[a]));
+  const order=secret.concat(boss,rest);
+  const hsByOrder=order.map(i=>songs[i].boss?CH3_BOSS_H:CH3_H);
+  const sumH=hsByOrder.reduce((a,b)=>a+b,0);
+  const n=order.length;
+  const gap=(CH3_BOTTOM-CH3_TOP-sumH)/Math.max(1,n-1);
+  const pts=order.map(()=>[50,0]);
+  const hs=order.map(()=>0);
+  let y=CH3_TOP;
+  order.forEach((songIdx,k)=>{
+    /* 左右摆：收尾曲/魔王曲居中，普通曲 67/33 交替，最下面那张回中间收线 */
+    let x=50;
+    if(!songs[songIdx].secret&&!songs[songIdx].boss){
+      const normalRank=k-(secret.length+boss.length);
+      x=(normalRank===rest.length-1)?50:(normalRank%2===0?67:33);
+    }
+    pts[songIdx]=[x,+y.toFixed(2)];
+    hs[songIdx]=hsByOrder[k];
+    y+=hsByOrder[k]+gap;
+  });
+  return {pts,hs};
+}
+/* 画布高度反推：卡片至少要 coverPx + 上下内边距 + 一点余量，才不像被裁过的扁条。
+   手机/平板/桌面同一套：卡片高度的百分比一样，画布跟着视口高度伸缩，物理尺寸就跟着曲绘走。 */
+function applyCh3MapScale(ch){
+  const map=$('#ssMap');
+  if(!map)return;
+  if(!ch||ch.id!=='ch3'){map.style.removeProperty('--ss-map-h');return;}
+  const vh=map.clientHeight||0;
+  if(vh<=0){map.style.removeProperty('--ss-map-h');return;}
+  const card=$('#ssNodes .ss-node:not(.boss)')||$('#ssNodes .ss-node');
+  let coverPx=0,pad=14;
+  if(card){
+    const cov=card.querySelector('.ss-cover');
+    if(cov)coverPx=cov.getBoundingClientRect().height;
+    const cs=getComputedStyle(card);
+    pad=(parseFloat(cs.paddingTop)||0)+(parseFloat(cs.paddingBottom)||0);
+  }
+  const target=clamp(coverPx?coverPx+pad+14:104,96,150);
+  const scale=clamp(target/((CH3_H/100)*vh),CH3_SCALE_MIN,CH3_SCALE_MAX);
+  map.style.setProperty('--ss-map-h',(scale*100).toFixed(1)+'%');
+}
+/* 窗口变化时重算画布高度（坐标都是百分比，不需要重新排） */
+function refreshSongMapScale(){
+  if(currentChapter)applyCh3MapScale(currentChapter);
+}
+function songNodeHTML(song,i,pos,hOverride){
   const stateClass=song.state==='available'?'avail':song.state==='clear'?'clear':'locked';
   const disabled=(song.state==='available'||song.state==='clear')||(song.state==='locked'&&!(song.boss&&song.chart))?'':'disabled';
   const locked=song.state==='locked';
@@ -1575,7 +1631,7 @@ function songNodeHTML(song,i,pos){
   const best=getBestFor(song.id);
   const apCls=(best&&best.ap)?' ap':'';
   const tall=song.chapterId==='ch2'||song.chapterId==='ch3';
-  const nodeH=songNodeH(song);
+  const nodeH=hOverride!=null?hOverride:songNodeH(song);
   const numLabel=song.boss?(tall?song.no:'FINAL / '+String(trackNum(song)).padStart(2,'0')):song.no;
   const stateText=song.state==='available'?'READY':song.state==='clear'?'CLEAR':(song.secret?'···':'LOCKED');
   /* 曲绘铺法：按 COVER_CROP 里的对准点写行内变量，CSS 那边只认这两个变量。
@@ -1634,9 +1690,11 @@ function renderSongSelect(){
   $('#ssChapterCn').dataset.text=ch.cn;
   $('#ssChapterEn').textContent=ch.en;
   $('#ssProgress').textContent=ch.progress+' CLEARED';
-  const pts=window.innerWidth<700?(SS_POS_M[ch.id]||SS_POS_M.ch1):(SS_POS[ch.id]||SS_POS.ch1);
-  const hs=ch.songs.map(songNodeH);
-  $('#ssNodes').innerHTML=ch.songs.map((s,i)=>songNodeHTML(s,i,pts[i]||[50,50])).join('');
+  /* 终章：位置/高度都走 ch3Stack 现算（手机/平板/桌面同一套），其它章节还是原来写死的表 */
+  const geom=ch.id==='ch3'?ch3Stack(ch.songs):null;
+  const pts=geom?geom.pts:(window.innerWidth<700?(SS_POS_M[ch.id]||SS_POS_M.ch1):(SS_POS[ch.id]||SS_POS.ch1));
+  const hs=geom?geom.hs:ch.songs.map(songNodeH);
+  $('#ssNodes').innerHTML=ch.songs.map((s,i)=>songNodeHTML(s,i,pts[i]||[50,50],geom?hs[i]:null)).join('');
   const centers=pts.map((p,i)=>[p[0],p[1]+hs[i]/2]);
   /* 收尾曲不进主线回路，它跟魔王曲之间单独连虚点 */
   const chain=ch.songs.map((s,i)=>i).filter(i=>!ch.songs[i].secret);
@@ -1650,6 +1708,8 @@ function renderSongSelect(){
     else {d+=` C ${q[0]} ${(q[1]+p[1])/2} ${p[0]} ${(q[1]+p[1])/2} ${p[0]} ${p[1]}`;}
   }
   $('#ssPath').innerHTML=`<path class="ss-base" d="${d}" vector-effect="non-scaling-stroke"/><path class="ss-line" d="${d}" vector-effect="non-scaling-stroke"/>${pathCenters.map(p=>`<circle class="ss-dot" cx="${p[0]}" cy="${p[1]}" r=".8" vector-effect="non-scaling-stroke"/>`).join('')}${finaleLinkSVG(ch,pts,hs)}`;
+  /* 卡片已经进 DOM 了，能量到曲绘的实际高度，这时候再把画布高度定下来（只影响高度比例，不动坐标） */
+  applyCh3MapScale(ch);
   const avail=ch.songs.find(s=>s.state==='available');
   $('#ssSide').innerHTML=`<span class="ss-kicker">CHAPTER ${ch.no} / ${ch.en}</span><h2>${ch.cn}</h2><p>${ch.sub}<br>BOSS AT TOP · ONE BY ONE UNLOCK</p><div class="ss-rule"></div><div class="ss-prog"><b>${ch.progress}</b>CHAPTER PROGRESS</div><div class="ss-unlock">NEXT UNLOCK<br><b>${avail?avail.no+' — READY':'—'}</b></div>`;
   $$('#ssNodes .ss-node').forEach(el=>{
@@ -5392,7 +5452,7 @@ function wireUI(){
   window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{
     layoutGame();buildCity();
     if(state==='GAME'||state==='PAUSED'||state==='RESUMING')drawGame(0);
-    if(songSelectScreen.classList.contains('active'))fitSongTitles();
+    if(songSelectScreen.classList.contains('active')){fitSongTitles();refreshSongMapScale();}
   },140);});
   window.addEventListener('orientationchange',()=>setTimeout(()=>{layoutGame();buildCity();},260));
 }
