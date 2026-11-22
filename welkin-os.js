@@ -923,40 +923,35 @@ function makeMainSongs(prefix,levels,bossLevel){
    谱面都还没接，chart 保持 null。id 沿用旧的 ch2-2…ch2-6 / ch2-boss，
    新插入的 La 用独立 id ch2-7，这样以前存下来的通关记录不会因为改曲目表而对不上。 */
 const CH2_COVER_FILES=['init.avif','an.avif','La.avif','bn.avif','pen.avif','fb.avif','ca.avif'];
-function makeCh2Songs(){
-  const rows=[
-    {id:'ch2-2',no:'TRACK 01',level:4},
-    {id:'ch2-3',no:'TRACK 02',level:6},
-    {id:'ch2-7',no:'TRACK 03',level:7},
-    {id:'ch2-4',no:'TRACK 04',level:7},
-    {id:'ch2-5',no:'TRACK 05',level:8},
-    {id:'ch2-6',no:'TRACK 06',level:10}
-  ];
-  const normal=rows.map((r,i)=>({
-    id:r.id,chapterId:'ch2',no:r.no,title:'?',
-    artist:'—',charter:'—',bpm:'—',length:'—',notes:0,level:r.level,boss:false,chart:null,
-    cover:CH2_COVER_FILES[i],state:'locked',shroud:true
-  }));
-  return [{id:'ch2-boss',chapterId:'ch2',no:'TRACK 07',title:'?',artist:'—',charter:'—',bpm:'—',length:'—',notes:0,level:14,boss:true,chart:null,cover:CH2_COVER_FILES[6],state:'locked',shroud:true},...normal];
-}
+/* 承章七首正式接入：顺序 TRACK 01→06 = init / 时逝 / Lamentation / Grievous Lady /
+   Pentiment / Tempestissimo，魔王曲 = CyberAttack。曲绘沿用旧的短名文件（bn=Grievous Lady，
+   ca=CyberAttack）。id 沿用 ch2-2…ch2-6 / ch2-boss，La 用独立 id ch2-7，避免撞旧通关记录。 */
+const CH2_INIT={id:'ch2-2',chapterId:'ch2',no:'TRACK 01',title:'init()',artist:'WELKIN',charter:'Welkin',bpm:'180',length:'02:19',notes:930,level:10,boss:false,chart:'init',audio:'init.mp3',cover:'init.avif',state:'locked',fingers:'dual'};
+const CH2_AN={id:'ch2-3',chapterId:'ch2',no:'TRACK 02',title:'时逝',artist:'WELKIN',charter:'Welkin',bpm:'199',length:'02:08',notes:1152,level:14,boss:false,chart:'an',audio:'an.mp3',cover:'an.avif',state:'locked',fingers:'dual'};
+const CH2_LA={id:'ch2-7',chapterId:'ch2',no:'TRACK 03',title:'Lamentation',artist:'WELKIN',charter:'Welkin',bpm:'98',length:'02:18',notes:798,level:15,boss:false,chart:'la',audio:'La.mp3',cover:'La.avif',state:'locked',fingers:'multi'};
+const CH2_LADY={id:'ch2-4',chapterId:'ch2',no:'TRACK 04',title:'Grievous Lady',artist:'WELKIN',charter:'Welkin',bpm:'106',length:'02:19',notes:1516,level:17,boss:false,chart:'lady',audio:'Lady.mp3',cover:'bn.avif',state:'locked',fingers:'multi'};
+const CH2_PEN={id:'ch2-5',chapterId:'ch2',no:'TRACK 05',title:'Pentiment',artist:'WELKIN',charter:'Welkin',bpm:'111',length:'02:37',notes:1217,level:18,boss:false,chart:'pen',audio:'pen.mp3',cover:'pen.avif',state:'locked',fingers:'dual'};
+const CH2_FB={id:'ch2-6',chapterId:'ch2',no:'TRACK 06',title:'Tempestissimo',artist:'WELKIN',charter:'Welkin',bpm:'116',length:'02:16',notes:1885,level:19,boss:false,chart:'fb',audio:'fb.mp3',cover:'fb.avif',state:'locked',fingers:'multi'};
+const CH2_CYBER={id:'ch2-boss',chapterId:'ch2',no:'TRACK 07',title:'CyberAttack',artist:'WELKIN',charter:'Welkin',bpm:'130',length:'03:14',notes:2310,level:20,boss:true,chart:'cyber',audio:'Cyber.mp3',cover:'ca.avif',state:'locked',fingers:'multi'};
+function makeCh2Songs(){return [CH2_CYBER,CH2_INIT,CH2_AN,CH2_LA,CH2_LADY,CH2_PEN,CH2_FB];}
 const EFFULGENCE={
   id:'ch1-2',chapterId:'ch1',no:'TRACK 01',title:'Effulgence',artist:'WELKIN',charter:'Welkin',
-  bpm:'—',length:'02:41',notes:493,level:5,boss:false,chart:'effulgence',audio:'Effulgence.mp3',cover:'Effulgence.avif',state:'locked'
+  bpm:'—',length:'02:41',notes:493,level:5,boss:false,chart:'effulgence',audio:'Effulgence.mp3',cover:'Effulgence.avif',state:'locked',fingers:'multi'
 };
 const SPARK={
   id:'ch1-3',chapterId:'ch1',no:'TRACK 02',title:'The Spark',artist:'WELKIN',charter:'Welkin',
-  bpm:'175',length:'02:25',notes:1078,level:8,boss:false,chart:'spark',audio:'The Spark.mp3',cover:'The Spark.avif',state:'locked'
+  bpm:'175',length:'02:25',notes:1078,level:8,boss:false,chart:'spark',audio:'The Spark.mp3',cover:'The Spark.avif',state:'locked',fingers:'dual'
 };
 /* 初章第三关：插在 The Spark(TRACK 02) 和 R.I.P.(原 TRACK 03) 之间，成为新的第三关。
    曲绘 ltzz.avif、曲名 テリトリーバトル、铺面 ltzz.qua、音乐 ltzz.mp3、难度 11；
    仍锁在解锁链上逐关解锁；id 用 ch1-7 避免撞号。 */
-const CH1_T3={id:'ch1-7',chapterId:'ch1',no:'TRACK 03',title:'テリトリーバトル',artist:'WELKIN',charter:'Welkin',bpm:'140',length:'02:32',notes:849,level:11,boss:false,chart:'ltzz',audio:'ltzz.mp3',cover:'ltzz.avif',state:'locked'};
-const RIP={id:'ch1-4',chapterId:'ch1',no:'TRACK 04',title:'R.I.P.',artist:'—',charter:'—',bpm:'—',length:'—',notes:0,level:10,boss:false,chart:null,audio:null,cover:'R.I.P.avif',state:'locked'};
-const WELKIN={id:'ch1-5',chapterId:'ch1',no:'TRACK 06',title:'WELKIN',artist:'WELKIN',charter:'Welkin',bpm:'150',length:'04:12',notes:1662,level:16,boss:true,chart:'welkin',audio:'WELKIN.mp3',cover:'W.avif',state:'locked'};
-const CORR={id:'ch1-6',chapterId:'ch1',no:'TRACK 05',title:'Corrupted Entity',artist:'—',charter:'WeIkin',bpm:'181',length:'02:45',notes:1413,level:15,boss:false,chart:'corr',audio:'Corrupted Entity.mp3',cover:'Corr.avif',state:'locked'};
-const STILL={id:'ex-1',chapterId:'ex',no:'TRACK 01',title:'Still (piano version)',artist:'—',charter:'Welkin',bpm:'130',length:'01:48',notes:365,level:6,boss:true,chart:'still',audio:'Still.mp3',cover:'Still.avif',state:'locked'};
+const CH1_T3={id:'ch1-7',chapterId:'ch1',no:'TRACK 03',title:'テリトリーバトル',artist:'WELKIN',charter:'Welkin',bpm:'140',length:'02:32',notes:849,level:11,boss:false,chart:'ltzz',audio:'ltzz.mp3',cover:'ltzz.avif',state:'locked',fingers:'multi'};
+const RIP={id:'ch1-4',chapterId:'ch1',no:'TRACK 04',title:'R.I.P.',artist:'—',charter:'—',bpm:'—',length:'—',notes:0,level:10,boss:false,chart:null,audio:null,cover:'R.I.P.avif',state:'locked',fingers:'dual'};
+const WELKIN={id:'ch1-5',chapterId:'ch1',no:'TRACK 06',title:'WELKIN',artist:'WELKIN',charter:'Welkin',bpm:'150',length:'04:12',notes:1662,level:16,boss:true,chart:'welkin',audio:'WELKIN.mp3',cover:'W.avif',state:'locked',fingers:'multi'};
+const CORR={id:'ch1-6',chapterId:'ch1',no:'TRACK 05',title:'Corrupted Entity',artist:'—',charter:'WeIkin',bpm:'181',length:'02:45',notes:1413,level:15,boss:false,chart:'corr',audio:'Corrupted Entity.mp3',cover:'Corr.avif',state:'locked',fingers:'dual'};
+const STILL={id:'ex-1',chapterId:'ex',no:'TRACK 01',title:'Still (piano version)',artist:'—',charter:'Welkin',bpm:'130',length:'01:48',notes:365,level:6,boss:true,chart:'still',audio:'Still.mp3',cover:'Still.avif',state:'locked',fingers:'dual'};
 /* 主线序章：单曲章节，曲目 W。它有自己的选歌页（DATAFALL），和初章 TRACK 05 的占位互不影响。 */
-const PROLOGUE_W={id:'prologue-1',chapterId:'prologue',no:'TRACK 01',title:'W.',artist:'WELKIN',charter:'Welkin',bpm:'152',length:'01:26',notes:84,level:2,boss:false,chart:'w',audio:'w.（.mp3',cover:'wel.avif',state:'available'};
+const PROLOGUE_W={id:'prologue-1',chapterId:'prologue',no:'TRACK 01',title:'W.',artist:'WELKIN',charter:'Welkin',bpm:'152',length:'01:26',notes:84,level:2,boss:false,chart:'w',audio:'w.（.mp3',cover:'wel.avif',state:'available',fingers:'dual'};
 /* 终章普通曲（占位）：TRACK 01→06，魔王曲 TRACK 07，收尾曲 TRACK 08(secret)。
    新插的第三关暂无曲绘，cover 保持 null；插在 TRACK 02 和 TRACK 03 之间，
    独立 id ch3-8 避免撞号，其余沿用 ch3-2…ch3-6 / ch3-boss。 */
@@ -986,7 +981,7 @@ const CHAPTERS=[
   {id:'prologue',no:'00',cn:'主线 · 序章',en:'PROLOGUE',sub:'THE ORIGIN SIGNAL',theme:'prologue',layout:'SOLO',progress:'0 / 1',previewArt:'wel.avif',songs:[PROLOGUE_W]},
   {id:'ch1',no:'01',cn:'主线 · 初章',en:'ORIGIN',sub:'THE FIRST SIGNAL',theme:'ch1',layout:'HELIX',progress:'0 / 6',songs:[WELKIN,EFFULGENCE,SPARK,CH1_T3,RIP,CORR]},
   {id:'ch2',no:'02',cn:'主线 · 承章',en:'ASCENT',sub:'THE SECOND CURRENT',theme:'ch2',layout:'ORBIT',progress:'0 / 7',songs:makeCh2Songs()},
-  {id:'ch3',no:'03',cn:'主线 · 终章',en:'TERMINUS',sub:'THE LAST HORIZON',theme:'ch3',layout:'CIRCUIT',progress:'0 / 8',songs:[...makeCh3Songs(),CH3_FINALE]},
+  {id:'ch3',no:'03',cn:'主线 · 终章',en:'TERMINUS',sub:'THE LAST HORIZON',theme:'ch3',layout:'CIRCUIT',progress:'0 / 8',locked:true,songs:[...makeCh3Songs(),CH3_FINALE]},
   {id:'ex',no:'EX',cn:'EX 章节',en:'ANOMALY',sub:'BEYOND THE LINE',theme:'ex',layout:'DIRECT',progress:'LOCKED',locked:true,previewArt:'Still.avif',songs:[STILL]}
 ];
 CHAPTERS.forEach(ch=>ch.songs.forEach(s=>{s.chapterCn=ch.cn;s.chapterEn=ch.en;s.chapterNo=ch.no;}));
@@ -1161,8 +1156,8 @@ function renderChapterSelect(){
   const totalTracks=CHAPTERS.reduce((n,ch)=>n+ch.songs.length,0);
   const cnt=$('#chStatusCount');
   if(cnt)cnt.textContent=`${CHAPTERS.length} CHAPTERS / ${totalTracks} TRACKS`;
-  $('#chapterCards').innerHTML=CHAPTERS.map((ch,i)=>`<button type="button" class="ch-card ${i===chapterFocus?'on':''} ${ch.id==='ex'?'ex':''} ${ch.id==='prologue'?'prologue':''} ${ch.locked?'locked':''} ${ch.id==='ch2'?'attack':''}" data-i="${i}">
-    <span class="ch-no">${ch.no}</span><span class="ch-en">${ch.en}</span><h3>${ch.cn}</h3><p>${ch.sub}</p>${ch.locked?'<span class="ch-lock">ACCESS LOCKED</span>':''}<span class="ch-bar"><i style="width:${ch.locked?0:Math.round((ch.cleared||0)/Math.max(1,ch.songs.length)*100)}%"></i></span>
+  $('#chapterCards').innerHTML=CHAPTERS.map((ch,i)=>`<button type="button" class="ch-card ${i===chapterFocus?'on':''} ${ch.id==='ex'?'ex':''} ${ch.id==='prologue'?'prologue':''} ${ch.locked?'locked':''} ${ch.id==='ch2'?'attack':''} ${ch.id==='ch3'?'ch3':''}" data-i="${i}">
+    <span class="ch-no">${ch.no}</span><span class="ch-en">${ch.en}</span><h3>${ch.cn}</h3><p>${ch.sub}</p>${ch.locked?(ch.id==='ch3'?'<span class="ch-tech-lock"><i class="lock-glyph"></i>SIGNAL SEALED</span>':'<span class="ch-lock">ACCESS LOCKED</span>'):''}<span class="ch-bar"><i style="width:${ch.locked?0:Math.round((ch.cleared||0)/Math.max(1,ch.songs.length)*100)}%"></i></span>
   </button>`).join('');
   $$('#chapterCards .ch-card').forEach(el=>{
     const i=Number(el.dataset.i);
@@ -1765,6 +1760,17 @@ function renderSongDetail(song){
   $('#songCharter').textContent=song.charter;
   $('#songLevel').textContent=song.level+' / 20';
   $('#songDiff').innerHTML=Array.from({length:20},(_,i)=>`<i class="${i<song.level?'on':''}"></i>`).join('');
+  const fi=$('#fingerInd');
+  if(fi){
+    const chip=fi.querySelector('.finger-chip');
+    if(song.fingers==='multi'||song.fingers==='dual'){
+      fi.style.display='';
+      fi.className='finger-ind '+(song.fingers==='multi'?'multi':'dual');
+      if(chip)chip.textContent=song.fingers==='multi'?'多指':'双指';
+    }else{
+      fi.style.display='none';
+    }
+  }
   const hasBest=!!song.chart&&best&&best.score>0;
   $('#songBest').textContent=hasBest?pad7(best.score):'0000000';
   $('#songRank').textContent=hasBest?rankOf(best.score):'—';
@@ -2305,7 +2311,14 @@ const CHART_META={
   still:{duration:108,final:101.769},
   w:{duration:86.34,final:82.006},
   ltzz:{duration:152.1,final:148.621},
-  welkin:{duration:252,final:242.833}
+  welkin:{duration:252,final:242.833},
+  init:{duration:140.6,final:139.027},
+  an:{duration:129.6,final:127.839},
+  la:{duration:139.4,final:132.397},
+  lady:{duration:140.4,final:133.867},
+  pen:{duration:158.7,final:156.756},
+  fb:{duration:137.9,final:136.034},
+  cyber:{duration:195.9,final:194.395}
 };
 const KEYS=['c','v','b','n'];
 
@@ -2486,7 +2499,15 @@ function generateBeatmap(){
   else if(selectedSong&&selectedSong.chart==='w')buildWChart();
   else if(selectedSong&&selectedSong.chart==='ltzz')buildLtzzChart();
   else if(selectedSong&&selectedSong.chart==='welkin')buildWelkinChart();
+  else if(selectedSong&&selectedSong.chart==='init')buildInitChart();
+  else if(selectedSong&&selectedSong.chart==='an')buildAnChart();
+  else if(selectedSong&&selectedSong.chart==='la')buildLaChart();
+  else if(selectedSong&&selectedSong.chart==='lady')buildLadyChart();
+  else if(selectedSong&&selectedSong.chart==='pen')buildPenChart();
+  else if(selectedSong&&selectedSong.chart==='fb')buildFbChart();
+  else if(selectedSong&&selectedSong.chart==='cyber')buildCyberChart();
   finalizeChart();
+  applyBreakConversion();
   if(selectedSong)selectedSong.notes=game.notes.reduce((a,n)=>a+(n.perform?0:1),0);
 }
 
@@ -2598,7 +2619,7 @@ function judgeBreak(n){
   game.perfect++;game.weightSum+=1;game.combo++;
   game.feedback='PERFECT';game.feedbackType='P';game.feedbackTimer=.62;game.comboScale=1.5;feedbackYOffset=0;
   game.judgeLineGlow=1;game.screenShake=Math.max(game.screenShake,2);
-  addHitFx(n.lane,0,n.is_chord,n.is_multi);ltzzChordShake(n);welkinChordShake(n);playBreakSfx(n.lane);
+  addHitFx(n.lane,0,n.is_chord,n.is_multi);ltzzChordShake(n);welkinChordShake(n);ch2ChordShake(n);playBreakSfx(n.lane);
   if(game.combo>game.maxCombo)game.maxCombo=game.combo;
   if(Math.abs(n.time-FINAL_CHORD_TIME)<.05)game.flashAlpha=.5;
 }
@@ -2609,7 +2630,7 @@ function startHold(n,quality){
   game.feedback=quality==='P'?'PERFECT':'GOOD';game.feedbackType=quality==='P'?'P':'G';
   game.feedbackTimer=.62;game.comboScale=1.5;feedbackYOffset=0;
   game.judgeLineGlow=quality==='P'?1:.6;game.screenShake=quality==='P'?2:1.5;
-  addHitFx(n.lane,quality==='P'?0:1,n.is_chord,n.is_multi);ltzzChordShake(n);welkinChordShake(n);
+  addHitFx(n.lane,quality==='P'?0:1,n.is_chord,n.is_multi);ltzzChordShake(n);welkinChordShake(n);ch2ChordShake(n);
   playHitSfx(n.lane,quality==='P'?0:1);
   if(game.combo>game.maxCombo)game.maxCombo=game.combo;
 }
@@ -2682,11 +2703,11 @@ function judgeLane(lane,stamp){
     if(bestDt<=PERFECT_WINDOW){
       game.perfect++;game.weightSum+=1;game.combo++;
       game.feedback='PERFECT';game.feedbackType='P';game.judgeLineGlow=1;game.screenShake=2.0;
-      addHitFx(lane,0,n.is_chord,n.is_multi);ltzzChordShake(n);welkinChordShake(n);playHitSfx(lane,0);
+      addHitFx(lane,0,n.is_chord,n.is_multi);ltzzChordShake(n);welkinChordShake(n);ch2ChordShake(n);playHitSfx(lane,0);
     }else if(bestDt<=GOOD_WINDOW){
       game.good++;game.weightSum+=.65;game.combo++;
       game.feedback='GOOD';game.feedbackType='G';game.judgeLineGlow=.6;game.screenShake=1.5;
-      addHitFx(lane,1,n.is_chord,n.is_multi);ltzzChordShake(n);welkinChordShake(n);playHitSfx(lane,1);
+      addHitFx(lane,1,n.is_chord,n.is_multi);ltzzChordShake(n);welkinChordShake(n);ch2ChordShake(n);playHitSfx(lane,1);
     }else{
       game.bad++;game.combo=0;game.feedback='BAD';game.feedbackType='B';
       addHitFx(lane,2,n.is_chord,n.is_multi);
@@ -2826,6 +2847,43 @@ function welkinChordShake(n){
   else if(mt>=123&&mt<=126)amt=size>=3?22:15;
   else if(mt>=130&&mt<=135)amt=size>=3?26:18;
   else if(mt>=209)amt=size>=3?24:16;
+  if(amt>0)game.screenShake=Math.max(game.screenShake,amt);
+}
+/* 承章（第二章）— 双押/多押按时间段触发屏幕抖动，增强打击感。
+   只在命中(P/G)时触发；同一次和弦靠 ch2ChordShakeAt 去重，双押的两个键不会各抖一次。
+   各曲规则：
+   - init：16-20s 双押、59-85s 双押、112s 起双押（更猛）
+   - la：71s 起每个双押/多押
+   - lady：全程双押/多押，56s 起多押更猛
+   - pen：全程双押
+   - fb：17s 起双押/多押
+   - cyber：全程双押/多押 */
+function ch2ChordShake(n){
+  if(!selectedSong)return;
+  const chart=selectedSong.chart;
+  if(chart!=='init'&&chart!=='la'&&chart!=='lady'&&chart!=='pen'&&chart!=='fb'&&chart!=='cyber')return;
+  const size=n.chordSize||1;
+  if(size<2)return;
+  const mt=n.time-MUSIC_DELAY;
+  if(Math.abs(mt-game.ch2ChordShakeAt)<0.03)return;
+  game.ch2ChordShakeAt=mt;
+  let amt=0;
+  if(chart==='init'){
+    if(mt>=16&&mt<=20)amt=size>=3?16:12;
+    else if(mt>=59&&mt<=85)amt=size>=3?16:12;
+    else if(mt>=112)amt=size>=3?23:17;
+  }else if(chart==='la'){
+    if(mt>=71)amt=size>=3?18:13;
+  }else if(chart==='lady'){
+    if(mt>=56)amt=size>=3?24:17;
+    else amt=size>=3?16:12;
+  }else if(chart==='pen'){
+    amt=size>=3?16:11;
+  }else if(chart==='fb'){
+    if(mt>=17)amt=size>=3?18:13;
+  }else if(chart==='cyber'){
+    amt=size>=3?16:12;
+  }
   if(amt>0)game.screenShake=Math.max(game.screenShake,amt);
 }
 function addMissFx(lane){
@@ -3087,13 +3145,14 @@ function resetGameData(){
   SONG_DURATION=meta.duration;FINAL_CHORD_TIME=meta.final;
   LTZZ_END_FOG.ready=false; // 尾杀黑雾的区间每局按当前谱面重新算
   welkinPopups=[];
+  ch2ResetFxCaches(); // 承章各曲的「最后一根长条」区间每局按当前谱面重算
   AUDIO_DELAY=(selectedSong&&selectedSong.chart==='corr')?0.2:0;
   game={
     clock:-3,perfect:0,good:0,bad:0,miss:0,combo:0,maxCombo:0,weightSum:0,
     feedback:'',feedbackType:'',feedbackTimer:0,comboScale:1,screenShake:0,
     judgeLineGlow:0,bpmPulse:0,flashAlpha:0,whiteFlash:0,
     notes:[],effects:[],keyHold:[false,false,false,false],laneFlash:[0,0,0,0],
-    lastDelta:0,lastType:'',lastShakeBeat:-1,ltzzChordShakeAt:-999,welkinChordShakeAt:-999,lanePtr:[0,0,0,0]
+    lastDelta:0,lastType:'',lastShakeBeat:-1,ltzzChordShakeAt:-999,welkinChordShakeAt:-999,ch2ChordShakeAt:-999,lanePtr:[0,0,0,0]
   };
   generateBeatmap();
   // Mirror：谱面沿 y 轴左右翻转（只翻转显示/判定用的轨道，不改谱面配置与计分）。
@@ -3211,6 +3270,7 @@ function stepGame(dt){
   else if(isWelkin&&at>=84.9&&at<109.7){shakeBeat=Math.floor((at-84.9)/0.5);shakeAmt=16;}
   else if(isWelkin&&at>=148&&at<170){shakeBeat=Math.floor((at-148)/0.8);shakeAmt=15;}
   else if(isWelkin&&at>=170&&at<199){shakeBeat=Math.floor((at-170)/0.5);shakeAmt=17;}
+  if(shakeBeat<0){const s2=ch2TimedShake(at);if(s2){shakeBeat=s2[0];shakeAmt=s2[1];}}
   if(shakeBeat>=0&&shakeBeat!==game.lastShakeBeat){
     game.lastShakeBeat=shakeBeat;game.screenShake=Math.max(game.screenShake,shakeAmt);
   }
@@ -3690,6 +3750,8 @@ function drawGame(dt){
   const isW=selectedSong&&selectedSong.chart==='w';
   const isLtzz=selectedSong&&selectedSong.chart==='ltzz';
   const isWelkin=selectedSong&&selectedSong.chart==='welkin';
+  const isCyber=selectedSong&&selectedSong.chart==='cyber';
+  const isAn=selectedSong&&selectedSong.chart==='an';
   const mt=game.clock-MUSIC_DELAY;
   // Corr: lanes + background go grayscale (0 -> 70% over the countdown, stays 70%).
   // Notes/receptors/judgement stay full color, so we only wrap the backdrop+playfield.
@@ -3724,6 +3786,8 @@ function drawGame(dt){
   if(isW)drawWFog();
   if(isWelkin)drawWelkinFog();
   if(isStill)drawStillRays();
+  drawCh2Fog();
+  if(!V.ultraFx)drawCh2Ambient();
   drawNotes();
   drawTopFade();
   drawHitLine();
@@ -3743,10 +3807,12 @@ function drawGame(dt){
   if(isW)drawWGlitch();
   if(isStill)drawStillFog();
   if(isWelkin)drawWelkinGlitch(dt);
+  drawCh2TextFx(dt);
 
   if(game.flashAlpha>0){c.fillStyle='rgba(225,250,255,'+(game.flashAlpha*.3).toFixed(3)+')';c.fillRect(0,0,V.w,V.h);}
   if(game.whiteFlash>0){c.fillStyle='rgba(170,235,255,'+game.whiteFlash.toFixed(3)+')';c.fillRect(0,0,V.w,V.h);}
   if(isLtzz)drawLtzzEndFogVeil();
+  drawCh2FinalVeil();
   /* WELKIN 203s→208s：整帧去饱和到 70%（之后停在 70%）。
      用 saturation 混合模式铺一层灰：B(Cb,Cs) 会把底色的饱和度换成源色的饱和度(0)，
      即「保亮度、去颜色」，按键、音符、长条、判定/PERFECT 特效、粒子、黑雾暗角一起变黑白。 */
@@ -3761,6 +3827,47 @@ function drawGame(dt){
         c.fillRect(0,0,V.w,V.h);
         c.restore();
         // 画布外还有一层 HUD（进度/分数），一并压成灰，做到「整个屏幕」
+        const q=Math.round(desat*100)/100;
+        if(q!==welkinHudDesat){welkinHudDesat=q;gameHud.style.filter='grayscale('+q+')';}
+      }else{
+        stage.style.filter='grayscale('+desat.toFixed(3)+')';
+        gameHud.style.filter='grayscale('+desat.toFixed(3)+')';
+        welkinHudDesat=-1;
+      }
+    }
+  }
+  /* CYBER 11s 起整帧去饱和 30%（155.5s 起再 +20% = 50%），与 WELKIN 同一套 saturation 混合模式，
+     按键/音符/长条/判定特效/粒子/黑雾一起变黑白。 */
+  if(isCyber){
+    const desat=clamp(1-cyberSaturation(mt),0,1);
+    if(desat>0.001){
+      if(welkinBlendOk(c)){
+        c.save();
+        c.globalCompositeOperation='saturation';
+        c.globalAlpha=desat;
+        c.fillStyle='#808080';
+        c.fillRect(0,0,V.w,V.h);
+        c.restore();
+        const q=Math.round(desat*100)/100;
+        if(q!==welkinHudDesat){welkinHudDesat=q;gameHud.style.filter='grayscale('+q+')';}
+      }else{
+        stage.style.filter='grayscale('+desat.toFixed(3)+')';
+        gameHud.style.filter='grayscale('+desat.toFixed(3)+')';
+        welkinHudDesat=-1;
+      }
+    }
+  }
+  /* 时逝：10s 淡入黑白 10%、18-20s 淡回全彩，同套 saturation 混合模式。 */
+  if(isAn){
+    const desat=clamp(1-anSaturation(mt),0,1);
+    if(desat>0.001){
+      if(welkinBlendOk(c)){
+        c.save();
+        c.globalCompositeOperation='saturation';
+        c.globalAlpha=desat;
+        c.fillStyle='#808080';
+        c.fillRect(0,0,V.w,V.h);
+        c.restore();
         const q=Math.round(desat*100)/100;
         if(q!==welkinHudDesat){welkinHudDesat=q;gameHud.style.filter='grayscale('+q+')';}
       }else{
@@ -5016,6 +5123,426 @@ function drawWelkinGlitch(dt){
     c.globalAlpha=1;
   }
   c.restore();
+}
+/* ============================================================
+   承章（第二章）exclusive FX — 抖动已拆到 ch2ChordShake / ch2TimedShake，
+   这里只管黑雾 / 去饱和 / 雨 / 风 / 科技光 / 史诗光 / 乱码文字。
+   全部按音乐时间 mt（= .qua 秒）走，跟谱面对齐。
+   ============================================================ */
+const CH2_GLYPH='█▓▒░#%&@$XYZ0123456789αβγΔΦΨ01?!<>';
+let _ch2LastHoldOf={};
+function ch2ResetFxCaches(){_ch2LastHoldOf={};}
+/* 找「最晚结束、且 chordSize>=minChord」的那根长条，返回音乐时间 {start,end}。
+   lady 尾杀黑屏、an 的定时抖动截止、pen 的双押长条黑屏、fb 的四押长条黑雾都用它，
+   改 .qua 也不会错位。 */
+function ch2LastHoldOf(minChord){
+  const k=''+minChord;
+  if(_ch2LastHoldOf[k])return _ch2LastHoldOf[k];
+  let start=-Infinity,end=-Infinity;
+  for(let i=0;i<game.notes.length;i++){
+    const n=game.notes[i];
+    if(n.type!=='hold'||(n.chordSize||0)<minChord)continue;
+    if(n.end>end){end=n.end;start=n.time;}
+  }
+  const r=end>0?{start:start-MUSIC_DELAY,end:end-MUSIC_DELAY}:{start:0,end:0};
+  _ch2LastHoldOf[k]=r;
+  return r;
+}
+/* 定时抖动（每 X 秒抖一次 / 单次剧烈抖）：返回 [shakeBeat, shakeAmt]，无则 null。 */
+function ch2TimedShake(at){
+  if(!selectedSong)return null;
+  const c=selectedSong.chart;
+  if(c==='init'){
+    if(at>=43.2&&at<59)return [Math.floor((at-43.2)/0.65),11];
+  }else if(c==='an'){
+    if(at>=20&&at<67)return [Math.floor((at-20)/0.7),10];
+    if(at>=94.5&&at<ch2LastHoldOf(2).end)return [Math.floor((at-94.5)/0.5),12];
+  }else if(c==='la'){
+    if(at>=34.286&&at<56)return [Math.floor((at-34.286)/0.6),10];
+  }else if(c==='pen'){
+    if(at>=150.5&&at<151.0)return [100000+Math.floor((at-150.5)*20),28];
+  }else if(c==='fb'){
+    if(at>=86&&at<87)return [100000+Math.floor((at-86)*15),22];
+  }else if(c==='cyber'){
+    if(at>=157.466&&at<171)return [Math.floor((at-157.466)/0.5),12];
+    if(at>=176.2)return [Math.floor((at-176.2)/0.5),13];
+  }
+  return null;
+}
+/* 蓝键→黄键转换（在 finalizeChart 之后做，此时 chordSize 已知）：
+   - 时逝：69s–73.719s 所有蓝键（tap）变黄键
+   - CyberAttack：124.299s–137.697s 的「单点」蓝键（chordSize<2，即不成双押/多押）变黄键 */
+const BREAK_RANGES={
+  an:{start:69,end:73.719,singleOnly:false},
+  cyber:{start:124.299,end:137.697,singleOnly:true}
+};
+function applyBreakConversion(){
+  if(!selectedSong)return;
+  const cfg=BREAK_RANGES[selectedSong.chart];
+  if(!cfg)return;
+  for(let i=0;i<game.notes.length;i++){
+    const n=game.notes[i];
+    if(n.type!=='tap'||n.perform)continue;
+    const mt=n.time-MUSIC_DELAY;
+    if(mt<cfg.start||mt>cfg.end)continue;
+    if(cfg.singleOnly&&(n.chordSize||0)>=2)continue;
+    n.type='break';n.end=0;
+  }
+}
+function ch2FillFog(level){
+  if(level<=.005)return;
+  const c=sctx,w=V.w,h=V.h;
+  c.save();
+  const g=c.createRadialGradient(w/2,h*.5,h*.14,w/2,h*.5,Math.hypot(w,h)*.66);
+  g.addColorStop(0,'rgba(1,3,7,'+(level*.34).toFixed(3)+')');
+  g.addColorStop(.5,'rgba(0,2,5,'+(level*.66).toFixed(3)+')');
+  g.addColorStop(1,'rgba(0,1,4,'+Math.min(1,level).toFixed(3)+')');
+  c.fillStyle=g;c.fillRect(0,0,w,h);
+  c.restore();
+}
+function anFogLevel(mt){if(mt<68||mt>78)return 0;return .4*Math.min(clamp((mt-68)/.9,0,1),clamp((78-mt)/.9,0,1));}
+function laFogLevel(mt){
+  let f=0;
+  if(mt<13)f=.5*clamp(mt/1.5,0,1);
+  else if(mt<25)f=.4;
+  else if(mt<30)f=.4*(1-clamp((mt-25)/5,0,1));
+  if(mt>=58){
+    let f4=0;
+    if(mt<59)f4=.5*clamp((mt-58)/1,0,1);
+    else if(mt<70)f4=.5;
+    else if(mt<71)f4=.5*(1-clamp((mt-70)/1,0,1));
+    f=Math.max(f,f4);
+  }
+  if(mt>=80){
+    let f5=0;
+    if(mt<81.5)f5=.7*clamp((mt-80)/1.5,0,1);
+    else if(mt<93)f5=.7;
+    else if(mt<94)f5=.7*(1-clamp((mt-93)/1,0,1));
+    f=Math.max(f,f5);
+  }
+  return f;
+}
+function ladyFogLevel(mt){if(mt<16.8||mt>18.3)return 0;return .7*Math.min(clamp((mt-16.8)/.3,0,1),clamp((18.3-mt)/.5,0,1));}
+function penFogLevel(mt){if(mt<53||mt>57)return 0;return .4*Math.min(clamp((mt-53)/.9,0,1),clamp((57-mt)/.9,0,1));}
+function cyberFogLevel(mt){
+  if(mt<11)return 0;
+  const base=.2*clamp((mt-11)/.8,0,1);
+  if(mt>=124&&mt<125)return Math.max(base,lerp(.2,.7,clamp((mt-124)/1,0,1)));
+  if(mt>=125&&mt<137)return .7;
+  if(mt>=137&&mt<138)return lerp(.7,.2,clamp((mt-137)/1,0,1));
+  return base;
+}
+function cyberSaturation(mt){
+  let sat=1;
+  if(mt>=11)sat=Math.min(sat,1-.3*clamp((mt-11)/.6,0,1));
+  if(mt>=155.5)sat=Math.min(sat,1-.5*clamp((mt-155.5)/1,0,1));
+  return sat;
+}
+/* 时逝：10s 淡入到 90% 饱和度（黑白 10%），18-20s 花 2 秒淡回全彩。 */
+function anSaturation(mt){
+  if(mt<10)return 1;
+  if(mt<11)return 1-.1*clamp((mt-10)/1,0,1);
+  if(mt<18)return .9;
+  if(mt<20)return .9+.1*clamp((mt-18)/2,0,1);
+  return 1;
+}
+function drawCh2Fog(){
+  if(!selectedSong)return;
+  const chart=selectedSong.chart,mt=game.clock-MUSIC_DELAY;
+  let lvl=0;
+  if(chart==='an')lvl=anFogLevel(mt);
+  else if(chart==='la')lvl=laFogLevel(mt);
+  else if(chart==='lady')lvl=ladyFogLevel(mt);
+  else if(chart==='pen')lvl=penFogLevel(mt);
+  else if(chart==='cyber')lvl=cyberFogLevel(mt);
+  if(lvl>.005)ch2FillFog(lvl);
+}
+/* ---------- init：开局科技光芒迸发 + 64-80s 科技风光柱 ---------- */
+function initBurstLevel(mt){if(mt<.4||mt>3.5)return 0;return Math.min(clamp((mt-.4)/.5,0,1),clamp((3.5-mt)/1,0,1));}
+function drawInitBurst(mt){
+  const l=initBurstLevel(mt);if(l<=.01)return;
+  const c=sctx,w=V.w,h=V.h;
+  c.save();c.globalCompositeOperation='lighter';c.globalAlpha=l;
+  const cx=w/2,cy=h*.42;
+  const core=c.createRadialGradient(cx,cy,0,cx,cy,Math.max(w,h)*.5);
+  core.addColorStop(0,'rgba(230,255,255,.5)');core.addColorStop(.22,'rgba(150,235,255,.22)');core.addColorStop(.55,'rgba(90,190,255,.08)');core.addColorStop(1,'rgba(90,190,255,0)');
+  c.fillStyle=core;c.fillRect(0,0,w,h);
+  const rings=V.lowFx?3:5;
+  for(let i=0;i<rings;i++){
+    const r=(i+1)/rings*Math.min(w,h)*.34*(.7+.3*Math.sin(mt*2+i*1.7));
+    c.strokeStyle='rgba('+(i%2?'255,220,150':'150,245,255')+','+(.3*(1-i/rings)).toFixed(3)+')';
+    c.lineWidth=1.2;
+    c.beginPath();c.ellipse(cx,cy,r,r*.5,0,0,Math.PI*2);c.stroke();
+  }
+  const beams=V.lowFx?10:18;
+  for(let i=0;i<beams;i++){
+    const a=i/beams*Math.PI*2+mt*.25;
+    const len=Math.min(w,h)*.42*(.75+.25*Math.sin(mt*3+i*2.1));
+    const g=c.createLinearGradient(cx,cy,cx+Math.cos(a)*len,cy+Math.sin(a)*len);
+    g.addColorStop(0,'rgba(210,250,255,.30)');g.addColorStop(1,'rgba(210,250,255,0)');
+    c.strokeStyle=g;c.lineWidth=1;
+    c.beginPath();c.moveTo(cx+Math.cos(a)*14,cy+Math.sin(a)*14);c.lineTo(cx+Math.cos(a)*len,cy+Math.sin(a)*len);c.stroke();
+  }
+  for(let k=0;k<(V.lowFx?14:26);k++){
+    const px=cx+Math.cos(k*2.399+mt*.5)*Math.min(w,h)*.4*(k%7*.12+.2);
+    const py=cy+Math.sin(k*2.399+mt*.5)*Math.min(w,h)*.4*(k%7*.12+.2);
+    c.fillStyle='rgba(220,250,255,'+(.15+.25*Math.sin(mt*3+k)).toFixed(3)+')';
+    c.fillRect(px,py,1.6,1.6);
+  }
+  c.restore();
+}
+function initPillarLevel(mt){if(mt<64||mt>80)return 0;return Math.min(clamp((mt-64)/2,0,1),clamp((80-mt)/1.5,0,1));}
+function drawInitPillars(mt){
+  const env=initPillarLevel(mt);if(env<=.01)return;
+  const c=sctx,w=V.w,h=V.h;
+  c.save();c.globalCompositeOperation='lighter';c.globalAlpha=env;
+  for(let k=0;k<(V.lowFx?2:3);k++){
+    const ay=h*(.18+k*.15)+Math.sin(mt*.6+k)*8;
+    const ag=c.createLinearGradient(0,0,w,0);
+    ag.addColorStop(0,'rgba(34,228,255,0)');ag.addColorStop(.5,'rgba(180,250,255,.08)');ag.addColorStop(1,'rgba(34,228,255,0)');
+    c.fillStyle=ag;c.fillRect(0,ay,w,1);
+  }
+  for(let i=0;i<5;i++){
+    const drift=Math.sin(mt*.5+i*1.7)*.014;
+    const x=V.x+((i+.5)/5+drift)*V.trackW;
+    const base=h*(.58+.08*Math.sin(i*1.3+mt*.7)+.15*(i/4));
+    const beamH=base*(.7+.24*Math.sin(mt*1.1+i));
+    const g=c.createLinearGradient(0,base-beamH,0,base);
+    g.addColorStop(0,'rgba(80,210,255,0)');
+    g.addColorStop(.24,'rgba(90,225,255,'+(.04+i*.005).toFixed(3)+')');
+    g.addColorStop(.78,'rgba(185,250,255,'+(.08+i*.006).toFixed(3)+')');
+    g.addColorStop(1,'rgba(255,220,150,.04)');
+    c.fillStyle=g;c.fillRect(x-4,base-beamH,8,beamH);
+    c.strokeStyle='rgba(34,228,255,.3)';c.lineWidth=.8;
+    c.beginPath();c.moveTo(x-2.1,base-beamH);c.lineTo(x-2.1,base);c.stroke();
+    c.strokeStyle='rgba(255,110,190,.16)';
+    c.beginPath();c.moveTo(x+2.1,base-beamH);c.lineTo(x+2.1,base);c.stroke();
+    c.fillStyle='rgba(235,255,255,.55)';c.fillRect(x-.6,base-beamH,.9,beamH);
+    for(let q=0;q<(V.lowFx?4:7);q++){
+      const yy=base-((q*61+mt*80+i*37)%Math.max(20,beamH));
+      const ww=7+(q%3)*4;
+      c.fillStyle=q%3===0?'rgba(255,225,160,.18)':'rgba(175,250,255,.2)';
+      c.fillRect(x-ww/2,yy,ww,1.2);
+    }
+    const hy=base-beamH;
+    c.fillStyle='rgba(210,255,255,.6)';
+    c.beginPath();c.moveTo(x,hy-4);c.lineTo(x+3,hy);c.lineTo(x,hy+4);c.lineTo(x-3,hy);c.closePath();c.fill();
+  }
+  c.restore();
+}
+/* ---------- lady：开局下雨（0-13s，粒子少、只做位移不做物理） ---------- */
+function drawLadyRain(mt){
+  if(mt<0||mt>13)return;
+  const env=Math.min(clamp(mt/1,0,1),clamp((13-mt)/1,0,1));if(env<=.01)return;
+  const c=sctx,w=V.w,h=V.h;
+  c.save();c.globalAlpha=env*.9;c.globalCompositeOperation='lighter';
+  const n=V.lowFx?26:50;
+  for(let i=0;i<n;i++){
+    const x=((i*97.3)%1000)/1000*w;
+    const sp=760+((i*53)%420);
+    const y=((mt*sp+i*137.7)%(h+46))-23;
+    const len=11+((i*31)%11);
+    const a=.28+((i*17)%30)/100;
+    c.strokeStyle='rgba(168,214,244,'+a.toFixed(2)+')';c.lineWidth=1;
+    c.beginPath();c.moveTo(x,y);c.lineTo(x-1.6,y+len);c.stroke();
+  }
+  c.restore();
+}
+/* ---------- fb：开局风暴（0-17s 循环，11s 起 200%） ---------- */
+function fbWindLevel(mt){
+  if(mt<0||mt>17)return 0;
+  const a=clamp(mt/.8,0,1);
+  const boost=mt>=11?2:1;
+  return Math.min(1,a*boost);
+}
+function drawFbWind(mt){
+  const l=fbWindLevel(mt);if(l<=.01)return;
+  const c=sctx,w=V.w,h=V.h;
+  c.save();c.globalCompositeOperation='lighter';c.globalAlpha=Math.min(1,l);
+  const speed=mt*900;
+  for(let layer=0;layer<(V.lowFx?2:3);layer++){
+    const yy=h*(.14+layer*.22)+Math.sin(mt*1.3+layer*2.1)*14;
+    for(let i=0;i<(V.lowFx?5:8);i++){
+      const seg=((i*173+layer*91)+speed*.6)%(w+320)-160;
+      const len=60+((i*53+layer*37)%120);
+      const g=c.createLinearGradient(seg-len,0,seg,0);
+      g.addColorStop(0,'rgba(150,220,255,0)');g.addColorStop(1,'rgba(200,244,255,'+(.14+.06*layer).toFixed(3)+')');
+      c.strokeStyle=g;c.lineWidth=1+layer*.5;
+      c.beginPath();c.moveTo(seg-len,yy+Math.sin(i*2+mt*4)*6);c.quadraticCurveTo(seg-len*.5,yy-8-Math.sin(mt*3+i)*6,seg,yy+Math.sin(i*3+mt*2)*4);c.stroke();
+    }
+  }
+  for(let i=0;i<(V.lowFx?6:12);i++){
+    const x=((i*211+speed)%w);
+    const y=((i*149)%h);
+    c.fillStyle='rgba(190,240,255,'+(.1+.1*Math.sin(mt*5+i)).toFixed(3)+')';
+    c.fillRect(x,y,18+((i*7)%20),1);
+  }
+  c.restore();
+}
+/* ---------- pen：史诗光（70-80s 主 / 98-124s 弱），魔王战前奏 ---------- */
+function penEpicAmp(mt){
+  if(mt>=70&&mt<80)return Math.min(clamp((mt-70)/2.5,0,1),clamp((80-mt)/2,0,1));
+  if(mt>=98&&mt<124)return .6*Math.min(clamp((mt-98)/4,0,1),clamp((124-mt)/4,0,1));
+  return 0;
+}
+function drawPenEpic(mt){
+  const env=penEpicAmp(mt);if(env<=.01)return;
+  const c=sctx,w=V.w,h=V.h;
+  const weak=mt>=98;
+  c.save();c.globalCompositeOperation='lighter';c.globalAlpha=env;
+  const cx=w*.5,cy=h*.42;
+  const core=c.createRadialGradient(cx,cy,0,cx,cy,Math.max(w,h)*.66);
+  core.addColorStop(0,'rgba(255,240,200,'+(weak?.16:.30)+')');
+  core.addColorStop(.34,'rgba(255,206,120,'+(weak?.09:.16)+')');
+  core.addColorStop(.68,'rgba(150,200,255,'+(weak?.05:.09)+')');
+  core.addColorStop(1,'rgba(150,200,255,0)');
+  c.fillStyle=core;c.fillRect(0,0,w,h);
+  const n=V.lowFx?3:5;
+  for(let i=0;i<n;i++){
+    const f=i/(n-1);
+    const x0=V.x+V.trackW*(.14+f*.72)+Math.sin(mt*.4+i*2.1)*V.trackW*.018;
+    const bw=V.laneW*(.5+.18*Math.sin(mt*.32+i*1.4));
+    const len=h*(.42+.2*Math.sin(mt*.36+i*2.6));
+    const sway=Math.sin(mt*.28+i*1.7)*.05;
+    c.save();c.translate(x0,h*.72);c.rotate(sway-Math.PI/2);
+    const g=c.createLinearGradient(0,0,0,-len);
+    g.addColorStop(0,'rgba(255,236,180,0)');
+    g.addColorStop(.5,'rgba(255,228,158,'+(.10+.06*Math.sin(mt*.7+i)).toFixed(3)+')');
+    g.addColorStop(1,'rgba(255,248,220,'+(.2+.07*Math.sin(mt*.5+i*2)).toFixed(3)+')');
+    c.fillStyle=g;c.fillRect(-bw,0,bw*2,-len);
+    c.restore();
+  }
+  for(let k=0;k<(V.lowFx?10:20);k++){
+    const px=V.x+((k*137+mt*7)%V.trackW);
+    const py=((k*83+mt*14)%(h*.72));
+    const tw=.5+.5*Math.sin(mt*2+k*1.7);
+    c.fillStyle='rgba(255,242,204,'+(.10+.14*tw).toFixed(3)+')';
+    c.fillRect(px,py,1.4,1.4);
+  }
+  c.restore();
+}
+function drawCh2Ambient(){
+  if(!selectedSong)return;
+  const chart=selectedSong.chart,mt=game.clock-MUSIC_DELAY;
+  if(chart==='init'){drawInitBurst(mt);drawInitPillars(mt);}
+  else if(chart==='lady')drawLadyRain(mt);
+  else if(chart==='fb')drawFbWind(mt);
+  else if(chart==='pen')drawPenEpic(mt);
+}
+/* ---------- cyber：文字特效（No Sign / Cyberattack / 灰白乱码） ---------- */
+function cyberGlyphStr(a,b){
+  const n=a+((Math.random()*(b-a+1))|0);let s='';
+  for(let i=0;i<n;i++)s+=CH2_GLYPH[(Math.random()*CH2_GLYPH.length)|0];
+  return s;
+}
+function drawNoSign(mt){
+  if(mt<.8||mt>11)return;
+  const c=sctx,w=V.w,h=V.h;
+  const spots=[[.18,.22],[.78,.3],[.5,.6],[.26,.78],[.66,.14]];
+  const flick=Math.random()<.94?1:.25;
+  c.save();
+  for(let i=0;i<spots.length;i++){
+    const s=spots[i];
+    const x=w*s[0],y=h*s[1];
+    const sz=11+((i*7)%6);
+    const jx=(Math.random()-.5)*2,jy=(Math.random()-.5)*1.5;
+    c.save();c.translate(x+jx,y+jy);
+    c.font='700 '+sz+'px '+FONT_M;c.textAlign='center';c.textBaseline='middle';
+    const col=i%2?'rgba(96,104,112,'+(.5*flick).toFixed(3)+')':'rgba(170,176,184,'+(.38*flick).toFixed(3)+')';
+    c.fillStyle=col;
+    c.fillText('No Sign',0,0);
+    c.fillStyle='rgba(230,20,50,'+(.22*flick).toFixed(3)+')';
+    c.fillText('No Sign',(Math.random()-.5)*2.5,(Math.random()-.5)*2);
+    c.restore();
+    c.fillStyle='rgba(40,46,52,'+(.4*flick).toFixed(3)+')';
+    c.fillRect(x-sz*2.4,y+sz*.7,sz*4.8,1);
+  }
+  c.restore();
+}
+function drawCyberTitle(mt){
+  if(mt<108.69||mt>109.29)return;
+  const p=(mt-108.69)/(109.29-108.69);
+  const env=Math.min(clamp(p/.12,0,1),clamp((1-p)/.14,0,1));
+  if(env<=.01)return;
+  const c=sctx,w=V.w,h=V.h;
+  c.save();c.globalAlpha=env;
+  c.fillStyle='rgba(2,4,7,.5)';c.fillRect(0,0,w,h);
+  const txt='Cyberattack';
+  const sz=clamp(w*.09,44,120);
+  c.font='700 '+sz.toFixed(0)+'px '+FONT_D;c.textAlign='center';c.textBaseline='middle';
+  const cx=w/2,cy=h/2;
+  const slices=14;
+  for(let i=0;i<slices;i++){
+    const y0=cy-sz*.8+i*(sz*1.6/slices);
+    const off=(Math.random()<.4?(Math.random()-.5)*sz*.16:0);
+    c.save();c.beginPath();c.rect(0,y0,w,sz*1.6/slices+1);c.clip();
+    c.fillStyle=i%3===0?'rgba(150,156,164,.92)':'rgba(120,128,138,.86)';
+    c.fillText(txt,cx+off,cy);
+    if(i%2===0){c.fillStyle='rgba(255,30,70,'+(.2+Math.random()*.2).toFixed(3)+')';c.fillText(txt,cx+off+(Math.random()-.5)*4,cy+(Math.random()-.5)*3);}
+    c.restore();
+  }
+  c.fillStyle='rgba(220,228,236,.16)';
+  for(let i=0;i<6;i++){
+    const y=cy-sz*.7+((i*47)%(sz*1.4));
+    c.fillRect(0,y,w,1);
+  }
+  c.restore();
+}
+function drawCyberGrayGlitch(dt){
+  if(!selectedSong||selectedSong.chart!=='cyber')return;
+  const mt=game.clock-MUSIC_DELAY;
+  if(mt<194)return;
+  const c=sctx,w=V.w,h=V.h;
+  const p=clamp((mt-194)/1.8,0,1);
+  c.save();
+  c.fillStyle='rgba(0,0,0,'+(p*.8).toFixed(3)+')';
+  c.fillRect(0,0,w,h);
+  const n=Math.min(90,Math.floor(p*110)+4);
+  for(let i=0;i<n;i++){
+    const x=Math.random()*w,y=Math.random()*h;
+    const sz=7+Math.random()*20;
+    c.font='700 '+sz.toFixed(0)+'px '+FONT_M;
+    const g=(.4+Math.random()*.5);
+    c.fillStyle=Math.random()<.3?'rgba(255,70,110,'+(.06+Math.random()*.16).toFixed(3)+')':'rgba('+Math.floor(g*255)+','+Math.floor(g*255)+','+Math.floor(g*255)+','+(.10+Math.random()*.26).toFixed(3)+')';
+    c.fillText(CH2_GLYPH[(Math.random()*CH2_GLYPH.length)|0],x,y);
+  }
+  c.restore();
+}
+function drawCh2TextFx(dt){
+  if(!selectedSong||selectedSong.chart!=='cyber')return;
+  const mt=game.clock-MUSIC_DELAY;
+  drawNoSign(mt);
+  drawCyberTitle(mt);
+  drawCyberGrayGlitch(dt);
+}
+/* 尾杀黑屏：lady 135s 渐变到黑、pen 最后双押长条黑屏、fb 最后四押长条黑雾黑屏。 */
+function drawCh2FinalVeil(){
+  if(!selectedSong)return;
+  const chart=selectedSong.chart,mt=game.clock-MUSIC_DELAY;
+  const c=sctx,w=V.w,h=V.h;
+  if(chart==='lady'){
+    if(mt<135)return;
+    const end=ch2LastHoldOf(1).end;
+    let v;
+    if(end>0&&mt<end)v=.8*clamp((mt-135)/(end-135),0,1);
+    else v=1;
+    if(v>.005){c.save();c.fillStyle='rgba(0,0,0,'+v.toFixed(3)+')';c.fillRect(0,0,w,h);c.restore();}
+  }else if(chart==='pen'){
+    const h=ch2LastHoldOf(2);
+    if(h.end<=0||mt<h.end)return;
+    const v=clamp((mt-h.end)/.4,0,1);
+    if(v>.005){c.save();c.fillStyle='rgba(0,0,0,'+v.toFixed(3)+')';c.fillRect(0,0,w,h);c.restore();}
+  }else if(chart==='fb'){
+    const h=ch2LastHoldOf(4);
+    if(h.end<=0||mt<h.start)return;
+    if(mt<h.end){
+      const v=.6*clamp((mt-h.start)/(h.end-h.start),0,1);
+      if(v>.005)ch2FillFog(v);
+    }else{
+      const v=clamp((mt-h.end)/.3,0,1);
+      if(v>.005){c.save();c.fillStyle='rgba(0,0,0,'+v.toFixed(3)+')';c.fillRect(0,0,w,h);c.restore();}
+    }
+  }
 }
 function drawStageLight(){
   if(!selectedSong||selectedSong.chart!=='effulgence')return;
