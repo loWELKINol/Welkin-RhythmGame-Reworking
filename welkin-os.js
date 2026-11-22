@@ -918,8 +918,8 @@ function makeMainSongs(prefix,levels,bossLevel){
 }
 /* 承章七首：曲绘全部到位，顺序是 TRACK 01→06 = init / an / La / bn / pen / fb，魔王曲 = ca。
    La 插在 an(TRACK 02) 和 bn(原 TRACK 03) 之间，成为新的第三关，曲绘 La.avif。
-   曲名暂时不公开（选歌页里显示 ?），并且每张卡都罩一层黑雾（shroud），
-   和第一章没解锁的那几关同一个观感；等第一章收完尾再决定什么时候揭。
+   曲名跟着解锁走：没解锁的卡在选歌页显示 ?（魔王曲 ???）并罩一层黑雾，
+   解锁之后才露真名——和第一章同一套规则，见 songNodeHTML。
    谱面都还没接，chart 保持 null。id 沿用旧的 ch2-2…ch2-6 / ch2-boss，
    新插入的 La 用独立 id ch2-7，这样以前存下来的通关记录不会因为改曲目表而对不上。 */
 const CH2_COVER_FILES=['init.avif','an.avif','La.avif','bn.avif','pen.avif','fb.avif','ca.avif'];
@@ -1557,7 +1557,7 @@ function songNodeH(song){
    画布高随窗口高走，卡片高只听画布百分比，于是平板这种「窗口矮、卡还宽」的比例下
    卡片被压成 271×82 的扁条，连曲绘（82px）都塞不进内边距，上下被裁掉一截。
    现在改成：卡片高度统一给百分比，纵向从 CH3_TOP 排到 CH3_BOTTOM、间距均分（卡片整体下移、
-   底部留白收窄）；画布高度不写死，由「卡片至少要多高才装得下曲绘」反推（applyCh3MapScale）。
+   底部留白收窄）；画布高度不写死，由「卡片至少要多高才装得下曲绘」反推（applySsMapScale）。
    数组序是 ch3.songs：[魔王曲, TRACK01..06, 收尾曲]，纵向从上到下则是
    收尾曲 → 魔王曲 → TRACK 06 → … → TRACK 01（01 在最下面，和 CIRCUIT 连线走向一致）。 */
 const CH3_TOP=1,CH3_BOTTOM=90,CH3_H=8.6,CH3_BOSS_H=10.4;
@@ -1591,11 +1591,16 @@ function ch3Stack(songs){
   return {pts,hs};
 }
 /* 画布高度反推：卡片至少要 coverPx + 上下内边距 + 一点余量，才不像被裁过的扁条。
-   手机/平板/桌面同一套：卡片高度的百分比一样，画布跟着视口高度伸缩，物理尺寸就跟着曲绘走。 */
-function applyCh3MapScale(ch){
+   手机/平板/桌面同一套：卡片高度的百分比一样，画布跟着视口高度伸缩，物理尺寸就跟着曲绘走。
+   11-22 承章也走这套：它原来把画布写死 150%，卡片高度就只听窗口高——1280x720 上卡片只剩
+   95px，曲绘 82px 上下各留 6.6px，几乎顶到卡片边框，这就是「曲绘贴着卡片边缘」的由来。
+   现在按曲绘反推画布，矮窗口卡片自动变大，任何尺寸都留出余量；上限 1.85 是不让内容滚太远。 */
+const MAP_SCALE_MIN={ch2:1.5,ch3:CH3_SCALE_MIN};
+const MAP_SCALE_MAX={ch2:1.85,ch3:CH3_SCALE_MAX};
+function applySsMapScale(ch){
   const map=$('#ssMap');
   if(!map)return;
-  if(!ch||ch.id!=='ch3'){map.style.removeProperty('--ss-map-h');return;}
+  if(!ch||(ch.id!=='ch2'&&ch.id!=='ch3')){map.style.removeProperty('--ss-map-h');return;}
   const vh=map.clientHeight||0;
   if(vh<=0){map.style.removeProperty('--ss-map-h');return;}
   const card=$('#ssNodes .ss-node:not(.boss)')||$('#ssNodes .ss-node');
@@ -1606,23 +1611,29 @@ function applyCh3MapScale(ch){
     const cs=getComputedStyle(card);
     pad=(parseFloat(cs.paddingTop)||0)+(parseFloat(cs.paddingBottom)||0);
   }
-  const target=clamp(coverPx?coverPx+pad+14:104,96,150);
-  const scale=clamp(target/((CH3_H/100)*vh),CH3_SCALE_MIN,CH3_SCALE_MAX);
+  /* 普通卡占画布的百分比：承章 11%（见 songNodeH），终章 CH3_H */
+  const frac=(ch.id==='ch3'?CH3_H:11)/100;
+  /* 终章沿用原来的 14px 余量；承章要更松，留 18px */
+  const slack=ch.id==='ch3'?14:18;
+  const target=clamp(coverPx?coverPx+pad+slack:104,96,176);
+  const scale=clamp(target/(frac*vh),MAP_SCALE_MIN[ch.id],MAP_SCALE_MAX[ch.id]);
   map.style.setProperty('--ss-map-h',(scale*100).toFixed(1)+'%');
 }
 /* 窗口变化时重算画布高度（坐标都是百分比，不需要重新排） */
 function refreshSongMapScale(){
-  if(currentChapter)applyCh3MapScale(currentChapter);
+  if(currentChapter)applySsMapScale(currentChapter);
 }
 function songNodeHTML(song,i,pos,hOverride){
   const stateClass=song.state==='available'?'avail':song.state==='clear'?'clear':'locked';
   const disabled=(song.state==='available'||song.state==='clear')||(song.state==='locked'&&!(song.boss&&song.chart))?'':'disabled';
   const locked=song.state==='locked';
-  /* shrouded：承章现在整章都不揭（曲名 ? + 黑雾），跟锁没锁无关；
-     初章从 TRACK 03 起仍是「没解锁就先藏」。 */
+  /* 没解锁的卡罩黑雾；song.shroud 是以前「承章整章不揭」留下的开关，暂时没有曲目用它，
+     留着以后想整章藏的时候直接挂上去。 */
   const shrouded=locked||!!song.shroud;
-  const mystery=!!song.shroud||(locked&&song.chapterId==='ch1'&&trackNum(song)>=3);
-  const title=mystery?'?':(locked&&song.secret?'???':song.title);
+  const hidden=locked||!!song.shroud;
+  /* 曲名规则（所有章节统一）：未解锁 → 「?」；魔王曲 → 「？？？」；收尾曲同样是「？？？」，
+     只让人知道这一关藏着东西，不泄曲名。解锁之后照常显示真名。 */
+  const title=hidden?(song.boss||song.secret?'???':'?'):song.title;
   const best=getBestFor(song.id);
   const apCls=(best&&best.ap)?' ap':'';
   const tall=song.chapterId==='ch2'||song.chapterId==='ch3';
@@ -1704,7 +1715,7 @@ function renderSongSelect(){
   }
   $('#ssPath').innerHTML=`<path class="ss-base" d="${d}" vector-effect="non-scaling-stroke"/><path class="ss-line" d="${d}" vector-effect="non-scaling-stroke"/>${pathCenters.map(p=>`<circle class="ss-dot" cx="${p[0]}" cy="${p[1]}" r=".8" vector-effect="non-scaling-stroke"/>`).join('')}${finaleLinkSVG(ch,pts,hs)}`;
   /* 卡片已经进 DOM 了，能量到曲绘的实际高度，这时候再把画布高度定下来（只影响高度比例，不动坐标） */
-  applyCh3MapScale(ch);
+  applySsMapScale(ch);
   const avail=ch.songs.find(s=>s.state==='available');
   $('#ssSide').innerHTML=`<span class="ss-kicker">CHAPTER ${ch.no} / ${ch.en}</span><h2>${ch.cn}</h2><p>${ch.sub}<br>BOSS AT TOP · ONE BY ONE UNLOCK</p><div class="ss-rule"></div><div class="ss-prog"><b>${ch.progress}</b>CHAPTER PROGRESS</div><div class="ss-unlock">NEXT UNLOCK<br><b>${avail?avail.no+' — READY':'—'}</b></div>`;
   $$('#ssNodes .ss-node').forEach(el=>{
@@ -1764,9 +1775,13 @@ function renderSongDetail(song){
   if(fi){
     const chip=fi.querySelector('.finger-chip');
     if(song.fingers==='multi'||song.fingers==='dual'){
+      /* 多指=暗红 / 双指=暗绿。以前类名只挂在外层 .finger-ind 上，可 CSS 选的是
+         .finger-chip.multi / .finger-chip.dual，两个模式都落在 chip 的默认绿上，
+         看着一模一样。这里把类名同时挂到 chip 上，颜色才真的分得开。 */
+      const mode=song.fingers==='multi'?'multi':'dual';
       fi.style.display='';
-      fi.className='finger-ind '+(song.fingers==='multi'?'multi':'dual');
-      if(chip)chip.textContent=song.fingers==='multi'?'多指':'双指';
+      fi.className='finger-ind '+mode;
+      if(chip){chip.className='finger-chip '+mode;chip.textContent=mode==='multi'?'多指':'双指';}
     }else{
       fi.style.display='none';
     }

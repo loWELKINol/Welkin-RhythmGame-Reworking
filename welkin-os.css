@@ -340,14 +340,14 @@ h1,h2,h3,p{margin:0}
 .song-meta span{display:block;font:500 8px/1 var(--font-m);letter-spacing:.26em;color:#5d87a3;margin-bottom:7px}
 .song-meta b{font:600 clamp(20px,2vw,26px)/1 var(--font-d);letter-spacing:.03em;color:#e6f7ff}
 .song-meta .hot b{color:var(--cy);text-shadow:0 0 20px rgba(34,228,255,.5)}
-.song-meta .finger-ind{display:flex;flex-direction:column;gap:7px}
-.song-meta .finger-ind>span{display:block;font:500 8px/1 var(--font-m);letter-spacing:.26em;color:#5d87a3;margin-bottom:7px}
-.song-meta .finger-chip{display:inline-flex;align-items:center;justify-content:center;min-width:44px;padding:8px 12px;font:700 12px/1 var(--font-m);letter-spacing:.16em;color:#5fd68a;border:1px solid;position:relative;overflow:hidden;
+.song-meta .finger-ind{display:flex;flex-direction:column;gap:3px}
+.song-meta .finger-ind>span{display:block;font:500 8px/1 var(--font-m);letter-spacing:.26em;color:#5d87a3;margin-bottom:0}
+.song-meta .finger-chip{display:inline-flex;align-items:center;justify-content:center;min-width:44px;padding:8px 12px;font:700 12px/1 var(--font-m);letter-spacing:.16em;color:#3f8a5c;border:1px solid;position:relative;overflow:hidden;
   clip-path:polygon(9px 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%,0 9px)}
 .song-meta .finger-chip::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 4px,rgba(255,255,255,.04) 4px 5px);pointer-events:none}
 .song-meta .finger-chip::after{content:"";position:absolute;left:0;top:0;width:100%;height:1px;background:currentColor;opacity:.5;box-shadow:0 0 8px currentColor}
-.song-meta .finger-chip.dual{color:#5fd68a;border-color:rgba(95,214,138,.42);background:linear-gradient(135deg,rgba(30,80,52,.30),rgba(7,18,12,.55));text-shadow:0 0 10px rgba(95,214,138,.45)}
-.song-meta .finger-chip.multi{color:#e06a6a;border-color:rgba(224,106,106,.42);background:linear-gradient(135deg,rgba(90,34,34,.30),rgba(18,7,7,.55));text-shadow:0 0 10px rgba(224,106,106,.45)}
+.song-meta .finger-chip.dual{color:#3f8a5c;border-color:rgba(63,138,92,.5);background:linear-gradient(135deg,rgba(18,56,34,.55),rgba(5,15,10,.7));text-shadow:0 0 10px rgba(63,138,92,.4)}
+.song-meta .finger-chip.multi{color:#a83a34;border-color:rgba(168,58,52,.55);background:linear-gradient(135deg,rgba(74,20,17,.55),rgba(15,5,5,.7));text-shadow:0 0 10px rgba(168,58,52,.45)}
 .song-best{display:flex;align-items:center;gap:12px;font-family:var(--font-m);margin-bottom:24px}
 .song-best span{font:500 8px/1 var(--font-m);letter-spacing:.28em;color:#5d87a3}
 .song-best b{font:600 22px/1 var(--font-d);letter-spacing:.16em;color:#ffe6a6;font-variant-numeric:tabular-nums;text-shadow:0 0 22px rgba(255,207,106,.25)}
@@ -1506,6 +1506,29 @@ button,.ch-card,.ss-node,.back-btn,.im-tab,input[type=range]{touch-action:manipu
 }
 @media (max-width:560px){
  .ss-node{width:180px!important}.ss-node.boss{width:220px!important}
+}
+
+/* 承章卡片放大 + 曲绘留呼吸位（11-22）：
+   承章原来和初章共用一套尺寸，7 首歌挤在同一条画布里，矮窗口下卡片被压到 95px 高，
+   曲绘（82~100px）上下只剩 6px，贴边看着像被裁过。这里只动承章，别的章不受影响：
+   卡片加宽一档、内边距放松、曲绘保底 76px；画布高度由 applySsMapScale 按曲绘反推。 */
+.song-select.ch2 .ss-node{width:clamp(280px,25vw,368px)!important;padding:10px 12px}
+.song-select.ch2 .ss-node.boss{width:clamp(310px,28vw,404px)!important}
+.song-select.ch2 .ss-node .ss-cover{flex-basis:clamp(76px,6.8vw,104px)}
+.song-select.ch2 .ss-node.boss .ss-cover{flex-basis:clamp(92px,7.8vw,126px)}
+@media (max-width:1100px){
+ .song-select.ch2 .ss-node{width:clamp(238px,27vw,292px)!important}
+ .song-select.ch2 .ss-node.boss{width:clamp(266px,30vw,326px)!important}
+}
+@media (max-width:900px){
+ .song-select.ch2 .ss-node{width:230px!important;padding:9px 10px}
+ .song-select.ch2 .ss-node.boss{width:260px!important}
+}
+@media (max-width:560px){
+ .song-select.ch2 .ss-node{width:196px!important}
+ .song-select.ch2 .ss-node.boss{width:226px!important}
+ .song-select.ch2 .ss-node .ss-cover{flex-basis:72px}
+ .song-select.ch2 .ss-node.boss .ss-cover{flex-basis:86px}
 }
 
 /* Chapter 2: oppressive living shadow shroud */
