@@ -4834,6 +4834,29 @@ function ltzzWaterAmp(mt){
   if(mt<19.714||mt>27)return 0;
   return fxEnv(mt,19.714,27,1.0);
 }
+/* 软光点：径向渐变的小圆（pen / ltzz / init 共用），替代硬方块光尘。 */
+function fxGlowDot(c,x,y,r,inner){
+  const g=c.createRadialGradient(x,y,0,x,y,r);
+  g.addColorStop(0,inner);
+  g.addColorStop(1,'rgba(0,0,0,0)');
+  c.fillStyle=g;
+  c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fill();
+}
+/* 上帝光：从 (cx,cy) 沿 ang 方向铺开的锥形柔光，近端收窄、远端散开，无硬边。 */
+function fxGodRay(c,cx,cy,len,spread,ang,colA,colB){
+  c.save();c.translate(cx,cy);c.rotate(ang);
+  const g=c.createLinearGradient(0,0,len,0);
+  g.addColorStop(0,colA);
+  g.addColorStop(1,colB);
+  c.fillStyle=g;
+  c.beginPath();
+  c.moveTo(0,-spread*.14);
+  c.quadraticCurveTo(len*.5,-spread,len,-spread);
+  c.lineTo(len,spread);
+  c.quadraticCurveTo(len*.5,spread,0,spread*.14);
+  c.closePath();c.fill();
+  c.restore();
+}
 function drawLtzzNobleLight(){
   const mt=game.clock-MUSIC_DELAY;
   if(mt<30||mt>36)return;
@@ -4841,44 +4864,55 @@ function drawLtzzNobleLight(){
   if(env<=.01)return;
   const c=sctx,w=V.w,h=V.h;
   c.save();c.globalCompositeOperation='lighter';c.globalAlpha=env;
-  // 中央暖金核心光晕（高贵金+白，边缘带一点冷蓝）
-  const cx=w*.5,cy=h*.42;
-  const core=c.createRadialGradient(cx,cy,0,cx,cy,Math.max(w,h)*.62);
-  core.addColorStop(0,'rgba(255,234,178,.20)');
-  core.addColorStop(.38,'rgba(255,208,124,.09)');
-  core.addColorStop(.68,'rgba(150,200,255,.05)');
-  core.addColorStop(1,'rgba(150,200,255,0)');
+  const cx=w*.5,cy=h*.54;
+  // 中央暖金核心：双层径向光晕，纯渐变不叠块（整体再放大一圈）
+  const core=c.createRadialGradient(cx,cy,0,cx,cy,Math.max(w,h)*.84);
+  core.addColorStop(0,'rgba(255,242,200,.30)');
+  core.addColorStop(.34,'rgba(255,212,130,.13)');
+  core.addColorStop(.66,'rgba(255,196,120,.05)');
+  core.addColorStop(1,'rgba(255,196,120,0)');
   c.fillStyle=core;c.fillRect(0,0,w,h);
-  // 轨道上方垂落的柔光柱（金白，缓缓摇摆，无硬边）
-  const n=V.lowFx?3:5;
+  const flare=c.createRadialGradient(cx,cy,0,cx,cy,Math.min(w,h)*.64);
+  flare.addColorStop(0,'rgba(255,250,230,.32)');
+  flare.addColorStop(.28,'rgba(255,232,172,.11)');
+  flare.addColorStop(1,'rgba(255,232,172,0)');
+  c.fillStyle=flare;c.fillRect(0,0,w,h);
+  // 高贵光「冠冕」：向上、左右对称展开的柔光扇——与 pen 的冷白下坠光柱方向/色相都相反
+  const n=V.lowFx?6:11;
   for(let i=0;i<n;i++){
-    const f=i/(n-1);
-    const x0=V.x+V.trackW*(.14+f*.72)+Math.sin(mt*.4+i*2.1)*V.trackW*.018;
-    const bw=V.laneW*(.5+.18*Math.sin(mt*.32+i*1.4));
-    const len=h*(.38+.18*Math.sin(mt*.36+i*2.6));
-    const sway=Math.sin(mt*.28+i*1.7)*.05;
-    c.save();c.translate(x0,h*.72);c.rotate(sway-Math.PI/2);
-    const g=c.createLinearGradient(0,0,0,-len);
-    g.addColorStop(0,'rgba(255,236,180,0)');
-    g.addColorStop(.5,'rgba(255,228,158,'+(.09+.05*Math.sin(mt*.7+i)).toFixed(3)+')');
-    g.addColorStop(1,'rgba(255,246,216,'+(.18+.06*Math.sin(mt*.5+i*2)).toFixed(3)+')');
-    c.fillStyle=g;c.fillRect(-bw,0,bw*2,-len);
+    const f=i/(n-1)-.5;
+    const ang=-Math.PI/2+f*1.9+Math.sin(mt*.22+i*2.3)*.02;
+    const len=Math.min(w,h)*(.58+.14*Math.sin(mt*.34+i*1.7));
+    const spread=V.laneW*(.52+.12*Math.sin(mt*.26+i*2.1));
+    const baseX=cx+Math.sin(mt*.2+i*2.4)*w*.012;
+    fxGodRay(c,baseX,cy,len,spread,ang,
+      'rgba(255,206,120,.16)',
+      'rgba(255,200,112,0)');
+    // 光束中心亮芯
+    c.save();c.translate(baseX,cy);c.rotate(ang);
+    const cc=c.createLinearGradient(0,0,len,0);
+    cc.addColorStop(0,'rgba(255,246,208,.20)');
+    cc.addColorStop(.55,'rgba(255,228,160,.055)');
+    cc.addColorStop(1,'rgba(255,228,160,0)');
+    c.fillStyle=cc;
+    c.beginPath();c.moveTo(0,-spread*.05);c.lineTo(len,-spread*.36);c.lineTo(len,spread*.36);c.lineTo(0,spread*.05);c.closePath();c.fill();
     c.restore();
   }
-  // 上升的金色光尘
-  for(let k=0;k<(V.lowFx?10:20);k++){
-    const px=V.x+((k*137+mt*7)%V.trackW);
-    const py=((k*83+mt*14)%(h*.72));
-    const tw=.5+.5*Math.sin(mt*2+k*1.7);
-    c.fillStyle='rgba(255,242,204,'+(.10+.14*tw).toFixed(3)+')';
-    c.fillRect(px,py,1.4,1.4);
+  // 上升的金色光尘：圆形柔光点，不是方块
+  const dust=V.lowFx?16:30;
+  for(let k=0;k<dust;k++){
+    const px=cx+(((k*137)%100)/100-.5)*w*.90+Math.sin(mt*.5+k*1.3)*7;
+    const py=h*.80-((k*83+mt*24)%(h*.64));
+    const tw=.4+.6*Math.sin(mt*1.6+k*1.7);
+    const rr=1.2+((k*7)%3)*.9;
+    fxGlowDot(c,px,py,rr*2.4,'rgba(255,244,214,'+(.12+.16*tw).toFixed(3)+')');
   }
   // 底部一条优雅的金色地平线光带
-  const band=c.createLinearGradient(0,h*.7,0,h*.88);
+  const band=c.createLinearGradient(0,h*.72,0,h*.94);
   band.addColorStop(0,'rgba(255,226,150,0)');
-  band.addColorStop(.5,'rgba(255,226,150,'+(.08+.03*Math.sin(mt*1.1)).toFixed(3)+')');
+  band.addColorStop(.5,'rgba(255,226,150,'+(.12+.04*Math.sin(mt*1.1)).toFixed(3)+')');
   band.addColorStop(1,'rgba(255,226,150,0)');
-  c.fillStyle=band;c.fillRect(0,h*.7,w,h*.18);
+  c.fillStyle=band;c.fillRect(0,h*.72,w,h*.22);
   c.restore();
 }
 /* LTZZ 尾杀黑雾 — 最后一组双押长条一按住，黑雾就从判定线往上漫过铺面，
@@ -5311,37 +5345,69 @@ function drawInitPillars(mt){
   const env=initPillarLevel(mt);if(env<=.01)return;
   const c=sctx,w=V.w,h=V.h;
   c.save();c.globalCompositeOperation='lighter';c.globalAlpha=env;
-  for(let k=0;k<(V.lowFx?2:3);k++){
-    const ay=h*(.18+k*.15)+Math.sin(mt*.6+k)*8;
-    const ag=c.createLinearGradient(0,0,w,0);
-    ag.addColorStop(0,'rgba(34,228,255,0)');ag.addColorStop(.5,'rgba(180,250,255,.08)');ag.addColorStop(1,'rgba(34,228,255,0)');
-    c.fillStyle=ag;c.fillRect(0,ay,w,1);
-  }
-  for(let i=0;i<5;i++){
-    const drift=Math.sin(mt*.5+i*1.7)*.014;
-    const x=V.x+((i+.5)/5+drift)*V.trackW;
-    const base=h*(.58+.08*Math.sin(i*1.3+mt*.7)+.15*(i/4));
-    const beamH=base*(.7+.24*Math.sin(mt*1.1+i));
-    const g=c.createLinearGradient(0,base-beamH,0,base);
-    g.addColorStop(0,'rgba(80,210,255,0)');
-    g.addColorStop(.24,'rgba(90,225,255,'+(.04+i*.005).toFixed(3)+')');
-    g.addColorStop(.78,'rgba(185,250,255,'+(.08+i*.006).toFixed(3)+')');
-    g.addColorStop(1,'rgba(255,220,150,.04)');
-    c.fillStyle=g;c.fillRect(x-4,base-beamH,8,beamH);
-    c.strokeStyle='rgba(34,228,255,.3)';c.lineWidth=.8;
-    c.beginPath();c.moveTo(x-2.1,base-beamH);c.lineTo(x-2.1,base);c.stroke();
-    c.strokeStyle='rgba(255,110,190,.16)';
-    c.beginPath();c.moveTo(x+2.1,base-beamH);c.lineTo(x+2.1,base);c.stroke();
-    c.fillStyle='rgba(235,255,255,.55)';c.fillRect(x-.6,base-beamH,.9,beamH);
-    for(let q=0;q<(V.lowFx?4:7);q++){
-      const yy=base-((q*61+mt*80+i*37)%Math.max(20,beamH));
-      const ww=7+(q%3)*4;
-      c.fillStyle=q%3===0?'rgba(255,225,160,.18)':'rgba(175,250,255,.2)';
-      c.fillRect(x-ww/2,yy,ww,1.2);
+  // 地面一条横向「启动」光带，作光柱落点
+  const floorY=h*(.72+.02*Math.sin(mt*.8));
+  const fg=c.createLinearGradient(0,floorY-2,0,floorY+30);
+  fg.addColorStop(0,'rgba(120,235,255,.18)');
+  fg.addColorStop(1,'rgba(120,235,255,0)');
+  c.fillStyle=fg;c.fillRect(0,floorY-2,w,32);
+  const n=V.lowFx?3:4;
+  for(let i=0;i<n;i++){
+    const f=i/(n-1);
+    const x=V.x+V.trackW*(.16+f*.68)+Math.sin(mt*.5+i*1.9)*V.trackW*.012;
+    const base=floorY;
+    const len=h*(.44+.15*Math.sin(mt*.7+i*1.3));
+    const tipY=base-len;
+    const halfW=V.laneW*(.34+.05*Math.sin(mt*.6+i*2.1));
+    // 体积光主体：横向软边 + 顶部收窄（锥形），替代硬方块
+    const body=c.createLinearGradient(x-halfW,0,x+halfW,0);
+    body.addColorStop(0,'rgba(96,225,255,0)');
+    body.addColorStop(.35,'rgba(130,240,255,.10)');
+    body.addColorStop(.5,'rgba(205,252,255,.22)');
+    body.addColorStop(.65,'rgba(130,240,255,.10)');
+    body.addColorStop(1,'rgba(96,225,255,0)');
+    c.fillStyle=body;
+    c.beginPath();
+    c.moveTo(x-halfW,base);
+    c.lineTo(x+halfW,base);
+    c.quadraticCurveTo(x+halfW*.5,tipY+len*.12,x+halfW*.16,tipY);
+    c.quadraticCurveTo(x,tipY-len*.05,x-halfW*.16,tipY);
+    c.quadraticCurveTo(x-halfW*.5,tipY+len*.12,x-halfW,base);
+    c.closePath();c.fill();
+    // 中心亮核：细的纵向渐变线
+    const core=c.createLinearGradient(0,tipY,0,base);
+    core.addColorStop(0,'rgba(210,255,255,0)');
+    core.addColorStop(.45,'rgba(225,255,255,.55)');
+    core.addColorStop(1,'rgba(255,225,160,.26)');
+    c.strokeStyle=core;c.lineWidth=1.1;
+    c.beginPath();c.moveTo(x,tipY+2);c.lineTo(x,base);c.stroke();
+    // 顶部光晕（椭圆柔光，替代菱形头）
+    const head=c.createRadialGradient(x,tipY,0,x,tipY,halfW*2.1);
+    head.addColorStop(0,'rgba(230,255,255,.5)');
+    head.addColorStop(.4,'rgba(150,240,255,.16)');
+    head.addColorStop(1,'rgba(150,240,255,0)');
+    c.fillStyle=head;
+    c.beginPath();c.ellipse(x,tipY,halfW*2.1,halfW*.6,0,0,Math.PI*2);c.fill();
+    // 底部落点光池
+    const pool=c.createRadialGradient(x,base,0,x,base,halfW*1.6);
+    pool.addColorStop(0,'rgba(210,250,255,.24)');
+    pool.addColorStop(1,'rgba(120,220,255,0)');
+    c.fillStyle=pool;
+    c.beginPath();c.ellipse(x,base,halfW*1.6,halfW*.4,0,0,Math.PI*2);c.fill();
+    // 沿柱上升的扫描环
+    const scanY=base-((mt*120+i*97)%Math.max(20,len));
+    const sg=c.createLinearGradient(x-halfW,0,x+halfW,0);
+    sg.addColorStop(0,'rgba(200,250,255,0)');
+    sg.addColorStop(.5,'rgba(230,255,255,.5)');
+    sg.addColorStop(1,'rgba(200,250,255,0)');
+    c.fillStyle=sg;c.fillRect(x-halfW,scanY-1,halfW*2,2);
+    // 上升的光尘（圆形柔光）
+    const dots=V.lowFx?4:6;
+    for(let q=0;q<dots;q++){
+      const y=base-((q*73+mt*90+i*41)%Math.max(20,len));
+      const rr=1.2+(q%3)*.8;
+      fxGlowDot(c,x+Math.sin(mt*1.3+q*2+i)*2,y,rr*2.2,'rgba(210,252,255,.5)');
     }
-    const hy=base-beamH;
-    c.fillStyle='rgba(210,255,255,.6)';
-    c.beginPath();c.moveTo(x,hy-4);c.lineTo(x+3,hy);c.lineTo(x,hy+4);c.lineTo(x-3,hy);c.closePath();c.fill();
   }
   c.restore();
 }
@@ -5370,27 +5436,56 @@ function fbWindLevel(mt){
   const boost=mt>=11?2:1;
   return Math.min(1,a*boost);
 }
+const FB_WIND_ALPHA=.10;   // fb 气流整体可见度：1=原亮度，.10=只剩 10%（三层流线与风痕同比例淡出）
 function drawFbWind(mt){
   const l=fbWindLevel(mt);if(l<=.01)return;
   const c=sctx,w=V.w,h=V.h;
-  c.save();c.globalCompositeOperation='lighter';c.globalAlpha=Math.min(1,l);
-  const speed=mt*900;
-  for(let layer=0;layer<(V.lowFx?2:3);layer++){
-    const yy=h*(.14+layer*.22)+Math.sin(mt*1.3+layer*2.1)*14;
-    for(let i=0;i<(V.lowFx?5:8);i++){
-      const seg=((i*173+layer*91)+speed*.6)%(w+320)-160;
-      const len=60+((i*53+layer*37)%120);
-      const g=c.createLinearGradient(seg-len,0,seg,0);
-      g.addColorStop(0,'rgba(150,220,255,0)');g.addColorStop(1,'rgba(200,244,255,'+(.14+.06*layer).toFixed(3)+')');
-      c.strokeStyle=g;c.lineWidth=1+layer*.5;
-      c.beginPath();c.moveTo(seg-len,yy+Math.sin(i*2+mt*4)*6);c.quadraticCurveTo(seg-len*.5,yy-8-Math.sin(mt*3+i)*6,seg,yy+Math.sin(i*3+mt*2)*4);c.stroke();
+  c.save();c.globalCompositeOperation='lighter';c.globalAlpha=Math.min(1,l)*FB_WIND_ALPHA;
+  const boost=mt>=11?1:0;
+  const gust=.5+.5*Math.sin(mt*1.9);                 // 阵风包络
+  const amp=8+14*gust+16*boost;                      // 起伏幅度随阵风增大
+  const layers=V.lowFx?2:3;
+  for(let layer=0;layer<layers;layer++){
+    const yy=h*(.15+layer*.24);
+    const ribbons=V.lowFx?4:6;
+    for(let r=0;r<ribbons;r++){
+      const seed=r*2.399+layer*1.7;
+      const y0=yy+Math.sin(seed)*h*.05;
+      const ra=amp*(.5+.5*Math.sin(seed*1.3));
+      const wl=2.1+((r*7+layer*5)%18)/10;            // 波长
+      const phase=seed+mt*(1.8+boost*1.2);
+      const len=w*.5+((r*53+layer*37)%Math.floor(w*.55));
+      const head=((r*173+layer*91)%Math.floor(w*.7))+mt*(w*.14)*(1+boost*.7);
+      const x0=-len+head%(w+len*2);
+      c.beginPath();
+      const SEG=26;
+      for(let s=0;s<=SEG;s++){
+        const f=s/SEG,xx=x0+len*f;
+        const yy2=y0+Math.sin(f*wl*Math.PI*2+phase)*ra
+                 +Math.sin(f*wl*4*Math.PI-phase*.6+mt*3.1)*ra*.38;
+        if(s===0)c.moveTo(xx,yy2);else c.lineTo(xx,yy2);
+      }
+      // 外圈软光 + 内芯亮线，形成气流的两层质感（再压一档透明，让风更「空气感」而不是一片实色）
+      c.strokeStyle='rgba(150,220,255,'+(.088+.034*Math.sin(mt*3+r)).toFixed(3)+')';
+      c.lineWidth=(V.lowFx?12:20)+layer*4.0;
+      c.stroke();
+      c.strokeStyle='rgba(222,248,255,'+(.170+.060*Math.sin(mt*2.6+r*1.3)).toFixed(3)+')';
+      c.lineWidth=(V.lowFx?5.2:7.4);
+      c.stroke();
     }
   }
-  for(let i=0;i<(V.lowFx?6:12);i++){
-    const x=((i*211+speed)%w);
-    const y=((i*149)%h);
-    c.fillStyle='rgba(190,240,255,'+(.1+.1*Math.sin(mt*5+i)).toFixed(3)+')';
-    c.fillRect(x,y,18+((i*7)%20),1);
+  // 快速掠过的风痕：短促亮线，随阵风加速
+  const streaks=V.lowFx?10:20;
+  for(let i=0;i<streaks;i++){
+    const sp=(1.6+((i*17)%24)/10)*(1+boost);
+    const x=((i*211+mt*sp*900)%(w+260))-130;
+    const y=((i*149)%Math.floor(h*.85))+h*.04;
+    const sl=26+((i*7)%34)*(1+boost*.6);
+    const gg=c.createLinearGradient(x-sl,0,x,0);
+    gg.addColorStop(0,'rgba(190,244,255,0)');
+    gg.addColorStop(1,'rgba(230,252,255,'+(.152+.055*Math.sin(mt*5+i)).toFixed(3)+')');
+    c.strokeStyle=gg;c.lineWidth=(V.lowFx?4.8:6.6)+(i%2)*2.6;
+    c.beginPath();c.moveTo(x-sl,y+Math.sin(i+mt*2)*2);c.lineTo(x,y);c.stroke();
   }
   c.restore();
 }
@@ -5404,36 +5499,58 @@ function drawPenEpic(mt){
   const env=penEpicAmp(mt);if(env<=.01)return;
   const c=sctx,w=V.w,h=V.h;
   const weak=mt>=98;
-  c.save();c.globalCompositeOperation='lighter';c.globalAlpha=env;
-  const cx=w*.5,cy=h*.42;
-  const core=c.createRadialGradient(cx,cy,0,cx,cy,Math.max(w,h)*.66);
-  core.addColorStop(0,'rgba(255,240,200,'+(weak?.16:.30)+')');
-  core.addColorStop(.34,'rgba(255,206,120,'+(weak?.09:.16)+')');
-  core.addColorStop(.68,'rgba(150,200,255,'+(weak?.05:.09)+')');
-  core.addColorStop(1,'rgba(150,200,255,0)');
+  c.save();c.globalCompositeOperation='lighter';c.globalAlpha=env*(weak?.7:.8);
+  const cx=w*.5,cy=h*.26;
+  // 顶部宽幅柔光：让主光柱像是从一片「天窗」漏下来，而不是一个点
+  const win=c.createRadialGradient(cx,cy*.9,0,cx,cy*.9,Math.max(w,h)*.60);
+  win.addColorStop(0,'rgba(228,240,255,'+(weak?.09:.14)+')');
+  win.addColorStop(.30,'rgba(196,218,248,'+(weak?.04:.07)+')');
+  win.addColorStop(.64,'rgba(150,196,244,'+(weak?.02:.035)+')');
+  win.addColorStop(1,'rgba(140,190,240,0)');
+  c.fillStyle=win;c.fillRect(0,0,w,h);
+  // 核心：冷白银蓝、克制亮度（与 ltzz 的暖金高贵光明确区分）
+  const core=c.createRadialGradient(cx,cy,0,cx,cy,Math.max(w,h)*.7);
+  core.addColorStop(0,'rgba(226,238,255,'+(weak?.10:.16)+')');
+  core.addColorStop(.30,'rgba(190,214,248,'+(weak?.05:.08)+')');
+  core.addColorStop(.62,'rgba(140,190,240,'+(weak?.02:.04)+')');
+  core.addColorStop(1,'rgba(140,190,240,0)');
   c.fillStyle=core;c.fillRect(0,0,w,h);
-  const n=V.lowFx?3:5;
-  for(let i=0;i<n;i++){
-    const f=i/(n-1);
-    const x0=V.x+V.trackW*(.14+f*.72)+Math.sin(mt*.4+i*2.1)*V.trackW*.018;
-    const bw=V.laneW*(.5+.18*Math.sin(mt*.32+i*1.4));
-    const len=h*(.42+.2*Math.sin(mt*.36+i*2.6));
-    const sway=Math.sin(mt*.28+i*1.7)*.05;
-    c.save();c.translate(x0,h*.72);c.rotate(sway-Math.PI/2);
-    const g=c.createLinearGradient(0,0,0,-len);
-    g.addColorStop(0,'rgba(255,236,180,0)');
-    g.addColorStop(.5,'rgba(255,228,158,'+(.10+.06*Math.sin(mt*.7+i)).toFixed(3)+')');
-    g.addColorStop(1,'rgba(255,248,220,'+(.2+.07*Math.sin(mt*.5+i*2)).toFixed(3)+')');
-    c.fillStyle=g;c.fillRect(-bw,0,bw*2,-len);
+  const flare=c.createRadialGradient(cx,cy,0,cx,cy,Math.min(w,h)*.48);
+  flare.addColorStop(0,'rgba(240,246,255,'+(weak?.08:.14)+')');
+  flare.addColorStop(.28,'rgba(200,224,250,.05)');
+  flare.addColorStop(1,'rgba(200,224,250,0)');
+  c.fillStyle=flare;c.fillRect(0,0,w,h);
+  // 宽幅光柱：纵向拉长的柔光叠出体积感，边缘自然淡出——上帝光/体积光的柔边，不出硬条纹
+  const pillar=(bx,rx,ry,alpha)=>{
+    c.save();c.translate(bx,cy);c.scale(1,ry/rx);
+    const g=c.createRadialGradient(0,0,0,0,0,rx);
+    g.addColorStop(0,'rgba(232,244,255,'+alpha.toFixed(3)+')');
+    g.addColorStop(.40,'rgba(202,224,251,'+(alpha*.5).toFixed(3)+')');
+    g.addColorStop(1,'rgba(178,208,244,0)');
+    c.fillStyle=g;c.beginPath();c.arc(0,0,rx,0,Math.PI*2);c.fill();
     c.restore();
+  };
+  const breathe=.5+.5*Math.sin(mt*.32);
+  pillar(cx-w*.10, w*.15, h*(1.9+.12*Math.sin(mt*.3+.8)), (weak?.08:.12));
+  pillar(cx+w*.10, w*.15, h*(1.9+.12*Math.sin(mt*.3+2.2)), (weak?.08:.12));
+  pillar(cx,        w*.19, h*(2.1+.12*breathe),              (weak?.09:.13));
+  // 中心亮芯：细而柔，给光柱一个「心」
+  pillar(cx,        w*.045, h*(2.2+.10*Math.sin(mt*.4)),     (weak?.16:.23));
+  // 下落的冷白光尘：更少、更暗
+  const dust=V.lowFx?10:18;
+  for(let k=0;k<dust;k++){
+    const px=cx+(((k*137)%100)/100-.5)*w*.86+Math.sin(mt*.5+k*1.3)*5;
+    const py=h*.72-((k*83+mt*18)%(h*.5));
+    const tw=.4+.6*Math.sin(mt*1.6+k*1.7);
+    const rr=1.0+((k*7)%3)*.6;
+    fxGlowDot(c,px,py,rr*2.2,'rgba(222,238,255,'+(.05+.07*tw).toFixed(3)+')');
   }
-  for(let k=0;k<(V.lowFx?10:20);k++){
-    const px=V.x+((k*137+mt*7)%V.trackW);
-    const py=((k*83+mt*14)%(h*.72));
-    const tw=.5+.5*Math.sin(mt*2+k*1.7);
-    c.fillStyle='rgba(255,242,204,'+(.10+.14*tw).toFixed(3)+')';
-    c.fillRect(px,py,1.4,1.4);
-  }
+  // 底部冷白地平线光带（暗）
+  const band=c.createLinearGradient(0,h*.74,0,h*.94);
+  band.addColorStop(0,'rgba(200,224,255,0)');
+  band.addColorStop(.5,'rgba(200,224,255,'+(weak?.03:.05)+')');
+  band.addColorStop(1,'rgba(200,224,255,0)');
+  c.fillStyle=band;c.fillRect(0,h*.74,w,h*.2);
   c.restore();
 }
 function drawCh2Ambient(){
@@ -5449,6 +5566,73 @@ function cyberGlyphStr(a,b){
   const n=a+((Math.random()*(b-a+1))|0);let s='';
   for(let i=0;i<n;i++)s+=CH2_GLYPH[(Math.random()*CH2_GLYPH.length)|0];
   return s;
+}
+/* ---------- 自制破碎字体：离屏采样字形 → 切成碎块错位重绘（灰白 + 竖向裂纹），
+   不再直接 fillText 系统字体。按 text+size 缓存，帧间只 drawImage。 ---------- */
+const _shatterCache={};
+function buildShatteredText(text,sz){
+  const key=text+'@'+Math.round(sz);
+  if(_shatterCache[key])return _shatterCache[key];
+  const pad=Math.ceil(sz*.22);
+  const probe=document.createElement('canvas');
+  const pg=probe.getContext('2d');
+  const font='900 '+sz+'px '+FONT_D;
+  pg.font=font;
+  const mw=pg.measureText(text).width;
+  const W=Math.ceil(mw+pad*2),H=Math.ceil(sz*1.5+pad*2);
+  const cv=document.createElement('canvas');cv.width=W;cv.height=H;
+  const g=cv.getContext('2d',{willReadFrequently:true});
+  g.font=font;g.textAlign='center';g.textBaseline='middle';
+  g.fillStyle='#fff';
+  g.fillText(text,W/2,H/2);
+  const id=g.getImageData(0,0,W,H);
+  let minX=W,maxX=0,minY=H,maxY=0;
+  for(let y=0;y<H;y++){
+    for(let x=0;x<W;x++){
+      if(id.data[(y*W+x)*4+3]>42){
+        if(x<minX)minX=x;if(x>maxX)maxX=x;
+        if(y<minY)minY=y;if(y>maxY)maxY=y;
+      }
+    }
+  }
+  if(maxX<=minX||maxY<=minY){_shatterCache[key]=cv;return cv;}
+  const out=document.createElement('canvas');out.width=W;out.height=H;
+  const oc=out.getContext('2d');
+  const cell=Math.max(3,Math.round(sz*.075));
+  const gap=Math.max(1,Math.ceil(cell*.16));
+  let seed=(text.length*131+Math.round(sz))%100000;
+  const rnd=()=>{seed=(seed*1103515245+12345)&0x7fffffff;return seed/0x7fffffff;};
+  for(let y=minY;y<=maxY;y+=cell){
+    for(let x=minX;x<=maxX;x+=cell){
+      let hit=false;
+      for(let yy=y;yy<y+cell&&yy<H&&!hit;yy++){
+        for(let xx=x;xx<x+cell&&xx<W;xx++){
+          if(id.data[(yy*W+xx)*4+3]>42){hit=true;break;}
+        }
+      }
+      if(!hit)continue;
+      const gr=.58+.42*rnd();
+      const jx=(rnd()-.5)*cell*.7, jy=(rnd()-.5)*cell*.7;
+      const a=.78+.22*rnd();
+      oc.fillStyle='rgba('+Math.floor(gr*228)+','+Math.floor(gr*232)+','+Math.floor(gr*242)+','+a.toFixed(3)+')';
+      oc.fillRect(x+jx,y+jy,cell-gap,cell-gap);
+    }
+  }
+  // 竖向为主的裂纹：深色细线穿字形，形成「碎裂」裂缝
+  oc.strokeStyle='rgba(6,9,14,.85)';
+  oc.lineWidth=Math.max(1,Math.ceil(sz*.012));
+  const cracks=Math.max(5,Math.round(sz/13));
+  for(let i=0;i<cracks;i++){
+    const x0=minX+(maxX-minX)*rnd();
+    const y0=minY+(maxY-minY)*rnd();
+    const ang=Math.PI/2+((rnd()-.5)*.9);
+    const len=(maxX-minX)*(.35+.65*rnd());
+    oc.beginPath();oc.moveTo(x0,y0);
+    oc.lineTo(x0+Math.cos(ang)*len,y0+Math.sin(ang)*len);
+    oc.stroke();
+  }
+  _shatterCache[key]=out;
+  return out;
 }
 function drawNoSign(mt){
   if(mt<.8||mt>11)return;
@@ -5466,7 +5650,7 @@ function drawNoSign(mt){
     const col=i%2?'rgba(96,104,112,'+(.5*flick).toFixed(3)+')':'rgba(170,176,184,'+(.38*flick).toFixed(3)+')';
     c.fillStyle=col;
     c.fillText('No Sign',0,0);
-    c.fillStyle='rgba(230,20,50,'+(.22*flick).toFixed(3)+')';
+    c.fillStyle='rgba(198,206,216,'+(.20*flick).toFixed(3)+')';
     c.fillText('No Sign',(Math.random()-.5)*2.5,(Math.random()-.5)*2);
     c.restore();
     c.fillStyle='rgba(40,46,52,'+(.4*flick).toFixed(3)+')';
@@ -5484,21 +5668,21 @@ function drawCyberTitle(mt){
   c.fillStyle='rgba(2,4,7,.5)';c.fillRect(0,0,w,h);
   const txt='Cyberattack';
   const sz=clamp(w*.09,44,120);
-  c.font='700 '+sz.toFixed(0)+'px '+FONT_D;c.textAlign='center';c.textBaseline='middle';
   const cx=w/2,cy=h/2;
+  const shat=buildShatteredText(txt,sz);
+  const dw=shat.width,dh=shat.height;
+  // 水平切片随机错位，保留 glitch 抖动；字形本身已是破碎灰白
   const slices=14;
   for(let i=0;i<slices;i++){
-    const y0=cy-sz*.8+i*(sz*1.6/slices);
-    const off=(Math.random()<.4?(Math.random()-.5)*sz*.16:0);
-    c.save();c.beginPath();c.rect(0,y0,w,sz*1.6/slices+1);c.clip();
-    c.fillStyle=i%3===0?'rgba(150,156,164,.92)':'rgba(120,128,138,.86)';
-    c.fillText(txt,cx+off,cy);
-    if(i%2===0){c.fillStyle='rgba(255,30,70,'+(.2+Math.random()*.2).toFixed(3)+')';c.fillText(txt,cx+off+(Math.random()-.5)*4,cy+(Math.random()-.5)*3);}
+    const y0=cy-dh/2+i*(dh/slices);
+    const off=(Math.random()<.4?(Math.random()-.5)*sz*.10:0);
+    c.save();c.beginPath();c.rect(0,y0,w,dh/slices+1);c.clip();
+    c.drawImage(shat,cx-dw/2+off,cy-dh/2);
     c.restore();
   }
-  c.fillStyle='rgba(220,228,236,.16)';
+  c.fillStyle='rgba(220,228,236,.14)';
   for(let i=0;i<6;i++){
-    const y=cy-sz*.7+((i*47)%(sz*1.4));
+    const y=cy-dh/2+((i*47)%dh);
     c.fillRect(0,y,w,1);
   }
   c.restore();
