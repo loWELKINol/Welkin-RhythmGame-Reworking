@@ -531,7 +531,8 @@
       </div>
     </div>
 
-    <div class="set-foot">WELKIN OS · ORBITAL TERMINAL · BUILD 2.2.0</div>
+    <div class="set-foot">WELKIN OS · ORBITAL TERMINAL · BUILD 2.0</div>
+    <button type="button" class="dev-trigger" id="btnDev" aria-label="开发者入口"><i>·</i></button>
   </div>
 </section>
 
@@ -596,6 +597,32 @@
 
 <!-- EX chapter tech notice -->
 <div id="exNotice" class="ex-notice"><i></i><b id="exNoticeTitle">AP REQUIRED</b><span id="exNoticeText">需要 AP 一首歌才能解开 EX 章节</span></div>
+
+<!-- Developer access: hidden entry → key prompt → unlock all installed charts -->
+<div id="devModal" class="dev-modal">
+  <div class="dev-panel">
+    <div class="dev-kicker">DEVELOPER ACCESS</div>
+    <h2 id="devModalTitle">ENTER KEY</h2>
+    <div class="dev-key" id="devKeyWrap">
+      <input id="devKeyInput" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="32" placeholder="••••••••">
+    </div>
+    <div class="dev-status" id="devStatus">DEV MODE <b>ACTIVE</b></div>
+    <div class="dev-actions">
+      <button class="dev-btn primary" id="devConfirm">AUTHORIZE</button>
+      <button class="dev-btn danger" id="devDisable">RESTORE &amp; EXIT</button>
+      <button class="dev-btn ghost" id="devCancel">CANCEL</button>
+    </div>
+  </div>
+</div>
+
+<div id="devFx" class="dev-fx">
+  <div class="dev-fx-flash"></div>
+  <div class="dev-fx-rings"><i></i><i></i><i></i></div>
+  <div class="dev-fx-panel">
+    <b id="devFxTitle">ACCESS GRANTED</b>
+    <span id="devFxText">ALL TRACKS UNLOCKED</span>
+  </div>
+</div>
 
 <!-- Still letter overlay: oil-painting flowing starry sky -->
 <section id="letterOverlay" class="letter-overlay">

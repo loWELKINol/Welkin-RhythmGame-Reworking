@@ -1008,6 +1008,12 @@ const CLEAR_KEY='welkin_os_clears_v1';
 let clears={};
 try{const raw=JSON.parse(localStorage.getItem(CLEAR_KEY)||'{}');if(raw&&typeof raw==='object')clears=raw;}catch(e){}
 function saveClears(){try{localStorage.setItem(CLEAR_KEY,JSON.stringify(clears));}catch(e){}}
+/* 开发者模式：隐藏入口输对密钥后，把所有曲目全部解锁（不落进 clears，关掉即还原原进度）。
+   未接入谱面（chart=null）的曲目详情页/开局仍会被 chart 判断拦下，因此不可进入。 */
+const DEV_KEY='welkin_os_dev_unlock';
+let devUnlockAll=false;
+try{devUnlockAll=localStorage.getItem(DEV_KEY)==='1';}catch(e){}
+function saveDevUnlock(){try{localStorage.setItem(DEV_KEY,devUnlockAll?'1':'0');}catch(e){}}
 const trackNum=s=>{
   const m=/(\d+)\s*$/.exec(String(s.no||''));
   return m?parseInt(m[1],10):99;
@@ -1022,6 +1028,22 @@ function songClearedAnywhere(id){
   return false;
 }
 function applyUnlocks(){
+  if(devUnlockAll){
+    /* 全解锁模式：所有章节打开、所有曲目全开（保留 clear 标记）。
+       未接入谱面的曲目 state 也照常置 available，但详情页/开局的 chart 判断
+       仍会拦下它们（CHART PENDING），所以「未安装铺面的关卡依然进不去」。
+       本分支不写 clears，关掉即还原原始进度。 */
+    CHAPTERS.forEach(ch=>{
+      const ids=Array.isArray(clears[ch.id])?clears[ch.id]:[];
+      ch.locked=false;
+      ch.songs.forEach(s=>{
+        s.state=ids.includes(s.id)?'clear':'available';
+      });
+      ch.cleared=ids.length;
+      ch.progress=`${ids.length} / ${ch.songs.length}`;
+    });
+    return;
+  }
   CHAPTERS.forEach(ch=>{
     if(ch.id==='prologue'){
       const ids=Array.isArray(clears[ch.id])?clears[ch.id]:[];
@@ -1466,7 +1488,7 @@ function showExScreen(){
   uiSound(1.1);
 }
 function openExChapter(){
-  if(!exUnlocked)return;
+  if(!exUnlocked&&!devUnlockAll)return;
   state='LOADING';
   uiLockUntil=performance.now()+400;
   gateStillCover(showExScreen);
@@ -1917,6 +1939,7 @@ function syncSettingsUI(){
   syncNoteSkinUI();
   renderNoteSkinPreview();
   syncPerfSeg();
+  syncDevButton();
   if(user)$('#setUser').textContent=user.name;
 }
 function syncTrackSkinUI(){
@@ -2037,6 +2060,103 @@ function applySettings(){
   document.body.classList.toggle('reduce-motion',settings.motion);
   settings.trackSkin=activeTrackSkin;
   saveSettings();
+}
+
+/* ============================================================
+   6b. developer access — hidden key gate, unlock-all, restore
+   ============================================================ */
+const DEV_KEY_INPUT='Welkin';
+let devFxTimer=0;
+/* 合成音效：成功 = 上行琶音，失败 = 下滑低音 + 噪。独立于 UI 音效开关，始终播放。 */
+function devSfx(ok){
+  const c=ensureAudioCtx();if(!c)return;
+  try{
+    if(c.state==='suspended')c.resume().catch(()=>{});
+    const t0=c.currentTime;
+    if(ok){
+      const notes=[523.25,659.25,783.99,1046.5,1318.5];
+      notes.forEach((f,i)=>{
+        const o=c.createOscillator(),g=c.createGain();
+        o.type='sine';o.frequency.value=f;
+        const st=t0+i*.085;
+        g.gain.setValueAtTime(0,st);
+        g.gain.linearRampToValueAtTime(.2,st+.02);
+        g.gain.exponentialRampToValueAtTime(.0008,st+.5);
+        o.connect(g);g.connect(c.destination);
+        o.start(st);o.stop(st+.55);
+      });
+    }else{
+      const o=c.createOscillator(),g=c.createGain();
+      o.type='sawtooth';
+      o.frequency.setValueAtTime(233,t0);
+      o.frequency.exponentialRampToValueAtTime(98,t0+.32);
+      g.gain.setValueAtTime(.16,t0);
+      g.gain.exponentialRampToValueAtTime(.001,t0+.4);
+      o.connect(g);g.connect(c.destination);
+      o.start(t0);o.stop(t0+.45);
+      const o2=c.createOscillator(),g2=c.createGain();
+      o2.type='square';o2.frequency.value=147;
+      g2.gain.setValueAtTime(.09,t0+.05);
+      g2.gain.exponentialRampToValueAtTime(.001,t0+.4);
+      o2.connect(g2);g2.connect(c.destination);
+      o2.start(t0+.05);o2.stop(t0+.45);
+    }
+  }catch(e){}
+}
+function syncDevButton(){
+  const b=$('#btnDev');if(!b)return;
+  b.classList.toggle('on',!!devUnlockAll);
+  b.querySelector('i').textContent=devUnlockAll?'DEV · ON':'·';
+}
+function playDevFx(ok,title,text){
+  const el=$('#devFx');if(!el)return;
+  el.classList.remove('play','ok','fail');
+  const t=$('#devFxTitle'),x=$('#devFxText');
+  if(t)t.textContent=title;
+  if(x)x.textContent=text;
+  void el.offsetWidth;
+  el.classList.add('play',ok?'ok':'fail');
+  devSfx(ok);
+  clearTimeout(devFxTimer);
+  devFxTimer=setTimeout(()=>el.classList.remove('play','ok','fail'),ok?1500:1300);
+}
+function openDevModal(){
+  const m=$('#devModal');if(!m)return;
+  m.classList.toggle('on',!!devUnlockAll);
+  $('#devModalTitle').textContent=devUnlockAll?'DEV MODE':'ENTER KEY';
+  const inp=$('#devKeyInput');
+  inp.value='';
+  m.classList.add('active');
+  uiSound(1.1);
+  if(!devUnlockAll)setTimeout(()=>{try{inp.focus();}catch(e){}},80);
+}
+function closeDevModal(){
+  const m=$('#devModal');if(m)m.classList.remove('active');
+  uiSound(.9);
+}
+function confirmDevKey(){
+  const inp=$('#devKeyInput');
+  const val=inp?inp.value:'';
+  if(val===DEV_KEY_INPUT){
+    closeDevModal();
+    devUnlockAll=true;
+    saveDevUnlock();
+    applyUnlocks();
+    syncDevButton();
+    playDevFx(true,'ACCESS GRANTED','ALL TRACKS UNLOCKED');
+  }else{
+    inp.value='';
+    playDevFx(false,'ACCESS DENIED','INVALID KEY');
+    setTimeout(()=>{try{inp.focus();}catch(e){}},40);
+  }
+}
+function disableDevMode(){
+  closeDevModal();
+  devUnlockAll=false;
+  saveDevUnlock();
+  applyUnlocks();
+  syncDevButton();
+  playDevFx(true,'PROGRESS RESTORED','DEV MODE DISABLED');
 }
 
 /* ============================================================
@@ -3721,6 +3841,8 @@ stage.addEventListener('contextmenu',e=>e.preventDefault());
 
 window.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
+    const dm=$('#devModal');
+    if(dm&&dm.classList.contains('active')){closeDevModal();return;}
     if(settingsApp.classList.contains('active')){closeSettings();return;}
     if(imApp.classList.contains('active')){
       if($('#imDetail').classList.contains('active')){$('#imDetail').classList.remove('active');uiSound(.9);}
@@ -6083,6 +6205,15 @@ function wireUI(){
   }));
 
   bind('#setBack','click',closeSettings);
+  bind('#btnDev','click',openDevModal);
+  bind('#devCancel','click',closeDevModal);
+  bind('#devConfirm','click',confirmDevKey);
+  bind('#devDisable','click',disableDevMode);
+  bind('#devModal','click',e=>{if(e.target===e.currentTarget)closeDevModal();});
+  bind('#devKeyInput','keydown',e=>{
+    if(e.key==='Enter'){e.preventDefault();confirmDevKey();}
+    else if(e.key==='Escape'){e.preventDefault();e.stopPropagation();closeDevModal();}
+  });
   bind('#btnPauseSet','click',()=>openSettings('PAUSE'));
   bind('#btnSwitchUser','click',()=>{
     closeSettings();
