@@ -37,11 +37,11 @@ HitObjects:
   EndTime: 4222
   KeySounds: []
 - StartTime: 4388
-  Lane: 3
+  Lane: 2
   EndTime: 5888
   KeySounds: []
 - StartTime: 4388
-  Lane: 2
+  Lane: 3
   EndTime: 5888
   KeySounds: []
 - StartTime: 6027
@@ -545,7 +545,7 @@ HitObjects:
   EndTime: 33638
   KeySounds: []
 - StartTime: 33305
-  Lane: 3
+  Lane: 2
   KeySounds: []
 - StartTime: 33444
   Lane: 1
@@ -576,9 +576,6 @@ HitObjects:
 - StartTime: 34916
   Lane: 3
   EndTime: 35554
-  KeySounds: []
-- StartTime: 35471
-  Lane: 3
   KeySounds: []
 - StartTime: 35666
   Lane: 4

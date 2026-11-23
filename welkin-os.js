@@ -926,13 +926,13 @@ const CH2_COVER_FILES=['init.avif','an.avif','La.avif','bn.avif','pen.avif','fb.
 /* 承章七首正式接入：顺序 TRACK 01→06 = init / 时逝 / Lamentation / Grievous Lady /
    Pentiment / Tempestissimo，魔王曲 = CyberAttack。曲绘沿用旧的短名文件（bn=Grievous Lady，
    ca=CyberAttack）。id 沿用 ch2-2…ch2-6 / ch2-boss，La 用独立 id ch2-7，避免撞旧通关记录。 */
-const CH2_INIT={id:'ch2-2',chapterId:'ch2',no:'TRACK 01',title:'init()',artist:'WELKIN',charter:'Welkin',bpm:'180',length:'02:19',notes:930,level:10,boss:false,chart:'init',audio:'init.mp3',cover:'init.avif',state:'locked',fingers:'dual'};
+const CH2_INIT={id:'ch2-2',chapterId:'ch2',no:'TRACK 01',title:'init()',artist:'WELKIN',charter:'Welkin',bpm:'180',length:'02:19',notes:929,level:10,boss:false,chart:'init',audio:'init.mp3',cover:'init.avif',state:'locked',fingers:'dual'};
 const CH2_AN={id:'ch2-3',chapterId:'ch2',no:'TRACK 02',title:'时逝',artist:'WELKIN',charter:'Welkin',bpm:'199',length:'02:08',notes:1152,level:14,boss:false,chart:'an',audio:'an.mp3',cover:'an.avif',state:'locked',fingers:'dual'};
-const CH2_LA={id:'ch2-7',chapterId:'ch2',no:'TRACK 03',title:'Lamentation',artist:'WELKIN',charter:'Welkin',bpm:'98',length:'02:18',notes:798,level:15,boss:false,chart:'la',audio:'La.mp3',cover:'La.avif',state:'locked',fingers:'multi'};
-const CH2_LADY={id:'ch2-4',chapterId:'ch2',no:'TRACK 04',title:'Grievous Lady',artist:'WELKIN',charter:'Welkin',bpm:'106',length:'02:19',notes:1516,level:17,boss:false,chart:'lady',audio:'Lady.mp3',cover:'bn.avif',state:'locked',fingers:'multi'};
+const CH2_LA={id:'ch2-7',chapterId:'ch2',no:'TRACK 03',title:'Lamentation',artist:'WELKIN',charter:'Welkin',bpm:'98',length:'02:18',notes:805,level:15,boss:false,chart:'la',audio:'La.mp3',cover:'La.avif',state:'locked',fingers:'multi'};
+const CH2_LADY={id:'ch2-4',chapterId:'ch2',no:'TRACK 04',title:'Grievous Lady',artist:'WELKIN',charter:'Welkin',bpm:'106',length:'02:19',notes:1518,level:17,boss:false,chart:'lady',audio:'Lady.mp3',cover:'bn.avif',state:'locked',fingers:'multi'};
 const CH2_PEN={id:'ch2-5',chapterId:'ch2',no:'TRACK 05',title:'Pentiment',artist:'WELKIN',charter:'Welkin',bpm:'111',length:'02:37',notes:1217,level:18,boss:false,chart:'pen',audio:'pen.mp3',cover:'pen.avif',state:'locked',fingers:'dual'};
-const CH2_FB={id:'ch2-6',chapterId:'ch2',no:'TRACK 06',title:'Tempestissimo',artist:'WELKIN',charter:'Welkin',bpm:'116',length:'02:16',notes:1885,level:19,boss:false,chart:'fb',audio:'fb.mp3',cover:'fb.avif',state:'locked',fingers:'multi'};
-const CH2_CYBER={id:'ch2-boss',chapterId:'ch2',no:'TRACK 07',title:'CyberAttack',artist:'WELKIN',charter:'Welkin',bpm:'130',length:'03:14',notes:2310,level:20,boss:true,chart:'cyber',audio:'Cyber.mp3',cover:'ca.avif',state:'locked',fingers:'multi'};
+const CH2_FB={id:'ch2-6',chapterId:'ch2',no:'TRACK 06',title:'Tempestissimo',artist:'WELKIN',charter:'Welkin',bpm:'116',length:'02:16',notes:1815,level:19,boss:false,chart:'fb',audio:'fb.mp3',cover:'fb.avif',state:'locked',fingers:'multi'};
+const CH2_CYBER={id:'ch2-boss',chapterId:'ch2',no:'TRACK 07',title:'CyberAttack',artist:'WELKIN',charter:'Welkin',bpm:'130',length:'03:14',notes:2265,level:20,boss:true,chart:'cyber',audio:'Cyber.mp3',cover:'ca.avif',state:'locked',fingers:'multi'};
 function makeCh2Songs(){return [CH2_CYBER,CH2_INIT,CH2_AN,CH2_LA,CH2_LADY,CH2_PEN,CH2_FB];}
 const EFFULGENCE={
   id:'ch1-2',chapterId:'ch1',no:'TRACK 01',title:'Effulgence',artist:'WELKIN',charter:'Welkin',
@@ -3055,7 +3055,8 @@ function layoutGame(){
   else V.trackW=Math.min(w*(tablet?.61:(phone?.66:.66)),h*1.35,tablet?1060:1100);
   V.laneW=V.trackW/4;
   V.x=(w-V.trackW)/2;
-  V.judgeY=h*(V.portrait?0.79:(tablet?0.87:0.82));
+  /* 平板横屏：判定线比 0.87 再往下压一点（0.90），轨道视角整体下移、竖直可视距离变长 */
+  V.judgeY=h*(V.portrait?0.79:(tablet?0.90:0.82));
   V.noteH=clamp(V.laneW*.15,14,28);
   updateScrollSpeed();
   stage.width=Math.round(w*dpr);stage.height=Math.round(h*dpr);
@@ -4553,7 +4554,7 @@ function drawNotes(){
       const y=V.judgeY-(n.time-t)*V.scrollSpeed;
       const ty=V.judgeY-(n.end-t)*V.scrollSpeed;
       const cx=V.x+n.lane*V.laneW+V.laneW/2;
-      drawHoldObject(n,cx,y,ty,.82,Math.abs(n.time-FINAL_CHORD_TIME)<.05,true);
+      drawHoldObject(n,cx,y,ty,.82,false,true);
       continue;
     }
     const y=V.judgeY-(n.time-t)*V.scrollSpeed;
@@ -4564,31 +4565,22 @@ function drawNotes(){
     const ex=V.x+n.lane*V.laneW+V.laneW/2;
     const cx=lerp(sx,ex,smooth);
     const alpha=clamp((y+90)/160,0,1);
-    const isFinal=Math.abs(n.time-FINAL_CHORD_TIME)<.05;
+    // 终结键（白色外观 + 头顶 16 层光柱残影）已移除：结尾那组键和其它键一样画，音符本身保留。
     if(n.type==='hold'){
       const ty=V.judgeY-(n.end-t)*V.scrollSpeed;
-      drawHoldObject(n,cx,y,ty,alpha,isFinal,false);
+      drawHoldObject(n,cx,y,ty,alpha,false,false);
       continue;
     }
-    const sp=isFinal?spr.final:(n.type==='break'?spr.break:(n.is_multi?spr.multi:(n.is_chord?spr.chord:spr.note)));
+    const sp=n.type==='break'?spr.break:(n.is_multi?spr.multi:(n.is_chord?spr.chord:spr.note));
     if(!sp)continue;
     c.globalAlpha=alpha;
-    if(isFinal){
-      const tw=V.laneW*.72;
-      for(let k=1;k<=16;k++){
-        const ty=y-k*V.noteH*1.4;if(ty<-90)break;
-        c.fillStyle='rgba(190,240,255,'+(.22*(1-k/16)).toFixed(3)+')';
-        const shr=1-k/24;c.fillRect(cx-tw*shr/2,ty,Math.max(1,tw*shr),Math.max(2,V.noteH*.8));
-      }
-    }else{
-      const tw=V.laneW*.58;
-      for(let k=1;k<=3;k++){
-        c.globalAlpha=alpha*.12/k;
-        c.fillStyle='#6fe6ff';
-        c.fillRect(cx-tw/2,y-k*V.noteH*.95,tw,V.noteH*.62);
-      }
-      c.globalAlpha=alpha;
+    const tw=V.laneW*.58;
+    for(let k=1;k<=3;k++){
+      c.globalAlpha=alpha*.12/k;
+      c.fillStyle='#6fe6ff';
+      c.fillRect(cx-tw/2,y-k*V.noteH*.95,tw,V.noteH*.62);
     }
+    c.globalAlpha=alpha;
     if(n.startLane!==n.lane&&y>0){
       c.save();c.setLineDash([5,9]);c.strokeStyle='rgba(255,207,106,'+(.22*alpha)+')';c.lineWidth=1;
       c.beginPath();c.moveTo(ex,y);c.lineTo(ex,V.judgeY+8);c.stroke();c.restore();
@@ -5463,14 +5455,17 @@ function drawInitBurst(mt){
   c.restore();
 }
 function initPillarLevel(mt){if(mt<64||mt>80)return 0;return Math.min(clamp((mt-64)/2,0,1),clamp((80-mt)/1.5,0,1));}
+// init 64–80s 科技光柱的整体亮度系数：1=原版，.5=压掉一半。只调这一个数就能整体亮/暗。
+const INIT_PILLAR_ALPHA=.5;
 function drawInitPillars(mt){
   const env=initPillarLevel(mt);if(env<=.01)return;
   const c=sctx,w=V.w,h=V.h;
+  const P=INIT_PILLAR_ALPHA;
   c.save();c.globalCompositeOperation='lighter';c.globalAlpha=env;
   // 地面一条横向「启动」光带，作光柱落点
   const floorY=h*(.72+.02*Math.sin(mt*.8));
   const fg=c.createLinearGradient(0,floorY-2,0,floorY+30);
-  fg.addColorStop(0,'rgba(120,235,255,.18)');
+  fg.addColorStop(0,'rgba(120,235,255,'+(.18*P).toFixed(3)+')');
   fg.addColorStop(1,'rgba(120,235,255,0)');
   c.fillStyle=fg;c.fillRect(0,floorY-2,w,32);
   const n=V.lowFx?3:4;
@@ -5484,9 +5479,9 @@ function drawInitPillars(mt){
     // 体积光主体：横向软边 + 顶部收窄（锥形），替代硬方块
     const body=c.createLinearGradient(x-halfW,0,x+halfW,0);
     body.addColorStop(0,'rgba(96,225,255,0)');
-    body.addColorStop(.35,'rgba(130,240,255,.10)');
-    body.addColorStop(.5,'rgba(205,252,255,.22)');
-    body.addColorStop(.65,'rgba(130,240,255,.10)');
+    body.addColorStop(.35,'rgba(130,240,255,'+(.10*P).toFixed(3)+')');
+    body.addColorStop(.5,'rgba(205,252,255,'+(.22*P).toFixed(3)+')');
+    body.addColorStop(.65,'rgba(130,240,255,'+(.10*P).toFixed(3)+')');
     body.addColorStop(1,'rgba(96,225,255,0)');
     c.fillStyle=body;
     c.beginPath();
@@ -5499,20 +5494,20 @@ function drawInitPillars(mt){
     // 中心亮核：细的纵向渐变线
     const core=c.createLinearGradient(0,tipY,0,base);
     core.addColorStop(0,'rgba(210,255,255,0)');
-    core.addColorStop(.45,'rgba(225,255,255,.55)');
-    core.addColorStop(1,'rgba(255,225,160,.26)');
+    core.addColorStop(.45,'rgba(225,255,255,'+(.55*P).toFixed(3)+')');
+    core.addColorStop(1,'rgba(255,225,160,'+(.26*P).toFixed(3)+')');
     c.strokeStyle=core;c.lineWidth=1.1;
     c.beginPath();c.moveTo(x,tipY+2);c.lineTo(x,base);c.stroke();
     // 顶部光晕（椭圆柔光，替代菱形头）
     const head=c.createRadialGradient(x,tipY,0,x,tipY,halfW*2.1);
-    head.addColorStop(0,'rgba(230,255,255,.5)');
-    head.addColorStop(.4,'rgba(150,240,255,.16)');
+    head.addColorStop(0,'rgba(230,255,255,'+(.5*P).toFixed(3)+')');
+    head.addColorStop(.4,'rgba(150,240,255,'+(.16*P).toFixed(3)+')');
     head.addColorStop(1,'rgba(150,240,255,0)');
     c.fillStyle=head;
     c.beginPath();c.ellipse(x,tipY,halfW*2.1,halfW*.6,0,0,Math.PI*2);c.fill();
     // 底部落点光池
     const pool=c.createRadialGradient(x,base,0,x,base,halfW*1.6);
-    pool.addColorStop(0,'rgba(210,250,255,.24)');
+    pool.addColorStop(0,'rgba(210,250,255,'+(.24*P).toFixed(3)+')');
     pool.addColorStop(1,'rgba(120,220,255,0)');
     c.fillStyle=pool;
     c.beginPath();c.ellipse(x,base,halfW*1.6,halfW*.4,0,0,Math.PI*2);c.fill();
@@ -5520,7 +5515,7 @@ function drawInitPillars(mt){
     const scanY=base-((mt*120+i*97)%Math.max(20,len));
     const sg=c.createLinearGradient(x-halfW,0,x+halfW,0);
     sg.addColorStop(0,'rgba(200,250,255,0)');
-    sg.addColorStop(.5,'rgba(230,255,255,.5)');
+    sg.addColorStop(.5,'rgba(230,255,255,'+(.5*P).toFixed(3)+')');
     sg.addColorStop(1,'rgba(200,250,255,0)');
     c.fillStyle=sg;c.fillRect(x-halfW,scanY-1,halfW*2,2);
     // 上升的光尘（圆形柔光）
@@ -5528,7 +5523,7 @@ function drawInitPillars(mt){
     for(let q=0;q<dots;q++){
       const y=base-((q*73+mt*90+i*41)%Math.max(20,len));
       const rr=1.2+(q%3)*.8;
-      fxGlowDot(c,x+Math.sin(mt*1.3+q*2+i)*2,y,rr*2.2,'rgba(210,252,255,.5)');
+      fxGlowDot(c,x+Math.sin(mt*1.3+q*2+i)*2,y,rr*2.2,'rgba(210,252,255,'+(.5*P).toFixed(3)+')');
     }
   }
   c.restore();
