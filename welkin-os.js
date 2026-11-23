@@ -1021,6 +1021,16 @@ const trackNum=s=>{
   return m?parseInt(m[1],10):99;
 };
 const chapterTrackOrder=ch=>ch.songs.slice().sort((a,b)=>trackNum(a)-trackNum(b)).map(s=>s.id);
+/* SESSION 编号：游戏里轨道下面那行「4 LANES · SESSION 001」用的号。
+   跨章连续编，跟着关卡顺序走：章序就是 CHAPTERS 的数组序（序章 → 初章 → 承章 → 终章 → EX），
+   章内按 TRACK 号从小到大。序章 W. = 001，初章 TRACK 01→06 = 002→007，
+   所以初章魔王曲 WELKIN（TRACK 06）就是 SESSION 007，往后接着 008… 一路数下去。
+   编号挂在 song.session 上，改曲目表/插关卡都会自动重排，不用手写死号。 */
+let sessionSeq=0;
+CHAPTERS.forEach(ch=>{
+  ch.songs.slice().sort((a,b)=>trackNum(a)-trackNum(b)).forEach(s=>{s.session=++sessionSeq;});
+});
+const sessionLabel=song=>'SESSION '+String((song&&song.session)||0).padStart(3,'0');
 /* 跨章解锁：每章第一关挂在上一章最后一关上，过了才开。
    ch1 第一关要序章通关（prologue-1）；ch2 第一关要初章最后一关 TRACK 06 WELKIN（ch1-5）；
    ch3 第一关要承章最后一关 TRACK 06 魔王曲（ch2-boss）。章内仍是逐关开。 */
@@ -1063,6 +1073,11 @@ function applyUnlocks(){
       ch.songs.forEach(s=>{s.state=ch.locked?'locked':(ids.includes(s.id)?'clear':'available');});
       return;
     }
+    /* 终章：以前 CHAPTERS 里写死 locked:true，没有任何地方把它翻回来，
+       于是开发者模式以外永远 SIGNAL SEALED（承章魔王曲打完了也不揭）。
+       现在每次 applyUnlocks 都按跨章门重新算：承章魔王曲（CH_GATE.ch3 = ch2-boss）
+       通关就揭封条，没通关就继续锁；章内还是逐关开。 */
+    if(ch.id==='ch3')ch.locked=!songClearedAnywhere(CH_GATE.ch3);
     if(ch.locked){ch.cleared=0;ch.progress='LOCKED';ch.songs.forEach(s=>{s.state='locked';});return;}
     const order=chapterTrackOrder(ch);
     order.forEach((id,i)=>{
@@ -1079,6 +1094,11 @@ function applyUnlocks(){
     ch.cleared=ids.length;
     ch.progress=`${ids.length} / ${ch.songs.length}`;
   });
+}
+/* 解锁状态变了而玩家正停在章节选择页时，卡片不会自己重画（SIGNAL SEALED 会赖在 DOM 上）。
+   开发者模式开关完主动刷一次，免得「已经解锁了但界面还锁着」。 */
+function refreshChapterSelectIfActive(){
+  if(chapterScreen&&chapterScreen.classList.contains('active'))renderChapterSelect();
 }
 function markSongCleared(song){
   if(!song)return;
@@ -1466,7 +1486,6 @@ function renderExScreen(){
   const title=$('#exTitle');if(title)title.textContent=(base||'Still').toUpperCase();
   const m=/\((.*?)\)/.exec(String(s.title||''));
   const sub=$('#exSub');if(sub)sub.textContent=m?m[1].toUpperCase():'ORIGINAL SESSION';
-  const bpm=$('#exBpm');if(bpm)bpm.textContent=(s.bpm||'—')+' BPM';
   const len=$('#exLen');if(len)len.textContent=s.length||'--:--';
   const charter=$('#exCharter');if(charter)charter.textContent=s.charter||'—';
   const lv=$('#exLevel');if(lv)lv.textContent='LV.'+s.level;
@@ -2144,6 +2163,7 @@ function confirmDevKey(){
     devUnlockAll=true;
     saveDevUnlock();
     applyUnlocks();
+    refreshChapterSelectIfActive();
     syncDevButton();
     playDevFx(true,'ACCESS GRANTED','ALL TRACKS UNLOCKED');
   }else{
@@ -2157,6 +2177,7 @@ function disableDevMode(){
   devUnlockAll=false;
   saveDevUnlock();
   applyUnlocks();
+  refreshChapterSelectIfActive();
   syncDevButton();
   playDevFx(true,'PROGRESS RESTORED','DEV MODE DISABLED');
 }
@@ -4716,7 +4737,7 @@ function drawBottomMeta(){
   c.save();
   c.font='500 9px '+FONT_M;c.textBaseline='middle';
   c.textAlign='left';c.fillStyle='rgba(120,170,200,.3)';
-  c.fillText('BPM '+(selectedSong&&selectedSong.bpm!=='—'?selectedSong.bpm:'—')+'   ·   4 LANES   ·   SESSION 001',V.x,y);
+  c.fillText('4 LANES   ·   '+sessionLabel(selectedSong),V.x,y);
   c.textAlign='right';c.fillText('SYNC '+settings.speed.toFixed(2)+'×',V.x+V.trackW,y);
   c.restore();
 }
