@@ -196,7 +196,9 @@ function renderNoteSkinPreview(){
   c.fillStyle=track;c.fillRect(W*.03,0,W*.94,H);
   const jy=H*.66;
   c.fillStyle='rgba(240,253,255,.85)';c.fillRect(W*.03,jy+26,W*.94,2);
-  const items=[[.12,spr.note],[.33,spr.chord],[.54,spr.multi],[.75,spr.final]];
+  // 终结键已不在谱面里出现（只保留音符、不再画白色外壳），第 4 格改画黄键：
+  // 用 spr.break，因此默认 / 白昼 / 晨曦各组显示的都是本组自己的黄键皮肤。
+  const items=[[.12,spr.note],[.33,spr.chord],[.54,spr.multi],[.75,spr.break]];
   for(const it of items){
     const sp=it[1];if(!sp)continue;
     const sc=Math.min(1,86/sp.w);
