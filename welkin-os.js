@@ -106,7 +106,7 @@ settings.dim=clamp(Number(settings.dim)||0,0,80);
 settings.volume=clamp(Number(settings.volume)||0,0,100);
 settings.hitVol=clamp(Number(settings.hitVol)||0,0,100);
 settings.inputOffset=clamp(Number(settings.inputOffset)||0,-150,150);
-settings.trackSkin=clamp(Math.floor(Number(settings.trackSkin)||0),0,19);
+settings.trackSkin=clamp(Math.floor(Number(settings.trackSkin)||0),0,20);
 settings.keySkin=clamp(Math.floor(Number(settings.keySkin)||0),0,2);
 settings.hit=!!settings.hit;settings.ui=!!settings.ui;settings.early=!!settings.early;settings.motion=!!settings.motion;settings.mirror=!!settings.mirror;
 if(settings.perfMode!=='low'&&settings.perfMode!=='high'&&settings.perfMode!=='ultra')settings.perfMode='auto';
@@ -116,7 +116,7 @@ if(settings.perfMode!=='low'&&settings.perfMode!=='high'&&settings.perfMode!=='u
 const TRACK_SKIN_KEY='welkin_os_track_skin_v1';
 function readTrackSkinValue(v){
   const n=Math.floor(Number(v));
-  return (Number.isFinite(n)&&n>=0&&n<20)?n:null;
+  return (Number.isFinite(n)&&n>=0&&n<21)?n:null;
 }
 let activeTrackSkin=readTrackSkinValue(settings.trackSkin);
 try{
@@ -130,11 +130,13 @@ function getTrackSkin(){
   let list=[];
   try{list=TRACK_SKINS;}catch(e){}
   if(!list.length||activeTrackSkin<0||activeTrackSkin>=list.length)activeTrackSkin=0;
+  if(!isTrackUnlocked(activeTrackSkin))activeTrackSkin=0;
   return list[activeTrackSkin]||list[0]||{name:'WELKIN',a:[34,228,255],b:[120,220,255],col:'solid',div:'line',dim:1};
 }
 function setTrackSkin(i){
   const n=Math.floor(Number(i));
-  activeTrackSkin=((Number.isFinite(n)?n:0)%20+20)%20;
+  activeTrackSkin=((Number.isFinite(n)?n:0)%21+21)%21;
+  if(!isTrackUnlocked(activeTrackSkin))activeTrackSkin=0;
   settings.trackSkin=activeTrackSkin;
   try{localStorage.setItem(TRACK_SKIN_KEY,String(activeTrackSkin));}catch(e){}
   saveSettings();
@@ -160,11 +162,13 @@ const NOTE_SKINS=[
 function noteSkinCount(){return NOTE_SKINS.length;}
 function getNoteSkin(){
   const i=clamp(Math.floor(Number(settings&&settings.keySkin)||0),0,NOTE_SKINS.length-1);
+  if(!isNoteUnlocked(i))return NOTE_SKINS[0];
   return NOTE_SKINS[i]||NOTE_SKINS[0];
 }
 function setNoteSkin(i){
   const n=Math.floor(Number(i))||0,c=NOTE_SKINS.length;
-  const idx=((n%c)+c)%c;
+  let idx=((n%c)+c)%c;
+  if(!isNoteUnlocked(idx))idx=0;
   settings.keySkin=idx;
   saveSettings();
   refreshNoteSkin();
@@ -264,6 +268,475 @@ function saveBestFor(id,b){
 }
 let bestMap=readBestMap();
 let best=emptyBest();
+
+/* ============================================================
+   1b. ACCOUNT + STORE（苍穹星 · 皇室抽奖 · 皮肤解锁）
+   ============================================================ */
+/* 账号体系：稳定 accountId，与 operator 名称彻底解耦。改 operator / 重新登录
+   都绝不触碰任何进度、货币、皮肤。全部数据（进度 + 苍穹星 + 皮肤 + 解锁）归入
+   一套账号档案，永久保留，不随名字变化、不被覆盖。 */
+const ACCT_KEY='welkin_os_account_v1';
+const STORE_FLAG_KEY='welkin_os_store_v1_init';
+const CURR_GRANT_KEY='welkin_os_store_v2_currency';
+const STAR_COST_ONE=67, STAR_COST_TEN=666;
+function genId(){return 'WK-'+Date.now().toString(36).toUpperCase()+'-'+Math.random().toString(36).slice(2,8).toUpperCase();}
+function freshAccount(){return {id:'',currency:666,unlockedNote:[0],unlockedTrack:[0],phone:false,lobby:false,scenery:false,phoneOn:false,lobbyOn:false,sceneryOn:false};}
+let account=freshAccount();
+function loadAccount(){
+  try{
+    const o=JSON.parse(localStorage.getItem(ACCT_KEY)||'null');
+    if(o&&typeof o==='object'){
+      account=Object.assign(freshAccount(),o);
+      if(!account.id)account.id=genId();
+      if(!Array.isArray(account.unlockedNote))account.unlockedNote=[0];
+      if(!Array.isArray(account.unlockedTrack))account.unlockedTrack=[0];
+      if(!account.unlockedNote.includes(0))account.unlockedNote.unshift(0);
+      if(!account.unlockedTrack.includes(0))account.unlockedTrack.unshift(0);
+      account.currency=Math.max(0,Math.floor(Number(account.currency)||0));
+      saveAccount();
+      return;
+    }
+  }catch(e){}
+  account=freshAccount();account.id=genId();saveAccount();
+}
+function saveAccount(){try{localStorage.setItem(ACCT_KEY,JSON.stringify(account));}catch(e){}}
+function isNoteUnlocked(i){const n=Math.floor(Number(i));if(n<=0)return true;return account.unlockedNote.includes(n);}
+function isTrackUnlocked(i){const n=Math.floor(Number(i));if(n<=0)return true;return account.unlockedTrack.includes(n);}
+function unlockedNoteList(){return account.unlockedNote.slice().sort((a,b)=>a-b);}
+function unlockedTrackList(){return account.unlockedTrack.slice().sort((a,b)=>a-b);}
+function applySkins(){
+  try{
+    document.body.classList.toggle('sss-phone',!!account.phoneOn);
+    document.body.classList.toggle('sss-lobby',!!account.lobbyOn);
+    document.body.classList.toggle('sss-scenery',!!account.sceneryOn);
+  }catch(e){}
+}
+function ensureAccount(){
+  loadAccount();
+  /* 一次性迁移：按键皮肤 / 轨道皮肤进入奖池 → 所有玩家恢复默认并锁住 */
+  let migrated=false;
+  try{migrated=localStorage.getItem(STORE_FLAG_KEY)==='1';}catch(e){}
+  if(!migrated){
+    activeTrackSkin=0;settings.trackSkin=0;settings.keySkin=0;
+    try{localStorage.setItem(TRACK_SKIN_KEY,'0');}catch(e){}
+    saveSettings();
+    account.unlockedNote=[0];account.unlockedTrack=[0];
+    try{localStorage.setItem(STORE_FLAG_KEY,'1');}catch(e){}
+    saveAccount();
+  }
+  /* 一次性补发：所有玩家初始 666 苍穹星（老账号不足 666 的补到 666，绝不回扣） */
+  let granted=false;
+  try{granted=localStorage.getItem(CURR_GRANT_KEY)==='1';}catch(e){}
+  if(!granted){
+    if(account.currency<666)account.currency=666;
+    try{localStorage.setItem(CURR_GRANT_KEY,'1');}catch(e){}
+    saveAccount();
+  }
+  if(!isTrackUnlocked(activeTrackSkin)){activeTrackSkin=0;settings.trackSkin=0;}
+  if(!isNoteUnlocked(getNoteSkinIndex())){settings.keySkin=0;}
+  applySkins();
+}
+
+/* ---- 苍穹星获取算法 ----------------------------------------------------------
+   AP 锚点：Lv.2 = 67，Lv.20 = 67000，指数增长；平时 = AP/10；全连 = 5× 平时；
+   评级越高 / 难度越高给的越多。0 分不给。 */
+function stardustFor(level,rank,isAP,isFC,score){
+  if(!score||score<=0)return 0;
+  const L=clamp(Math.floor(Number(level)||1),1,20);
+  const ap=67*Math.pow(1000,(L-2)/18);
+  if(isAP)return Math.round(ap);
+  const normal=ap/10;
+  if(isFC)return Math.max(1,Math.round(normal*5));
+  const scale={SSS:1.0,S:0.85,A:0.7,B:0.5,C:0.3};
+  const m=(rank&&scale[rank]!==undefined)?scale[rank]:0.5;
+  return Math.max(1,Math.round(normal*m));
+}
+
+/* ---- 奖池 ------------------------------------------------------------------ */
+const TIER_LIGHT={
+  SSS:{css:'#ffffff',label:'SSS',rainbow:true},
+  S:{css:'#ffd76a',label:'S'},
+  A:{css:'#c78bff',label:'A'},
+  B:{css:'#5ea8ff',label:'B'}
+};
+function hexa(hex,a){
+  const h=String(hex).replace('#','');
+  const r=parseInt(h.slice(0,2),16),g=parseInt(h.slice(2,4),16),b=parseInt(h.slice(4,6),16);
+  return 'rgba('+r+','+g+','+b+','+a+')';
+}
+function buildPrizePool(){
+  const P=[];
+  /* SSS 0.1%：3 件，各 1/3 × 0.1% */
+  const sssP=0.001/3;
+  P.push({id:'sss-phone',tier:'SSS',p:sssP,kind:'phone',name:'鎏金终端 · 皇室手机',desc:'高奢黄金风格手机外壳 · 鎏金按键 · 金工雕花',owned:()=>!!account.phone});
+  P.push({id:'sss-lobby',tier:'SSS',p:sssP,kind:'lobby',name:'金殿 · 皇室大厅',desc:'手机背后大厅焕新为皇室奢华风 · 窗外夜景保留',owned:()=>!!account.lobby});
+  P.push({id:'sss-scenery',tier:'SSS',p:sssP,kind:'scenery',name:'黄金苍穹 · 黄金奢华外景',desc:'窗外风景焕新为黄金科技炫酷风格 · 金辉天际线 · 鎏金霓虹',owned:()=>!!account.scenery});
+  /* S 0.3%：3 件，各 0.1% */
+  P.push({id:'note-1',tier:'S',p:0.001,kind:'note',skinIndex:1,name:'按键皮肤 · 白昼',desc:'轮廓环光 · 冰白配色',owned:()=>isNoteUnlocked(1)});
+  P.push({id:'note-2',tier:'S',p:0.001,kind:'note',skinIndex:2,name:'按键皮肤 · 晨曦',desc:'暖阳渐变 · 削角轮廓',owned:()=>isNoteUnlocked(2)});
+  P.push({id:'track-20',tier:'S',p:0.001,kind:'track',skinIndex:20,name:'轨道皮肤 · 黄金奢华',desc:'黄金奢华风轨道 · 鎏金流光 · 高端质感',owned:()=>isTrackUnlocked(20)});
+  /* A 9.6%：19 款轨道皮肤（除默认） */
+  const aEach=0.096/19;
+  for(let i=1;i<20;i++){
+    const sk=TRACK_SKINS[i];
+    P.push({id:'track-'+i,tier:'A',p:aEach,kind:'track',skinIndex:i,name:'轨道皮肤 · '+(sk?sk.name:('NO.'+(i+1))),desc:'第 '+(i+1)+' 款轨道背景皮肤',owned:()=>isTrackUnlocked(i)});
+  }
+  /* B 90%：苍穹星 67(10%) / 30(50%) / 15(40%)（相对 B 内占比） */
+  P.push({id:'b-67',tier:'B',p:0.09,kind:'currency',amount:67,name:'苍穹星 ×67',desc:'十份星屑',owned:()=>false});
+  P.push({id:'b-30',tier:'B',p:0.45,kind:'currency',amount:30,name:'苍穹星 ×30',desc:'一捧星屑',owned:()=>false});
+  P.push({id:'b-15',tier:'B',p:0.36,kind:'currency',amount:15,name:'苍穹星 ×15',desc:'几粒星屑',owned:()=>false});
+  return P;
+}
+function rollOnce(){
+  const pool=buildPrizePool();
+  const r=Math.random();let acc=0;
+  for(const p of pool){acc+=p.p;if(r<acc)return p;}
+  return pool[pool.length-1];
+}
+function rollTen(){
+  const res=[];
+  let hasA=false;
+  for(let i=0;i<10;i++){
+    const p=rollOnce();
+    if(p.tier==='A'||p.tier==='S'||p.tier==='SSS')hasA=true;
+    res.push(p);
+  }
+  if(!hasA){
+    const aList=buildPrizePool().filter(x=>x.tier==='A');
+    res[9]=aList[Math.floor(Math.random()*aList.length)];
+  }
+  return res;
+}
+function grantPrize(p){
+  if(p.kind==='currency'){account.currency+=p.amount;return {dup:false,amount:p.amount};}
+  if(p.kind==='note'){
+    if(isNoteUnlocked(p.skinIndex)){account.currency+=30;return {dup:true,amount:30};}
+    account.unlockedNote.push(p.skinIndex);return {dup:false};
+  }
+  if(p.kind==='track'){
+    if(isTrackUnlocked(p.skinIndex)){account.currency+=30;return {dup:true,amount:30};}
+    account.unlockedTrack.push(p.skinIndex);return {dup:false};
+  }
+  if(p.kind==='phone'){if(account.phone){account.currency+=30;return {dup:true,amount:30};}account.phone=true;return {dup:false};}
+  if(p.kind==='lobby'){if(account.lobby){account.currency+=30;return {dup:true,amount:30};}account.lobby=true;return {dup:false};}
+  if(p.kind==='scenery'){if(account.scenery){account.currency+=30;return {dup:true,amount:30};}account.scenery=true;return {dup:false};}
+  return {dup:false};
+}
+
+/* ---- 苍穹星图标（科技蓝） -------------------------------------------------- */
+let _starUid=0;
+function starSVG(size){
+  const s=size||16,id='sdg'+(_starUid++);
+  return `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" aria-hidden="true" class="star-svg">
+    <defs><linearGradient id="${id}" x1="0" y1="2" x2="0" y2="22" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#eef8ff"/><stop offset=".45" stop-color="#8ec9ff"/><stop offset="1" stop-color="#2f6dff"/>
+    </linearGradient></defs>
+    <path d="M12 1.4 C13.1 7.1 16.9 10.9 22.6 12 C16.9 13.1 13.1 16.9 12 22.6 C10.9 16.9 7.1 13.1 1.4 12 C7.1 10.9 10.9 7.1 12 1.4 Z" fill="url(#${id})" stroke="rgba(214,238,255,.85)" stroke-width=".5"/>
+    <path d="M12 7.6 C12.55 9.9 14.1 11.45 16.4 12 C14.1 12.55 12.55 14.1 12 16.4 C11.45 14.1 9.9 12.55 7.6 12 C9.9 11.45 11.45 9.9 12 7.6 Z" fill="rgba(255,255,255,.92)"/>
+  </svg>`;
+}
+
+/* ---- Store 音乐 ------------------------------------------------------------ */
+const storeMusicEl=$('#storeMusic');
+function playStoreMusic(){
+  try{
+    if(storeMusicEl){
+      storeMusicEl.loop=true;storeMusicEl.volume=uiMusicVolume();
+      storeMusicEl.currentTime=0;storeMusicEl.play().catch(()=>{});
+    }
+  }catch(e){}
+}
+function stopStoreMusic(){try{if(storeMusicEl)storeMusicEl.pause();}catch(e){}}
+
+/* ---- Store 落地页（iM 01 位） --------------------------------------------- */
+function renderStoreLanding(){
+  const feed=$('#imFeed');if(!feed)return;
+  feed.innerHTML=`
+    <div class="store-landing">
+      <div class="store-hero">
+        <div class="store-kicker">ROYAL VAULT · 皇室宝库</div>
+        <h2>STORE</h2>
+        <p>以苍穹星兑换皇室珍宝 · SSS 级珍品静候有缘人</p>
+        <div class="store-balance">${starSVG(20)}<b id="storeLandCur">${account.currency}</b><span>苍穹星</span></div>
+      </div>
+      <button class="store-bigbtn" id="btnOpenStore" type="button">
+        <span class="sbg-shine" aria-hidden="true"></span>
+        <span class="sbg-core"><b>STORE</b><em>ENTER THE VAULT</em></span>
+      </button>
+      <div class="store-hint">点击进入宝库 · 单抽 ${STAR_COST_ONE} / 十连 ${STAR_COST_TEN} 苍穹星</div>
+    </div>`;
+  const b=$('#btnOpenStore');if(b)b.addEventListener('click',openStore);
+}
+
+/* ---- Store 内 UI ----------------------------------------------------------- */
+function openStore(){
+  const app=$('#storeApp');if(!app||app.classList.contains('active'))return;
+  app.classList.add('active');
+  stopAllUIMusic();
+  playStoreMusic();
+  renderStore();
+  uiSound(1.25);
+}
+function closeStore(){
+  const app=$('#storeApp');if(!app)return;
+  app.classList.remove('active');
+  stopStoreMusic();
+  syncUIMusic(true);
+  uiSound(.9);
+}
+function trackSkinThumb(i){
+  const sk=TRACK_SKINS[i];if(!sk)return '';
+  const a='rgb('+sk.a[0]+','+sk.a[1]+','+sk.a[2]+')';
+  const b=sk.b?('rgb('+sk.b[0]+','+sk.b[1]+','+sk.b[2]+')'):a;
+  return `<span class="dr-thumb track" style="background:linear-gradient(180deg,${a},${b})"></span>`;
+}
+function noteSkinThumb(i){
+  const sk=NOTE_SKINS[i];if(!sk)return '';
+  const cap=(sk.hold&&sk.hold.cap)?sk.hold.cap[0]:'#8ec9ff';
+  const edge=(sk.hold&&sk.hold.edge)?sk.hold.edge:'#8ec9ff';
+  return `<span class="dr-thumb note" style="background:${cap};border-color:${edge}"></span>`;
+}
+function renderStore(){
+  const cur=$('#storeCur');if(cur)cur.textContent=account.currency;
+  const cur2=$('#storeCur2');if(cur2)cur2.textContent=account.currency;
+  const cur3=$('#storeCur3');if(cur3)cur3.textContent=account.currency;
+  const svgA=$('.s-cur-svg');if(svgA)svgA.innerHTML=starSVG(16);
+  const svgB=$('.s-cur2-svg');if(svgB)svgB.innerHTML=starSVG(14);
+  const svgC=$('.sbr-svg');if(svgC)svgC.innerHTML=starSVG(14);
+  const ownNote=$('#storeOwnNote');if(ownNote)ownNote.textContent=account.unlockedNote.length+'/'+NOTE_SKINS.length;
+  const ownTrack=$('#storeOwnTrack');if(ownTrack)ownTrack.textContent=account.unlockedTrack.filter(i=>i>=1&&i<20).length+'/19';
+  const oPhone=$('#storeOwnPhone');if(oPhone)oPhone.textContent=account.phone?'OWNED':'—';
+  const oLobby=$('#storeOwnLobby');if(oLobby)oLobby.textContent=account.lobby?'OWNED':'—';
+  const oScenery=$('#storeOwnScenery');if(oScenery)oScenery.textContent=account.scenery?'OWNED':'—';
+  const oRTrack=$('#storeOwnRoyalTrack');if(oRTrack)oRTrack.textContent=isTrackUnlocked(20)?'OWNED':'—';
+  const bOne=$('#btnDrawOne');if(bOne)bOne.innerHTML='单抽 <span>'+STAR_COST_ONE+'</span>'+starSVG(14);
+  const bTen=$('#btnDrawTen');if(bTen)bTen.innerHTML='十连抽 <span>'+STAR_COST_TEN+'</span>'+starSVG(14);
+  renderPrizeDetail();
+}
+function prizeTierName(t){return {SSS:'SSS 级',S:'S 级',A:'A 级',B:'B 级'}[t]||t;}
+function renderPrizeDetail(){
+  const body=$('#prizeModalBody');if(!body)return;
+  const pool=buildPrizePool();
+  const tiers=['SSS','S','A','B'];
+  let html='';
+  for(const t of tiers){
+    const items=pool.filter(p=>p.tier===t);
+    const meta=TIER_LIGHT[t];
+    html+=`<div class="pm-tier"><div class="pm-tier-h"><b class="pm-tag tier-${t.toLowerCase()}" style="color:${t==='SSS'?'#fff':meta.css}">${t}</b><span>${prizeTierName(t)}</span><em>概率 ${(items.reduce((s,p)=>s+p.p,0)*100).toFixed(t==='A'?1:2)}%</em></div>`;
+    html+=`<div class="pm-grid">`;
+    for(const p of items){
+      const owned=p.owned();
+      let ico='';
+      if(p.kind==='currency')ico=starSVG(26);
+      else if(p.kind==='note')ico=noteSkinThumb(p.skinIndex);
+      else if(p.kind==='track')ico=trackSkinThumb(p.skinIndex);
+      else if(p.kind==='phone')ico='<span class="pm-ico phone"></span>';
+      else if(p.kind==='lobby')ico='<span class="pm-ico lobby"></span>';
+      else if(p.kind==='scenery')ico='<span class="pm-ico scenery"></span>';
+      html+=`<div class="pm-item ${owned?'owned':''}">
+        <div class="pm-ico-wrap">${ico}</div>
+        <div class="pm-name">${esc(p.name)}</div>
+        <div class="pm-desc">${esc(p.desc)}</div>
+        <div class="pm-own">${owned?'已拥有':'未拥有'}</div>
+      </div>`;
+    }
+    html+=`</div></div>`;
+  }
+  body.innerHTML=html;
+}
+
+/* ---- 抽奖 ------------------------------------------------------------------ */
+function doDraw(ten){
+  const cost=ten?STAR_COST_TEN:STAR_COST_ONE;
+  if(account.currency<cost){
+    flashStoreInsufficient();
+    return;
+  }
+  account.currency-=cost;
+  royalSfx('tap');
+  const raw=ten?rollTen():[rollOnce()];
+  const items=raw.map(p=>{const g=grantPrize(p);return {prize:p,dup:g.dup,amount:g.amount};});
+  saveAccount();
+  renderStore();
+  playDrawAnimation(items,ten);
+}
+function flashStoreInsufficient(){
+  const el=$('#storeCur');if(el){el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake');}
+  const rb=$('#storeBalanceRed');if(rb){rb.classList.remove('shake');void rb.offsetWidth;rb.classList.add('shake');}
+  uiSound(.6);
+}
+let drawRaf=0;
+function playDrawAnimation(items,ten){
+  const overlay=$('#drawOverlay');if(!overlay)return;
+  const reveal=$('#drawReveal');
+  overlay.classList.add('active');overlay.classList.remove('flash');
+  reveal.classList.remove('show');reveal.innerHTML='';
+  const tiers=['B','A','S','SSS'];
+  let top='B';
+  for(const it of items){if(tiers.indexOf(it.prize.tier)>tiers.indexOf(top))top=it.prize.tier;}
+  const cv=$('#drawCanvas');
+  if(cv){
+    const dpr=Math.min(window.devicePixelRatio||1,2);
+    cv.width=Math.floor((window.innerWidth||800)*dpr);
+    cv.height=Math.floor((window.innerHeight||600)*dpr);
+  }
+  cancelAnimationFrame(drawRaf);
+  royalSfx('spin');
+  const t0=performance.now(),DUR=3000;
+  const step=now=>{
+    const k=clamp((now-t0)/DUR,0,1);
+    if(cv)drawDrawLight(cv,k,top);
+    if(k<1){drawRaf=requestAnimationFrame(step);}
+    else{
+      overlay.classList.add('flash');
+      royalSfx(top==='SSS'?'sss':'reveal');
+      setTimeout(()=>{
+        overlay.classList.remove('flash');
+        showDrawReveal(items,ten);
+      },230);
+    }
+  };
+  drawRaf=requestAnimationFrame(step);
+}
+function drawDrawLight(cv,k,tier){
+  const c=cv.getContext('2d');
+  const W=cv.width,H=cv.height,cx=W/2,cy=H/2;
+  c.clearRect(0,0,W,H);
+  const T=TIER_LIGHT[tier]||TIER_LIGHT.B;
+  const rainbow=!!T.rainbow;
+  const x=W*1.06-k*(W*1.14);
+  c.globalCompositeOperation='lighter';
+  const L=W*.42,N=56;
+  for(let i=0;i<N;i++){
+    const u=i/N;
+    const px=x-L*u;
+    const fade=Math.pow(1-u,1.6);
+    const r=(4+46*Math.pow(1-u,1.15));
+    const hue=(k*320+u*210)%360;
+    const col=rainbow?('hsla('+hue+',100%,72%,'+(fade*.5)+')'):hexa(T.css,fade*.42);
+    const g=c.createRadialGradient(px,cy,0,px,cy,r);
+    g.addColorStop(0,col);g.addColorStop(1,'rgba(0,0,0,0)');
+    c.fillStyle=g;c.beginPath();c.arc(px,cy,r,0,7);c.fill();
+  }
+  const hue0=(k*320)%360;
+  const head=rainbow?('hsla('+hue0+',100%,80%,1)'):hexa(T.css,1);
+  const hg=c.createRadialGradient(x,cy,0,x,cy,30);
+  hg.addColorStop(0,'rgba(255,255,255,.96)');
+  hg.addColorStop(.32,head);
+  hg.addColorStop(1,'rgba(0,0,0,0)');
+  c.fillStyle=hg;c.beginPath();c.arc(x,cy,30,0,7);c.fill();
+  const bh=H*.72,by0=cy-bh/2,bw=9;
+  const bcol=rainbow?('hsla('+hue0+',100%,76%,.55)'):hexa(T.css,.5);
+  const bg=c.createLinearGradient(0,by0,0,by0+bh);
+  bg.addColorStop(0,'rgba(0,0,0,0)');bg.addColorStop(.5,bcol);bg.addColorStop(1,'rgba(0,0,0,0)');
+  c.fillStyle=bg;
+  c.beginPath();
+  c.moveTo(x,by0);
+  c.quadraticCurveTo(x+bw*1.6,cy,x,by0+bh);
+  c.quadraticCurveTo(x-bw*1.6,cy,x,by0);
+  c.closePath();c.fill();
+  c.globalCompositeOperation='source-over';
+}
+function showDrawReveal(items,ten){
+  const reveal=$('#drawReveal');if(!reveal)return;
+  let html='<div class="dr-title"><i class="dr-crown"></i><span>'+(ten?'TEN DRAWS · 十连':'DRAW · 单抽')+'</span><i class="dr-crown"></i></div><div class="dr-grid'+(ten?' ten':'')+'">';
+  for(const it of items){
+    const p=it.prize,T=TIER_LIGHT[p.tier];
+    let ico='',sub=p.desc||'';
+    if(p.kind==='currency'){ico=starSVG(40);sub='苍穹星';}
+    else if(p.kind==='note')ico=noteSkinThumb(p.skinIndex);
+    else if(p.kind==='track')ico=trackSkinThumb(p.skinIndex);
+    else if(p.kind==='phone')ico='<span class="dr-ico phone"></span>';
+    else if(p.kind==='lobby')ico='<span class="dr-ico lobby"></span>';
+    else if(p.kind==='scenery')ico='<span class="dr-ico scenery"></span>';
+    html+=`<div class="dr-card tier-${p.tier.toLowerCase()}">
+      <i class="dr-corner tl"></i><i class="dr-corner tr"></i><i class="dr-corner bl"></i><i class="dr-corner br"></i>
+      <i class="dr-gem"></i>
+      <div class="dr-glow" style="--glow:${p.tier==='SSS'?'#ffffff':T.css}"></div>
+      <div class="dr-ico-wrap">${ico}</div>
+      <div class="dr-name">${esc(p.name)}</div>
+      <div class="dr-sub">${esc(sub)}</div>
+      <div class="dr-tier" style="color:${p.tier==='SSS'?'#fff':T.css}">${p.tier}</div>
+      ${it.dup?'<div class="dr-dup">已拥有 · +30 苍穹星</div>':''}
+    </div>`;
+  }
+  html+='</div><button class="dr-confirm" id="drConfirm" type="button">CONFIRM</button>';
+  reveal.innerHTML=html;
+  reveal.classList.add('show');
+  const c=$('#drConfirm');if(c)c.addEventListener('click',closeDrawOverlay);
+}
+function closeDrawOverlay(){
+  const overlay=$('#drawOverlay');if(!overlay)return;
+  overlay.classList.remove('active','flash');
+  $('#drawReveal').classList.remove('show');
+  cancelAnimationFrame(drawRaf);
+  renderStore();
+}
+
+/* ---- 皮肤选择（约束到已解锁） ---------------------------------------------- */
+function cycleTrackSkin(dir){
+  const list=unlockedTrackList();
+  let idx=list.indexOf(activeTrackSkin);if(idx<0)idx=0;
+  idx=(idx+dir+list.length)%list.length;
+  setTrackSkin(list[idx]);
+  syncTrackSkinUI();renderSkinPreview();
+}
+function cycleNoteSkin(dir){
+  const list=unlockedNoteList();
+  let idx=list.indexOf(getNoteSkinIndex());if(idx<0)idx=0;
+  idx=(idx+dir+list.length)%list.length;
+  setNoteSkin(list[idx]);
+  uiSound(1.3);
+}
+
+/* ---- 存档码：跨浏览器 / 跨设备迁移 ----------------------------------------- */
+function exportSave(){
+  const blob={
+    v:1,id:account.id,exportedAt:Date.now(),
+    user:(user||null),
+    account,
+    bestMap,clears,settings,likes,
+    exUnlocked:!!exUnlocked,devUnlockAll:!!devUnlockAll
+  };
+  try{
+    return btoa(unescape(encodeURIComponent(JSON.stringify(blob))));
+  }catch(e){
+    try{return btoa(JSON.stringify(blob));}catch(e2){return '';}
+  }
+}
+function importSave(code){
+  if(!code)return false;
+  let obj=null;
+  try{obj=JSON.parse(decodeURIComponent(escape(atob(code))));}catch(e){
+    try{obj=JSON.parse(atob(code));}catch(e2){return false;}
+  }
+  if(!obj||typeof obj!=='object')return false;
+  try{
+    if(obj.account&&typeof obj.account==='object'){
+      account=Object.assign(freshAccount(),obj.account);
+      if(!Array.isArray(account.unlockedNote))account.unlockedNote=[0];
+      if(!Array.isArray(account.unlockedTrack))account.unlockedTrack=[0];
+      if(!account.unlockedNote.includes(0))account.unlockedNote.unshift(0);
+      if(!account.unlockedTrack.includes(0))account.unlockedTrack.unshift(0);
+      account.currency=Math.max(0,Math.floor(Number(account.currency)||0));
+      saveAccount();
+    }
+    if(obj.bestMap&&typeof obj.bestMap==='object'){bestMap=obj.bestMap;try{localStorage.setItem(BEST_MAP_KEY,JSON.stringify(bestMap));}catch(e){}}
+    if(obj.clears&&typeof obj.clears==='object'){clears=obj.clears;saveClears();}
+    if(obj.settings&&typeof obj.settings==='object'){settings=Object.assign({},DEFAULT_SETTINGS,obj.settings);saveSettings();}
+    if(obj.likes&&typeof obj.likes==='object'){likes=obj.likes;saveLikes();}
+    if(typeof obj.exUnlocked==='boolean'){exUnlocked=obj.exUnlocked;try{localStorage.setItem(EX_KEY,exUnlocked?'1':'0');}catch(e){}}
+    if(typeof obj.devUnlockAll==='boolean'){devUnlockAll=obj.devUnlockAll;saveDevUnlock();}
+    if(obj.user){try{localStorage.setItem('welkin_os_user',JSON.stringify(obj.user));}catch(e){}}
+    activeTrackSkin=isTrackUnlocked(settings.trackSkin)?settings.trackSkin:0;
+    if(!isNoteUnlocked(settings.keySkin))settings.keySkin=0;
+    try{localStorage.setItem(STORE_FLAG_KEY,'1');}catch(e){}
+    applySkins();applyUnlocks();applySettings();
+    return true;
+  }catch(e){return false;}
+}
+
+ensureAccount();
 
 /* ============================================================
    2. time / weather
@@ -706,14 +1179,225 @@ function drawWindowCity(ts){
   ctx.fillStyle=vg;ctx.fillRect(0,0,w,h);
 }
 
+/* 黄金奢华外景（SSS）：窗外风景切换为黄金科技炫酷风。复用 city 几何状态，
+   仅换一套鎏金配色与金色特效，不触碰默认城市夜景的渲染。 */
+function drawGoldenCity(ts){
+  const w=city.w||cityCanvas.clientWidth,h=city.h||cityCanvas.clientHeight;
+  if(!w||!h)return;
+  const ctx=cityCtx;
+  const kind=weatherKind(weather.code);
+  city.t+=.016;
+
+  // 鎏金天空：深金 → 暖金 → 亮金地平线
+  const sky=ctx.createLinearGradient(0,0,0,h);
+  sky.addColorStop(0,'#0f0a03');
+  sky.addColorStop(.45,'#2b1d07');
+  sky.addColorStop(.74,'#6b4a14');
+  sky.addColorStop(1,'#c8953a');
+  ctx.fillStyle=sky;ctx.fillRect(0,0,w,h);
+
+  // 地平线金色辉光
+  const hg=ctx.createLinearGradient(0,h*.5,0,h);
+  hg.addColorStop(0,'rgba(255,200,110,0)');
+  hg.addColorStop(.7,'rgba(255,190,90,.26)');
+  hg.addColorStop(1,'rgba(255,215,130,.48)');
+  ctx.fillStyle=hg;ctx.fillRect(0,h*.5,w,h*.5);
+
+  // 金色星点
+  for(const s of city.stars){
+    const tw=.55+.45*Math.sin(city.t*1.6+s.p);
+    ctx.fillStyle='rgba(255,232,170,'+(.5*tw).toFixed(3)+')';
+    ctx.fillRect(s.x,s.y,s.r,s.r);
+  }
+
+  // 金色耀核
+  const coreX=w*((hourFloat-6)/12),coreY=h*.58;
+  if(coreX>-60&&coreX<w+60){
+    const g=ctx.createRadialGradient(coreX,coreY,0,coreX,coreY,h*.5);
+    g.addColorStop(0,'rgba(255,236,182,.8)');
+    g.addColorStop(.25,'rgba(255,206,120,.36)');
+    g.addColorStop(1,'rgba(255,170,80,0)');
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(coreX,coreY,h*.5,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='rgba(255,247,216,.96)';
+    ctx.beginPath();ctx.arc(coreX,coreY,h*.05,0,Math.PI*2);ctx.fill();
+  }
+
+  // 金色全息环 + 六边形科技节点
+  ctx.save();
+  ctx.translate(w*.2,h*.18);ctx.rotate(-.18);
+  ctx.strokeStyle='rgba(255,200,90,.32)';ctx.lineWidth=1.2;
+  ctx.beginPath();ctx.ellipse(0,0,w*.17,h*.055,0,0,Math.PI*2);ctx.stroke();
+  ctx.strokeStyle='rgba(255,200,90,.12)';
+  ctx.beginPath();ctx.ellipse(0,0,w*.17+9,h*.055+4,0,0,Math.PI*2);ctx.stroke();
+  ctx.fillStyle='rgba(255,220,150,.65)';
+  for(let i=0;i<7;i++){
+    const ax=Math.cos(i/7*Math.PI*2)*w*.17,ay=Math.sin(i/7*Math.PI*2)*h*.055;
+    ctx.fillRect(ax-1,ay-1,2,2);
+  }
+  ctx.restore();
+
+  // 黄金天梯缆索
+  ctx.save();ctx.globalCompositeOperation='lighter';
+  for(const t of city.tethers){
+    const x=w*t.x;
+    const tg=ctx.createLinearGradient(0,0,0,h*.58);
+    tg.addColorStop(0,'rgba(255,214,120,.4)');
+    tg.addColorStop(.55,'rgba(255,214,120,.13)');
+    tg.addColorStop(1,'rgba(255,214,120,0)');
+    ctx.strokeStyle=tg;ctx.lineWidth=1.2;
+    ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h*.58);ctx.stroke();
+    for(let k=1;k<=5;k++){
+      const ry=h*(.05+k*.085);
+      ctx.strokeStyle='rgba(255,220,130,'+(.26-k*.03)+')';
+      ctx.beginPath();ctx.ellipse(x,ry,8,2,0,0,Math.PI*2);ctx.stroke();
+    }
+    const cy=((city.t*.022+t.ph)%1)*h*.5;
+    ctx.fillStyle='rgba(255,238,180,.95)';ctx.fillRect(x-2,cy,4,12);
+    ctx.fillStyle='rgba(255,150,70,.85)';ctx.fillRect(x-1,cy+12,2,2);
+  }
+  ctx.restore();
+
+  // 金色楼宇
+  for(let L=0;L<city.buildings.length;L++){
+    const arr=city.buildings[L];
+    for(const b of arr){
+      ctx.fillStyle=L===0?'rgba(22,14,5,'+b.alpha+')':L===1?'rgba(17,11,4,'+b.alpha+')':'rgba(13,8,2,'+b.alpha+')';
+      ctx.fillRect(b.x,b.top,b.w,b.h);
+      if(b.spire){
+        ctx.fillStyle='rgba(30,20,8,.95)';
+        ctx.fillRect(b.x+b.w*.46,b.top-h*.06,b.w*.08,h*.06);
+        ctx.fillStyle='rgba(255,196,80,.8)';
+        ctx.fillRect(b.x+b.w*.47,b.top-h*.065,2,2);
+      }
+      if(b.neon){
+        ctx.fillStyle='rgba(255,186,74,.42)';
+        ctx.fillRect(b.x+2,b.top+4,1.2,b.h*.4);
+      }
+      const cols=Math.max(1,Math.floor(b.w/7)),rows=Math.max(1,Math.floor(b.h/10));
+      for(let r=0;r<rows;r++){
+        for(let c=0;c<cols;c++){
+          if(!b.lit[r*cols+c])continue;
+          const wx=b.x+3+c*((b.w-6)/cols);
+          const wy=b.top+5+r*((b.h-8)/rows);
+          ctx.fillStyle=(c*3+r)%7===0?'rgba(255,236,190,.82)':'rgba(255,196,96,.55)';
+          ctx.fillRect(wx,wy,1.6,2.2);
+        }
+      }
+      if(b.holo&&b.w>30&&b.h>h*.15){
+        const hs=b.holoSeed;
+        const hw=Math.min(b.w*.86,86),hh=Math.max(10,Math.min(h*.105,b.h*.16));
+        const hx=b.x+(b.w-hw)/2,hy=b.top+b.h*.16;
+        const flick=.7+.3*Math.sin(city.t*4+hs*3);
+        ctx.save();ctx.globalAlpha=.82*flick;
+        ctx.fillStyle='rgba(255,200,90,.14)';ctx.fillRect(hx,hy,hw,hh);
+        ctx.strokeStyle='rgba(255,200,90,.6)';ctx.lineWidth=1;ctx.strokeRect(hx+.5,hy+.5,hw-1,hh-1);
+        ctx.fillStyle='rgba(255,200,90,.18)';
+        for(let yy=hy+2;yy<hy+hh-1;yy+=3)ctx.fillRect(hx+1,yy,hw-2,1);
+        const labels=['AU.','GOLD','ROYAL','VAULT','999','LUX'];
+        ctx.font='700 '+Math.max(7,hh*.55).toFixed(1)+'px '+FONT_D;
+        ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillStyle='rgba(255,224,150,.95)';ctx.shadowBlur=9;ctx.shadowColor='rgba(255,190,90,.7)';
+        ctx.fillText(labels[Math.floor(hs*1.7)%labels.length],hx+hw/2,hy+hh/2+.5);
+        ctx.restore();
+      }
+    }
+  }
+
+  // 金色大气雾
+  const hz=ctx.createLinearGradient(0,h*.34,0,h);
+  hz.addColorStop(0,'rgba(255,214,150,0)');
+  hz.addColorStop(.75,'rgba(255,205,140,.12)');
+  hz.addColorStop(1,'rgba(255,225,170,.24)');
+  ctx.fillStyle=hz;ctx.fillRect(0,h*.34,w,h*.66);
+
+  // 金色探照灯
+  ctx.save();ctx.globalCompositeOperation='lighter';
+  for(let i=0;i<3;i++){
+    const bx=w*(.16+i*.3),by=h*.58;
+    const ang=(i-1)*.17+Math.sin(city.t*.3+i*1.7)*.12;
+    const lg=ctx.createLinearGradient(bx,by,bx+Math.sin(ang)*h*.8,by-h*.8);
+    lg.addColorStop(0,'rgba(255,214,120,.14)');
+    lg.addColorStop(1,'rgba(255,214,120,0)');
+    ctx.fillStyle=lg;ctx.beginPath();
+    ctx.moveTo(bx,by);
+    ctx.lineTo(bx-16+Math.sin(ang)*h*.8,by-h*.8);
+    ctx.lineTo(bx+16+Math.sin(ang)*h*.8,by-h*.8);
+    ctx.closePath();ctx.fill();
+  }
+  ctx.restore();
+
+  // 金色飞行载具 + 巡逻无人机
+  if(!settings.motion){
+    for(const car of city.cars){
+      car.x+=car.sp*.016;
+      if(car.x>w+40)car.x=-40;
+      if(car.x<-40)car.x=w+40;
+      const dir=Math.sign(car.sp)||1;
+      const g=ctx.createLinearGradient(car.x-car.len*dir,car.y,car.x,car.y);
+      g.addColorStop(0,'rgba(0,0,0,0)');
+      g.addColorStop(1,'rgba(255,205,100,.9)');
+      ctx.strokeStyle=g;ctx.lineWidth=1.1;ctx.globalAlpha=.55;
+      ctx.beginPath();ctx.moveTo(car.x-car.len*dir,car.y);ctx.lineTo(car.x,car.y);ctx.stroke();
+      ctx.globalAlpha=.95;ctx.fillStyle='#ffd76a';
+      ctx.fillRect(car.x,car.y-1,3.2*car.s,2*car.s);
+      ctx.fillStyle='rgba(255,255,255,.8)';ctx.fillRect(car.x+dir*1.2*car.s,car.y-.6,1.2,1.2);
+      ctx.globalAlpha=.35;ctx.fillStyle='#ffd76a';ctx.fillRect(car.x-1,car.y+2,5*car.s,1);
+      ctx.globalAlpha=1;
+    }
+    for(const d of city.drones){
+      d.x+=d.sp*.016;
+      d.y+=Math.sin(city.t*2.1+d.ph)*.09;
+      if(d.x>w+30)d.x=-30;
+      if(d.x<-30)d.x=w+30;
+      ctx.save();ctx.translate(d.x,d.y);ctx.scale(d.s,d.s);
+      ctx.strokeStyle='rgba(255,205,120,.5)';ctx.lineWidth=.8;
+      for(const a of [.785,2.356,3.927,5.498]){
+        const rx=Math.cos(a)*7,ry=Math.sin(a)*4;
+        ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(rx,ry);ctx.stroke();
+        ctx.beginPath();ctx.arc(rx,ry,2.1,0,Math.PI*2);ctx.stroke();
+      }
+      ctx.fillStyle='rgba(30,20,8,.95)';ctx.fillRect(-3,-2.2,6,4.4);
+      const blink=Math.sin(city.t*7+d.ph)>0;
+      ctx.fillStyle=blink?'rgba(255,160,70,.95)':'rgba(255,214,120,.7)';
+      ctx.fillRect(-.9,-.9,1.8,1.8);
+      ctx.restore();
+    }
+  }
+
+  // 金色天气粒子
+  if(kind==='rain'||kind==='storm'){
+    ctx.strokeStyle='rgba(255,214,150,.4)';ctx.lineWidth=1;
+    for(const d of city.rain){
+      if(!settings.motion){d.y+=d.sp*.016;d.x-=d.sp*.003;}
+      if(d.y>h){d.y=-10;d.x=Math.random()*w;}
+      ctx.beginPath();ctx.moveTo(d.x,d.y);ctx.lineTo(d.x-1.2,d.y+d.l);ctx.stroke();
+    }
+  }
+  if(kind==='snow'){
+    ctx.fillStyle='rgba(255,240,205,.8)';
+    for(const d of city.snow){
+      if(!settings.motion){d.y+=d.sp*.016;d.x+=Math.sin(city.t+d.p)*.2;}
+      if(d.y>h){d.y=-6;d.x=Math.random()*w;}
+      ctx.beginPath();ctx.arc(d.x,d.y,d.r,0,Math.PI*2);ctx.fill();
+    }
+  }
+
+  // 金色暗角
+  const vg=ctx.createRadialGradient(w/2,h*.5,h*.2,w/2,h*.5,h*.85);
+  vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(20,10,0,.5)');
+  ctx.fillStyle=vg;ctx.fillRect(0,0,w,h);
+}
+
 function cityLoop(ts){
   requestAnimationFrame(cityLoop);
   if(document.hidden)return;
   if(gameWrap.classList.contains('active')||imApp.classList.contains('active')||settingsApp.classList.contains('active')||songScreen.classList.contains('active')||chapterScreen.classList.contains('active')||songSelectScreen.classList.contains('active'))return;
+  const storeAppEl=document.getElementById('storeApp');
+  if(storeAppEl&&storeAppEl.classList.contains('active'))return;
   if(Math.min(window.innerWidth,window.innerHeight)<820&&ts-city.last<50)return;
   if(settings.motion&&ts-city.last<400)return;
   city.last=ts;
-  drawWindowCity(ts);
+  if(account.sceneryOn)drawGoldenCity(ts);else drawWindowCity(ts);
 }
 
 /* ============================================================
@@ -1925,7 +2609,7 @@ function openIM(){
   imApp.classList.add('active');
   state='IM';
   $('#imDetail').classList.remove('active');
-  renderFeed('feed');
+  renderFeed('store');
   playUIMusic('im',true);
   uiSound(1.1);
 }
@@ -1979,12 +2663,15 @@ function syncSettingsUI(){
   renderNoteSkinPreview();
   syncPerfSeg();
   syncDevButton();
+  const tp=$('#tPhone');if(tp){tp.classList.toggle('locked',!account.phone);setSwitch('#tPhone',!!account.phoneOn);}
+  const tl=$('#tLobby');if(tl){tl.classList.toggle('locked',!account.lobby);setSwitch('#tLobby',!!account.lobbyOn);}
+  const ts=$('#tScenery');if(ts){ts.classList.toggle('locked',!account.scenery);setSwitch('#tScenery',!!account.sceneryOn);}
   if(user)$('#setUser').textContent=user.name;
 }
 function syncTrackSkinUI(){
   const sk=getTrackSkin();
   const el=$('#vTrackSkin');
-  if(el)el.textContent=sk.name+'  '+(activeTrackSkin+1)+'/20';
+  if(el)el.textContent=sk.name+'  '+(activeTrackSkin+1)+'/21';
 }
 function syncMirrorBtn(){
   const b=$('#btnMirror');
@@ -2065,6 +2752,7 @@ function renderSkinPreview(){
   c.setLineDash([]);
   c.strokeStyle=rgba(A,.32);
   c.beginPath();c.moveTo(x+.5,0);c.lineTo(x+.5,H);c.moveTo(x+w-.5,0);c.lineTo(x+w-.5,H);c.stroke();
+  if(activeTrackSkin===20){drawGoldenFiligree(c,x,w,H,laneW);}
   // scan band (static)
   const sy=H*.34;
   const scan=c.createLinearGradient(0,sy-30,0,sy+30);
@@ -2097,6 +2785,7 @@ function applySettings(){
   Object.keys(uiTracks).forEach(k=>{const a=uiTracks[k];if(a)a.volume=uiMusicVolume();});
   if(typeof updateScrollSpeed==='function')updateScrollSpeed();
   document.body.classList.toggle('reduce-motion',settings.motion);
+  document.body.classList.toggle('perf-eco',settings.perfMode==='ultra'||settings.perfMode==='low');
   settings.trackSkin=activeTrackSkin;
   saveSettings();
 }
@@ -2278,6 +2967,7 @@ function postRow(p,idx){
 }
 function renderFeed(tab){
   const feed=$('#imFeed');
+  if(tab==='store'){renderStoreLanding();return;}
   const totalLikes=IM_POSTS.reduce((s,p)=>s+likeCount(p),0);
   const summary=`<div class="im-summary"><span>LOCAL NETWORK</span><b>${String(IM_POSTS.length).padStart(2,'0')}</b>SIGNALS <b>${String(IM_POSTS.length).padStart(2,'0')}</b>OPERATORS <b>${totalLikes}</b>LIKES <span class="dim">SYNCED</span></div>`;
   if(tab==='mine'){
@@ -2385,6 +3075,52 @@ function uiSound(pitch){
     const g=c.createGain();g.gain.value=.12;
     s.connect(g);g.connect(c.destination);s.start();
   }catch(e){}
+}
+
+/* ---- 皇室奢华音效（抽奖专用，Web Audio 合成，无外部文件） ------------------ */
+function royalTone(freq,delay,dur,vol,type){
+  const c=ensureAudioCtx();if(!c)return;
+  try{
+    if(c.state==='suspended')c.resume().catch(()=>{});
+    const t=c.currentTime+(delay||0);
+    const o=c.createOscillator();o.type=type||'sine';o.frequency.value=freq;
+    const g=c.createGain();const a=vol||.16;
+    g.gain.setValueAtTime(0,t);
+    g.gain.linearRampToValueAtTime(a,t+.012);
+    g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+    o.connect(g);g.connect(c.destination);
+    o.start(t);o.stop(t+dur+.06);
+  }catch(e){}
+}
+function royalSfx(kind){
+  if(!settings.ui)return;
+  const c=ensureAudioCtx();if(!c)return;
+  if(kind==='tap'){/* 点击抽奖：金色上行琶音 */
+    royalTone(523.25,0,.5,.16,'sine');
+    royalTone(659.25,.06,.5,.15,'sine');
+    royalTone(783.99,.12,.55,.15,'sine');
+    royalTone(1046.5,.18,.6,.17,'sine');
+    royalTone(1318.5,.25,.7,.13,'triangle');
+  }else if(kind==='spin'){/* 动画启动：低音蓄势上行 */
+    royalTone(130.81,0,.45,.12,'sine');
+    royalTone(196,.06,.45,.11,'sine');
+    royalTone(261.63,.12,.5,.12,'triangle');
+    royalTone(329.63,.18,.55,.12,'triangle');
+    royalTone(392,.24,.6,.12,'triangle');
+  }else if(kind==='reveal'){/* 白屏揭示：高亮钟声 */
+    royalTone(1046.5,0,.9,.2,'sine');
+    royalTone(1567.98,.02,1,.16,'triangle');
+    royalTone(2093,.04,.95,.14,'sine');
+    royalTone(2637,.06,1.1,.1,'sine');
+  }else if(kind==='sss'){/* SSS 大奖：华丽彩虹琶音 */
+    royalTone(523.25,0,.42,.16,'sine');
+    royalTone(659.25,.05,.42,.16,'sine');
+    royalTone(783.99,.1,.46,.16,'sine');
+    royalTone(1046.5,.15,.5,.18,'sine');
+    royalTone(1318.5,.2,.55,.18,'triangle');
+    royalTone(1567.98,.26,.6,.18,'triangle');
+    royalTone(2093,.32,.75,.16,'sine');
+  }
 }
 
 /* ============================================================
@@ -3731,6 +4467,12 @@ function endGame(){
   unlockExIfPossible();
   markSongCleared(selectedSong);
 
+  /* 苍穹星：0 分不给；按难度 / 评级 / AP / 全连 结算 */
+  const star=stardustFor(selectedSong?selectedSong.level:1,rank,isAP,isFC,finalScore);
+  if(star>0){account.currency+=star;saveAccount();}
+  const starEl=$('#resStar');
+  if(starEl)starEl.innerHTML=starSVG(18)+'<b>+'+star+'</b> 苍穹星';
+
   $('#resRank').textContent=rank;
   $('#resRank').classList.toggle('ap',isRankAP);
   $('#resRank').classList.toggle('fc',isFC&&!isRankAP);
@@ -4348,8 +5090,46 @@ const TRACK_SKINS=[
   {name:'雷霆',a:[250,204,21],b:[59,130,246],col:'stripe',div:'dash',dim:.85},
   {name:'月面',a:[203,213,225],b:[148,163,184],c:[196,181,253],col:'grad',div:'dot',dim:.5},
   {name:'紫霞',a:[167,139,250],b:[233,213,255],col:'fade',div:'line',dim:.55},
-  {name:'晨曦',a:[254,215,170],b:[253,186,116],c:[56,189,248],col:'grad',div:'double',dim:.7}
+  {name:'晨曦',a:[254,215,170],b:[253,186,116],c:[56,189,248],col:'grad',div:'double',dim:.7},
+  {name:'黄金奢华',a:[255,211,102],b:[232,200,118],c:[255,176,64],col:'grad',div:'double',dim:.9}
 ];
+
+/* 黄金奢华轨道 · 鎏金雕花纹样（菱形嵌饰 + 连珠 + 回纹横带），仅 index 20 启用。
+   一次绘制进缓存画布，不参与逐帧渲染，零额外开销。 */
+function drawGoldenFiligree(c,x,tw,h,laneW){
+  const gold=(a)=>'rgba(255,214,120,'+a+')';
+  const pale=(a)=>'rgba(255,244,205,'+a+')';
+  const deep=(a)=>'rgba(180,138,58,'+a+')';
+  const diamond=(cx,cy,r)=>{c.beginPath();c.moveTo(cx,cy-r);c.lineTo(cx+r,cy);c.lineTo(cx,cy+r);c.lineTo(cx-r,cy);c.closePath();c.fill();};
+  // 轨道左右内侧鎏金描边
+  c.strokeStyle=gold(.5);c.lineWidth=1.2;
+  c.beginPath();c.moveTo(x+2,0);c.lineTo(x+2,h);c.moveTo(x+tw-2,0);c.lineTo(x+tw-2,h);c.stroke();
+  // 分界线：串菱形鎏金嵌饰（大菱形套高光芯）
+  for(let i=0;i<=4;i++){
+    const lx=Math.round(x+i*laneW)+.5;
+    for(let yy=12;yy<h;yy+=44){
+      c.fillStyle=gold(.8);diamond(lx,yy,5.2);
+      c.fillStyle=pale(.95);diamond(lx,yy,2.1);
+    }
+  }
+  // 车道中心：斜向连珠小菱形纹路（低透明，衬出层次）
+  for(let i=0;i<4;i++){
+    const cx2=x+i*laneW+laneW/2;
+    for(let yy=34;yy<h;yy+=62){
+      c.fillStyle=gold(.28);diamond(cx2,yy,3.4);
+      c.fillStyle=pale(.32);diamond(cx2,yy,1.2);
+    }
+  }
+  // 上下端鎏金回纹横带
+  const band=(by)=>{
+    const g=c.createLinearGradient(x,0,x+tw,0);
+    g.addColorStop(0,deep(0));g.addColorStop(.5,gold(.55));g.addColorStop(1,deep(0));
+    c.fillStyle=g;c.fillRect(x,by,tw,2);
+    c.fillStyle=gold(.3);
+    for(let bx=x+6;bx<x+tw-6;bx+=18)diamond(bx,by+1,2.4);
+  };
+  band(4);band(h-6);
+}
 let pfCache=null,pfCacheKey='';
 function buildPlayfieldCache(){
   const w=V.w,h=V.h,x=V.x,tw=V.trackW;
@@ -4444,6 +5224,7 @@ function buildPlayfieldCache(){
   c.setLineDash([]);
   c.strokeStyle=rgba(A,.32);
   c.beginPath();c.moveTo(x+.5,0);c.lineTo(x+.5,h);c.moveTo(x+tw-.5,0);c.lineTo(x+tw-.5,h);c.stroke();
+  if(activeTrackSkin===20){drawGoldenFiligree(c,x,tw,h,V.laneW);}
   return cv;
 }
 function drawPlayfield(){
@@ -6304,6 +7085,42 @@ function wireUI(){
     else if(e.key==='Escape'){e.preventDefault();e.stopPropagation();closeDevModal();}
   });
   bind('#btnPauseSet','click',()=>openSettings('PAUSE'));
+  /* ---- Store + 存档码 + 皮肤收藏开关 ---- */
+  bind('#storeBack','click',closeStore);
+  bind('#btnDrawOne','click',()=>doDraw(false));
+  bind('#btnDrawTen','click',()=>doDraw(true));
+  bind('#btnPrizeDetail','click',()=>{const m=$('#prizeModal');if(m){renderPrizeDetail();m.classList.add('active');}uiSound(1.1);});
+  bind('#prizeModalClose','click',()=>$('#prizeModal').classList.remove('active'));
+  bind('#prizeModal','click',e=>{if(e.target===e.currentTarget)$('#prizeModal').classList.remove('active');});
+  bind('#tPhone','click',()=>{
+    if(!account.phone){showExNotice('LOCKED','抽中「鎏金终端」后解锁');uiSound(.6);return;}
+    account.phoneOn=!account.phoneOn;saveAccount();applySkins();
+    setSwitch('#tPhone',account.phoneOn);syncSettingsUI();uiSound(1.3);
+  });
+  bind('#tLobby','click',()=>{
+    if(!account.lobby){showExNotice('LOCKED','抽中「金殿 · 皇室大厅」后解锁');uiSound(.6);return;}
+    account.lobbyOn=!account.lobbyOn;saveAccount();applySkins();
+    setSwitch('#tLobby',account.lobbyOn);syncSettingsUI();uiSound(1.3);
+  });
+  bind('#tScenery','click',()=>{
+    if(!account.scenery){showExNotice('LOCKED','抽中「黄金奢华外景」后解锁');uiSound(.6);return;}
+    account.sceneryOn=!account.sceneryOn;saveAccount();applySkins();
+    setSwitch('#tScenery',account.sceneryOn);syncSettingsUI();uiSound(1.3);
+  });
+  bind('#btnExport','click',()=>{
+    const code=exportSave();
+    if(!code){showExNotice('EXPORT FAILED','无法生成存档码');return;}
+    try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(code).catch(()=>{});}}catch(e){}
+    prompt('你的存档码（已尝试复制，也可手动复制保存；可在任何浏览器/设备恢复）：',code);
+    uiSound(1.3);
+  });
+  bind('#btnImport','click',()=>{
+    const code=prompt('粘贴存档码以恢复全部进度（跨浏览器/设备）');
+    if(!code||!code.trim())return;
+    const ok=importSave(code.trim());
+    if(ok){syncSettingsUI();renderUser();applyUnlocks();showExNotice('IMPORT OK','进度已恢复');uiSound(1.4);}
+    else{showExNotice('IMPORT FAILED','存档码无效');uiSound(.6);}
+  });
   bind('#btnSwitchUser','click',()=>{
     closeSettings();
     stopAllUIMusic();
@@ -6326,10 +7143,10 @@ function wireUI(){
   bind('#sVol','input',()=>{settings.volume=clamp(parseInt(vo.value,10)||0,0,100);$('#vVol').textContent=Math.round(settings.volume)+'%';applySettings();});
   bind('#sHitVol','input',()=>{settings.hitVol=clamp(parseInt(hv.value,10)||0,0,100);$('#vHitVol').textContent=Math.round(settings.hitVol)+'%';saveSettings();});
   bind('#sInputOffset','input',()=>{settings.inputOffset=clamp(parseInt($('#sInputOffset').value,10)||0,-150,150);$('#vInputOffset').textContent=(settings.inputOffset>0?'+':'')+settings.inputOffset+'ms';saveSettings();});
-  bind('#btnSkinPrev','click',()=>{setTrackSkin(activeTrackSkin-1);syncTrackSkinUI();renderSkinPreview();uiSound(1.3);});
-  bind('#btnSkinNext','click',()=>{setTrackSkin(activeTrackSkin+1);syncTrackSkinUI();renderSkinPreview();uiSound(1.3);});
-  bind('#btnNoteSkinPrev','click',()=>{setNoteSkin(getNoteSkinIndex()-1);uiSound(1.3);});
-  bind('#btnNoteSkinNext','click',()=>{setNoteSkin(getNoteSkinIndex()+1);uiSound(1.3);});
+  bind('#btnSkinPrev','click',()=>{cycleTrackSkin(-1);uiSound(1.3);});
+  bind('#btnSkinNext','click',()=>{cycleTrackSkin(1);uiSound(1.3);});
+  bind('#btnNoteSkinPrev','click',()=>{cycleNoteSkin(-1);});
+  bind('#btnNoteSkinNext','click',()=>{cycleNoteSkin(1);});
   bind('#tEarly','click',()=>{settings.early=!settings.early;setSwitch('#tEarly',settings.early);saveSettings();uiSound(1.4);});
   bind('#tHit','click',()=>{settings.hit=!settings.hit;setSwitch('#tHit',settings.hit);saveSettings();uiSound(1.4);});
   bind('#tUI','click',()=>{settings.ui=!settings.ui;setSwitch('#tUI',settings.ui);saveSettings();});

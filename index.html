@@ -45,6 +45,7 @@
     <div class="phone" id="phone">
       <div class="phone-side"></div>
       <div class="phone-frame">
+        <div class="phone-gild" aria-hidden="true"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i><b class="gem"></b></div>
         <div class="phone-screen" id="phoneScreen">
           <div class="notch"></div>
 
@@ -133,6 +134,21 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <div class="royal-props" aria-hidden="true">
+    <div class="rp-cornice"></div>
+    <div class="rp-curtain cl"><i class="tie"></i></div>
+    <div class="rp-curtain cr"><i class="tie"></i></div>
+    <div class="rp-pillar pl"><i class="cap"></i><i class="shaft"></i><i class="base"></i></div>
+    <div class="rp-pillar pr"><i class="cap"></i><i class="shaft"></i><i class="base"></i></div>
+    <div class="rp-painting pa"><i class="frame"></i></div>
+    <div class="rp-painting pb"><i class="frame"></i></div>
+    <div class="rp-fireplace"><i class="mantel"></i><i class="flame"></i><i class="grate"></i><b class="ornt"></b></div>
+    <div class="rp-bookshelf"><i></i><i></i><i></i><i></i><i></i><b></b></div>
+    <div class="rp-carpet"></div>
+    <div class="rp-vase"><i class="body"></i><i class="flower"></i></div>
+    <div class="rp-crest"></div>
   </div>
 
   <div class="room-shade"></div>
@@ -434,8 +450,9 @@
   </header>
 
   <div class="im-tabs">
-    <button class="im-tab active" data-tab="feed"><b>01</b>FOR YOU</button>
-    <button class="im-tab" data-tab="mine"><b>02</b>MY SIGNAL</button>
+    <button class="im-tab active" data-tab="store"><b>01</b>STORE</button>
+    <button class="im-tab" data-tab="feed"><b>02</b>FOR YOU</button>
+    <button class="im-tab" data-tab="mine"><b>03</b>MY SIGNAL</button>
   </div>
 
   <div class="im-feed" id="imFeed"></div>
@@ -445,6 +462,112 @@
     <div id="imDetailBody"></div>
   </div>
 </section>
+
+<!-- ================= STORE（皇室宝库 · 抽奖） ================= -->
+<section id="storeApp" class="layer store-app">
+  <div class="store-bg" aria-hidden="true"></div>
+  <div class="store-decor" aria-hidden="true">
+    <div class="st-cornice"></div>
+    <div class="st-drape dl"><i></i></div>
+    <div class="st-drape dr"><i></i></div>
+    <div class="st-pillar pl"><i class="cap"></i><i class="shaft"></i><i class="base"></i></div>
+    <div class="st-pillar pr"><i class="cap"></i><i class="shaft"></i><i class="base"></i></div>
+    <div class="st-crest"></div>
+    <div class="st-carpet"></div>
+    <div class="st-sconce sl"><i></i></div>
+    <div class="st-sconce sr"><i></i></div>
+  </div>
+  <header class="store-top">
+    <button class="back-btn" id="storeBack" aria-label="返回" onclick="closeStore()">←</button>
+    <div class="store-brand">ROYAL <span>//</span> VAULT</div>
+    <div class="store-balance-top"><span id="storeCur2" class="s-cur2">0</span><span class="s-cur2-svg"></span><em>苍穹星</em></div>
+  </header>
+
+  <div class="store-body">
+    <div class="store-showcase">
+      <div class="sc-title">ROYAL PRIZES <small>顶级珍宝预览 · B 级不展示</small></div>
+      <div class="sc-row">
+        <div class="sc-card sss">
+          <div class="sc-glow"></div>
+          <div class="sc-ico phone" aria-hidden="true"></div>
+          <div class="sc-tier">SSS</div>
+          <div class="sc-name">鎏金终端 · 皇室手机</div>
+          <div class="sc-own" id="storeOwnPhone">—</div>
+        </div>
+        <div class="sc-card sss">
+          <div class="sc-glow"></div>
+          <div class="sc-ico lobby" aria-hidden="true"></div>
+          <div class="sc-tier">SSS</div>
+          <div class="sc-name">金殿 · 皇室大厅</div>
+          <div class="sc-own" id="storeOwnLobby">—</div>
+        </div>
+        <div class="sc-card sss">
+          <div class="sc-glow"></div>
+          <div class="sc-ico scenery" aria-hidden="true"></div>
+          <div class="sc-tier">SSS</div>
+          <div class="sc-name">黄金苍穹 · 黄金奢华外景</div>
+          <div class="sc-own" id="storeOwnScenery">—</div>
+        </div>
+        <div class="sc-card s">
+          <div class="sc-glow"></div>
+          <div class="sc-ico note" aria-hidden="true"></div>
+          <div class="sc-tier">S</div>
+          <div class="sc-name">按键皮肤 ×2</div>
+          <div class="sc-own" id="storeOwnNote">0/3</div>
+        </div>
+        <div class="sc-card s">
+          <div class="sc-glow"></div>
+          <div class="sc-ico royal-track" aria-hidden="true"></div>
+          <div class="sc-tier">S</div>
+          <div class="sc-name">黄金奢华轨道</div>
+          <div class="sc-own" id="storeOwnRoyalTrack">—</div>
+        </div>
+        <div class="sc-card a">
+          <div class="sc-glow"></div>
+          <div class="sc-ico track" aria-hidden="true"></div>
+          <div class="sc-tier">A</div>
+          <div class="sc-name">轨道皮肤 ×19</div>
+          <div class="sc-own" id="storeOwnTrack">0/19</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="store-prize-btn-wrap">
+      <button class="store-prize-btn" id="btnPrizeDetail" type="button"><span class="sp-ico"></span>查看各等级奖品详情<span class="sp-arrow">→</span></button>
+    </div>
+
+    <div class="store-draw">
+      <div class="store-balance-big"><span id="storeCur" class="s-cur">0</span><span class="s-cur-svg"></span><em>苍穹星</em></div>
+      <div class="store-draw-row">
+        <button class="store-draw-btn one" id="btnDrawOne" type="button"><b>单抽</b><span class="s-cost">67 <i></i></span></button>
+        <button class="store-draw-btn ten" id="btnDrawTen" type="button"><b>十连抽</b><span class="s-cost">666 <i></i></span></button>
+      </div>
+      <div class="store-balance-red" id="storeBalanceRed" aria-label="苍穹星剩余数量">
+        <span class="sbr-label">剩余苍穹星</span>
+        <span class="sbr-num" id="storeCur3">0</span>
+        <span class="sbr-svg"></span>
+      </div>
+      <div class="store-odds">SSS 0.1% · S 0.3% · A 9.6%（十连必出 A）· B 90%</div>
+    </div>
+  </div>
+</section>
+
+<!-- 奖品详情弹窗 -->
+<div id="prizeModal" class="prize-modal">
+  <div class="prize-panel">
+    <header class="prize-top">
+      <div class="prize-kicker">ROYAL PRIZE INDEX</div>
+      <button class="prize-close" id="prizeModalClose" aria-label="关闭">✕</button>
+    </header>
+    <div class="prize-body" id="prizeModalBody"></div>
+  </div>
+</div>
+
+<!-- 抽奖动画遮罩 -->
+<div id="drawOverlay" class="draw-overlay">
+  <canvas id="drawCanvas"></canvas>
+  <div class="draw-reveal" id="drawReveal"></div>
+</div>
 
 <!-- ================= SETTINGS ================= -->
 <section id="settingsApp" class="layer settings">
@@ -475,8 +598,8 @@
         <div class="set-control"><input id="sInputOffset" type="range" min="-150" max="150" step="5" value="0"><b id="vInputOffset">0ms</b></div>
       </div>
       <div class="set-row">
-        <div class="set-name">TRACK SKIN <small>轨道皮肤（20 款）</small></div>
-        <div class="set-control track-skin-ctl"><button class="sk-arrow" id="btnSkinPrev">‹</button><b id="vTrackSkin">经典 WELKIN  1/20</b><button class="sk-arrow" id="btnSkinNext">›</button></div>
+        <div class="set-name">TRACK SKIN <small>轨道皮肤（21 款）</small></div>
+        <div class="set-control track-skin-ctl"><button class="sk-arrow" id="btnSkinPrev">‹</button><b id="vTrackSkin">经典 WELKIN  1/21</b><button class="sk-arrow" id="btnSkinNext">›</button></div>
       </div>
       <div class="set-row set-skin-preview">
         <canvas id="skinPreview" width="560" height="150"></canvas>
@@ -528,6 +651,29 @@
       <div class="set-row">
         <div class="set-name">OPERATOR <small id="setUser">—</small></div>
         <button class="set-mini" id="btnSwitchUser">SWITCH</button>
+      </div>
+    </div>
+
+    <div class="set-section">
+      <div class="set-label">COLLECTION <small>收藏 · 皮肤 · 账号</small></div>
+      <div class="set-row">
+        <div class="set-name">PHONE SKIN <small>鎏金终端（SSS）</small></div>
+        <button class="switch" id="tPhone" role="switch" aria-checked="false"><i></i></button>
+      </div>
+      <div class="set-row">
+        <div class="set-name">LOBBY SKIN <small>金殿 · 皇室大厅（SSS）</small></div>
+        <button class="switch" id="tLobby" role="switch" aria-checked="false"><i></i></button>
+      </div>
+      <div class="set-row">
+        <div class="set-name">SCENERY SKIN <small>黄金苍穹 · 黄金奢华外景（SSS）</small></div>
+        <button class="switch" id="tScenery" role="switch" aria-checked="false"><i></i></button>
+      </div>
+      <div class="set-row">
+        <div class="set-name">SAVE DATA <small>存档码跨浏览器/设备永久恢复</small></div>
+        <div class="set-control save-ctl">
+          <button class="set-mini" id="btnExport">EXPORT</button>
+          <button class="set-mini" id="btnImport">IMPORT</button>
+        </div>
       </div>
     </div>
 
@@ -585,6 +731,7 @@
         <div><span>MAX COMBO</span><b id="resC">0</b></div>
       </div>
       <div class="res-best" id="resBest">PERSONAL BEST <b>0000000</b></div>
+      <div class="res-star" id="resStar"></div>
       <div class="res-actions">
         <button class="btn primary" id="btnRetry">RETRY <span>↻</span></button>
         <button class="btn ghost" id="btnBackSong">SONG</button>
@@ -770,6 +917,7 @@
 
 <audio id="bgm" preload="none"></audio>
 <audio id="uiMusic" src="Ui.mp3" loop preload="auto" playsinline style="position:fixed;left:-9999px;top:0;width:1px;height:1px"></audio>
+<audio id="storeMusic" src="Store.mp3" loop preload="auto" playsinline style="position:fixed;left:-9999px;top:0;width:1px;height:1px"></audio>
 
 <script src="corr_chart.js"></script>
 <script src="still_chart.js"></script>
