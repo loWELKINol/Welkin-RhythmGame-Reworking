@@ -409,8 +409,8 @@ function rollTen(){
   return res;
 }
 /* 重复转化：A/S/SSS 抽中已拥有的道具时，当场按品质转化为苍穹星。
-   A → 267，S → 666，SSS → 6700（B 类为星屑，无重复概念，不在此列）。 */
-function dupRefund(tier){return tier==='SSS'?6700:(tier==='S'?666:(tier==='A'?267:0));}
+   A → 67，S → 267，SSS → 670（B 类为星屑，无重复概念，不在此列）。 */
+function dupRefund(tier){return tier==='SSS'?670:(tier==='S'?267:(tier==='A'?67:0));}
 function grantPrize(p){
   if(p.kind==='currency'){account.currency+=p.amount;return {dup:false,amount:p.amount};}
   if(p.kind==='note'){
