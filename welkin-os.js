@@ -107,7 +107,7 @@ settings.volume=clamp(Number(settings.volume)||0,0,100);
 settings.hitVol=clamp(Number(settings.hitVol)||0,0,100);
 settings.inputOffset=clamp(Number(settings.inputOffset)||0,-150,150);
 settings.trackSkin=clamp(Math.floor(Number(settings.trackSkin)||0),0,20);
-settings.keySkin=clamp(Math.floor(Number(settings.keySkin)||0),0,2);
+settings.keySkin=clamp(Math.floor(Number(settings.keySkin)||0),0,6);
 settings.hit=!!settings.hit;settings.ui=!!settings.ui;settings.early=!!settings.early;settings.motion=!!settings.motion;settings.mirror=!!settings.mirror;
 if(settings.perfMode!=='low'&&settings.perfMode!=='high'&&settings.perfMode!=='ultra')settings.perfMode='auto';
 /* Track skin is pinned in its own slot. settings is rewritten/saved in several
@@ -157,7 +157,24 @@ const NOTE_SKINS=[
   {name:'晨曦',classic:false,shape:'chamfer',
    blue:{top:'#fff9f0',mid:'#a8dcf8',bot:'#4a8fc0',edge:[240,250,255],edgeA:.92,glow:[56,189,248],glowA:.4},
    hold:{body:['rgba(104,148,172,.74)','rgba(196,224,242,.72)','rgba(84,126,158,.78)'],
-         edge:'rgba(220,248,255,.80)',cap:['#fff9f0','#cfeafc','#4a8fc0']}}
+         edge:'rgba(220,248,255,.80)',cap:['#fff9f0','#cfeafc','#4a8fc0']}},
+  /* —— 皇室奢华四套：蓝键仍蓝、黄键仍金、押键金括号，只升材质与轮廓 —— */
+  {name:'冠冕',classic:false,shape:'shield',
+   blue:{top:'#f2fbff',mid:'#2e7cc0',bot:'#0b2b50',edge:[205,235,255],edgeA:.95,glow:[64,156,255],glowA:.42,rim:'#f4f9ff',rim2:'#061c34'},
+   hold:{body:['rgba(10,22,38,.94)','rgba(24,44,72,.90)','rgba(7,16,28,.95)'],
+         edge:'rgba(150,232,255,.85)',cap:['#f2fbff','#bfe8ff','#0b2b50']}},
+  {name:'蓝宝',classic:false,shape:'gem',
+   blue:{top:'#eafaff',mid:'#35a0e8',bot:'#0c4f8f',edge:[200,246,255],edgeA:.95,glow:[80,200,255],glowA:.45,rim:'#eafcff',rim2:'#07273f'},
+   hold:{body:['rgba(12,26,46,.92)','rgba(30,58,96,.88)','rgba(8,18,34,.95)'],
+         edge:'rgba(170,240,255,.85)',cap:['#eafaff','#c4efff','#0c4f8f']}},
+  {name:'圣铠',classic:false,shape:'arch',
+   blue:{top:'#f4f6ff',mid:'#3a6ea8',bot:'#12263f',edge:[214,228,255],edgeA:.95,glow:[120,180,255],glowA:.4,rim:'#eef2ff',rim2:'#0a1a30'},
+   hold:{body:['rgba(14,24,38,.94)','rgba(26,44,66,.90)','rgba(9,16,26,.95)'],
+         edge:'rgba(160,212,255,.82)',cap:['#f4f6ff','#c8d8f2','#12263f']}},
+  {name:'星冠',classic:false,shape:'diamond',
+   blue:{top:'#ffffff',mid:'#2f86d8',bot:'#0a3a70',edge:[224,246,255],edgeA:.96,glow:[90,190,255],glowA:.46,rim:'#f2fbff',rim2:'#052b4e'},
+   hold:{body:['rgba(12,24,42,.94)','rgba(28,54,92,.90)','rgba(8,16,30,.95)'],
+         edge:'rgba(160,235,255,.85)',cap:['#ffffff','#c8ecff','#0a3a70']}}
 ];
 function noteSkinCount(){return NOTE_SKINS.length;}
 function getNoteSkin(){
@@ -280,7 +297,7 @@ const STORE_FLAG_KEY='welkin_os_store_v1_init';
 const CURR_GRANT_KEY='welkin_os_store_v2_currency';
 const STAR_COST_ONE=67, STAR_COST_TEN=666;
 function genId(){return 'WK-'+Date.now().toString(36).toUpperCase()+'-'+Math.random().toString(36).slice(2,8).toUpperCase();}
-function freshAccount(){return {id:'',currency:666,unlockedNote:[0],unlockedTrack:[0],phone:false,lobby:false,scenery:false,phoneOn:false,lobbyOn:false,sceneryOn:false};}
+function freshAccount(){return {id:'',currency:666,unlockedNote:[0],unlockedTrack:[0],phone:false,lobby:false,scenery:false,phoneui:false,phoneOn:false,lobbyOn:false,sceneryOn:false,phoneuiOn:false};}
 let account=freshAccount();
 function loadAccount(){
   try{
@@ -309,6 +326,7 @@ function applySkins(){
     document.body.classList.toggle('sss-phone',!!account.phoneOn);
     document.body.classList.toggle('sss-lobby',!!account.lobbyOn);
     document.body.classList.toggle('sss-scenery',!!account.sceneryOn);
+    document.body.classList.toggle('sss-phoneui',!!account.phoneuiOn);
   }catch(e){}
 }
 function ensureAccount(){
@@ -366,15 +384,18 @@ function hexa(hex,a){
 }
 function buildPrizePool(){
   const P=[];
-  /* SSS 1%：3 件，各 1/3 × 1% */
-  const sssP=0.01/3;
+  /* SSS 1%：4 件，各 1/4 × 1% */
+  const sssP=0.01/4;
   P.push({id:'sss-phone',tier:'SSS',p:sssP,kind:'phone',name:'鎏金终端 · 皇室手机',desc:'高奢黄金风格手机外壳 · 鎏金按键 · 金工雕花',owned:()=>!!account.phone});
   P.push({id:'sss-lobby',tier:'SSS',p:sssP,kind:'lobby',name:'金殿 · 皇室大厅',desc:'手机背后大厅焕新为皇室奢华风 · 窗外夜景保留',owned:()=>!!account.lobby});
   P.push({id:'sss-scenery',tier:'SSS',p:sssP,kind:'scenery',name:'黄金苍穹 · 黄金奢华外景',desc:'窗外风景焕新为黄金科技炫酷风格 · 金辉天际线 · 鎏金霓虹',owned:()=>!!account.scenery});
-  /* S 5%：3 件，各 1/3 × 5% */
-  const sP=0.05/3;
+  P.push({id:'sss-phoneui',tier:'SSS',p:sssP,kind:'phoneui',name:'鎏金天幕 · 皇室天气屏',desc:'手机天气屏焕新为皇室黄金动态鎏金风格 · 金箔流光 · 动态鎏金',owned:()=>!!account.phoneui});
+  /* S 5%：5 件，各 1/5 × 5% */
+  const sP=0.05/5;
   P.push({id:'note-1',tier:'S',p:sP,kind:'note',skinIndex:1,name:'按键皮肤 · 白昼',desc:'轮廓环光 · 冰白配色',owned:()=>isNoteUnlocked(1)});
   P.push({id:'note-2',tier:'S',p:sP,kind:'note',skinIndex:2,name:'按键皮肤 · 晨曦',desc:'暖阳渐变 · 削角轮廓',owned:()=>isNoteUnlocked(2)});
+  P.push({id:'note-4',tier:'S',p:sP,kind:'note',skinIndex:4,name:'按键皮肤 · 蓝宝',desc:'蓝宝石八面切面 · 皇室高奢材质',owned:()=>isNoteUnlocked(4)});
+  P.push({id:'note-5',tier:'S',p:sP,kind:'note',skinIndex:5,name:'按键皮肤 · 圣铠',desc:'哥特尖拱圣铠 · 皇室高奢材质',owned:()=>isNoteUnlocked(5)});
   P.push({id:'track-20',tier:'S',p:sP,kind:'track',skinIndex:20,name:'轨道皮肤 · 黄金奢华',desc:'黄金奢华风轨道 · 鎏金流光 · 高端质感',owned:()=>isTrackUnlocked(20)});
   /* A 24%：19 款轨道皮肤（除默认） */
   const aEach=0.24/19;
@@ -424,6 +445,7 @@ function grantPrize(p){
   if(p.kind==='phone'){if(account.phone){const amt=dupRefund(p.tier);account.currency+=amt;return {dup:true,amount:amt};}account.phone=true;return {dup:false};}
   if(p.kind==='lobby'){if(account.lobby){const amt=dupRefund(p.tier);account.currency+=amt;return {dup:true,amount:amt};}account.lobby=true;return {dup:false};}
   if(p.kind==='scenery'){if(account.scenery){const amt=dupRefund(p.tier);account.currency+=amt;return {dup:true,amount:amt};}account.scenery=true;return {dup:false};}
+  if(p.kind==='phoneui'){if(account.phoneui){const amt=dupRefund(p.tier);account.currency+=amt;return {dup:true,amount:amt};}account.phoneui=true;return {dup:false};}
   return {dup:false};
 }
 
@@ -442,15 +464,37 @@ function starSVG(size){
 
 /* ---- Store 音乐 ------------------------------------------------------------ */
 const storeMusicEl=$('#storeMusic');
+const storeAppEl=$('#storeApp');
+let storeMusicWant=false;
 function playStoreMusic(){
   try{
-    if(storeMusicEl){
-      storeMusicEl.loop=true;storeMusicEl.volume=uiMusicVolume();
-      storeMusicEl.currentTime=0;storeMusicEl.play().catch(()=>{});
+    if(!storeMusicEl)return;
+    storeMusicWant=true;
+    storeMusicEl.loop=true;
+    storeMusicEl.volume=uiMusicVolume();
+    /* 二次进入时音频可能已被浏览器回收（networkState 回到 EMPTY）或残留上次 error，
+       先重新 load 再播，避免 play() 静默失败导致音乐“丢失” */
+    if(storeMusicEl.error||storeMusicEl.networkState===0||storeMusicEl.readyState===0){
+      try{storeMusicEl.load();}catch(e){}
+    }
+    const start=()=>{
+      if(!storeMusicWant)return;
+      storeMusicEl.volume=uiMusicVolume();
+      try{const p=storeMusicEl.play();if(p&&p.then)p.catch(()=>{});}catch(e){}
+    };
+    try{storeMusicEl.currentTime=0;}catch(e){}
+    if(storeMusicEl.readyState>=2){start();}
+    else{
+      storeMusicEl.addEventListener('canplay',start,{once:true});
+      storeMusicEl.addEventListener('loadeddata',start,{once:true});
+      start();
     }
   }catch(e){}
 }
-function stopStoreMusic(){try{if(storeMusicEl)storeMusicEl.pause();}catch(e){}}
+function stopStoreMusic(){
+  storeMusicWant=false;
+  try{if(storeMusicEl)storeMusicEl.pause();}catch(e){}
+}
 
 /* ---- Store 落地页（iM 01 位） --------------------------------------------- */
 function renderStoreLanding(){
@@ -531,6 +575,7 @@ function renderStore(){
   const oPhone=$('#storeOwnPhone');if(oPhone)oPhone.textContent=account.phone?'OWNED':'—';
   const oLobby=$('#storeOwnLobby');if(oLobby)oLobby.textContent=account.lobby?'OWNED':'—';
   const oScenery=$('#storeOwnScenery');if(oScenery)oScenery.textContent=account.scenery?'OWNED':'—';
+  const oPhoneui=$('#storeOwnPhoneui');if(oPhoneui)oPhoneui.textContent=account.phoneui?'OWNED':'—';
   const oRTrack=$('#storeOwnRoyalTrack');if(oRTrack)oRTrack.textContent=isTrackUnlocked(20)?'OWNED':'—';
   const bOne=$('#btnDrawOne');if(bOne)bOne.innerHTML='单抽 <span>'+STAR_COST_ONE+'</span>'+starSVG(14);
   const bTen=$('#btnDrawTen');if(bTen)bTen.innerHTML='十连抽 <span>'+STAR_COST_TEN+'</span>'+starSVG(14);
@@ -556,6 +601,7 @@ function renderPrizeDetail(){
       else if(p.kind==='phone')ico='<span class="pm-ico phone"></span>';
       else if(p.kind==='lobby')ico='<span class="pm-ico lobby"></span>';
       else if(p.kind==='scenery')ico='<span class="pm-ico scenery"></span>';
+      else if(p.kind==='phoneui')ico='<span class="pm-ico phoneui"></span>';
       html+=`<div class="pm-item ${owned?'owned':''}">
         <div class="pm-ico-wrap">${ico}</div>
         <div class="pm-name">${esc(p.name)}</div>
@@ -793,6 +839,7 @@ function showDrawReveal(items,ten){
     else if(p.kind==='phone')ico='<span class="dr-ico phone"></span>';
     else if(p.kind==='lobby')ico='<span class="dr-ico lobby"></span>';
     else if(p.kind==='scenery')ico='<span class="dr-ico scenery"></span>';
+    else if(p.kind==='phoneui')ico='<span class="dr-ico phoneui"></span>';
     html+=`<div class="dr-card tier-${p.tier.toLowerCase()}">
       <i class="dr-corner tl"></i><i class="dr-corner tr"></i><i class="dr-corner bl"></i><i class="dr-corner br"></i>
       <i class="dr-gem"></i>
@@ -2810,6 +2857,7 @@ function syncSettingsUI(){
   const tp=$('#tPhone');if(tp){tp.classList.toggle('locked',!account.phone);setSwitch('#tPhone',!!account.phoneOn);}
   const tl=$('#tLobby');if(tl){tl.classList.toggle('locked',!account.lobby);setSwitch('#tLobby',!!account.lobbyOn);}
   const ts=$('#tScenery');if(ts){ts.classList.toggle('locked',!account.scenery);setSwitch('#tScenery',!!account.sceneryOn);}
+  const tui=$('#tPhoneui');if(tui){tui.classList.toggle('locked',!account.phoneui);setSwitch('#tPhoneui',!!account.phoneuiOn);}
   if(user)$('#setUser').textContent=user.name;
 }
 function syncTrackSkinUI(){
@@ -3334,6 +3382,7 @@ function playUIMusic(key,restart=false){
   start();
 }
 function syncUIMusic(restart=false){
+  if(storeAppEl&&storeAppEl.classList.contains('active')){stopAllUIMusic();playStoreMusic();return;}
   if(settingsApp.classList.contains('active'))return playUIMusic('setting',restart);
   if(imApp.classList.contains('active')&&!imApp.classList.contains('im-closing'))return playUIMusic('im',restart);
   if(state==='PHONE')return playUIMusic('phone',restart);
@@ -4016,12 +4065,31 @@ function shapePath(g,bx,by,bw,bh,shape){
     const d=Math.min(bh*.42,bw*.18);
     g.moveTo(bx+d,by);g.lineTo(bx+bw-d,by);g.lineTo(bx+bw,by+d);g.lineTo(bx+bw,by+bh-d);
     g.lineTo(bx+bw-d,by+bh);g.lineTo(bx+d,by+bh);g.lineTo(bx,by+bh-d);g.lineTo(bx,by+d);g.closePath();
+  }else if(shape==='shield'){
+    /* 纹章盾：上沿平、两肩向下斜收、底端收成尖角 */
+    const w=bw*.16;
+    g.moveTo(bx,by);g.lineTo(bx+bw,by);
+    g.lineTo(bx+bw-w,by+bh*.72);g.lineTo(cx,by+bh);
+    g.lineTo(bx+w,by+bh*.72);g.closePath();
+  }else if(shape==='gem'){
+    /* 宝石切面：左右尖、上下各斜切（横长八面） */
+    const tx=Math.min(bw*.16,bh*.9),ty=Math.min(bh*.28,bw*.1);
+    g.moveTo(bx,cy);g.lineTo(bx+tx,by+ty);g.lineTo(bx+bw-tx,by+ty);g.lineTo(bx+bw,cy);
+    g.lineTo(bx+bw-tx,by+bh-ty);g.lineTo(bx+tx,by+bh-ty);g.closePath();
+  }else if(shape==='arch'){
+    /* 哥特尖拱：底平、上沿两侧斜升到中央尖顶 */
+    const leg=bh*.34;
+    g.moveTo(bx,by+bh);g.lineTo(bx,by+leg);g.lineTo(cx,by);
+    g.lineTo(bx+bw,by+leg);g.lineTo(bx+bw,by+bh);g.closePath();
+  }else if(shape==='diamond'){
+    /* 菱形：四角尖（上下尖 + 左右尖） */
+    g.moveTo(cx,by);g.lineTo(bx+bw,cy);g.lineTo(cx,by+bh);g.lineTo(bx,cy);g.closePath();
   }else{
     rr(g,bx,by,bw,bh,bh*.34);
   }
 }
-/* 皮肤化按键的填充：ring 画成空心环，其余按 shape 填渐变 */
-function paintNoteShape(g,bx,by,bw,bh,shape,fill,edgeColor,glowC,glowA){
+/* 皮肤化按键的填充：ring 画成空心环，其余按 shape 填渐变 + 宝石切面高光 + 双层描边 */
+function paintNoteShape(g,bx,by,bw,bh,shape,fill,edgeColor,glowC,glowA,rim,rim2){
   if(shape==='ring'){
     const lw=Math.max(3,bh*.3),ins=lw/2;
     rr(g,bx+ins,by+ins,bw-ins*2,bh-ins*2,Math.min(bw-ins*2,bh-ins*2)*.5);
@@ -4029,6 +4097,26 @@ function paintNoteShape(g,bx,by,bw,bh,shape,fill,edgeColor,glowC,glowA){
     g.fillStyle='rgba(255,255,255,.06)';g.fill();
     g.fillStyle='rgba(255,255,255,.92)';
     g.fillRect(bx+bw*.3,by+bh*.34,bw*.4,Math.max(2,bh*.32));
+  }else if(rim){
+    /* 皇室奢华材质：宝石切面高光 + 金属镶嵌双层描边 */
+    shapePath(g,bx,by,bw,bh,shape);
+    g.save();g.clip();
+    g.fillStyle=fill;g.fillRect(bx,by,bw,bh);
+    const hi=g.createLinearGradient(0,by,0,by+bh*.5);
+    hi.addColorStop(0,'rgba(255,255,255,.94)');hi.addColorStop(1,'rgba(255,255,255,0)');
+    g.fillStyle=hi;g.fillRect(bx,by,bw,bh*.4);
+    g.fillStyle='rgba(255,255,255,.96)';
+    g.fillRect(bx+bw*.16,by+bh*.24,bw*.68,Math.max(1,bh*.09));
+    g.strokeStyle='rgba(255,255,255,.5)';g.lineWidth=1;
+    g.beginPath();g.moveTo(bx+bw*.14,by+bh*.64);g.lineTo(bx+bw*.86,by+bh*.64);g.stroke();
+    const re=g.createLinearGradient(0,by+bh*.72,0,by+bh);
+    re.addColorStop(0,'rgba(255,255,255,0)');re.addColorStop(1,'rgba(255,255,255,.20)');
+    g.fillStyle=re;g.fillRect(bx,by+bh*.72,bw,bh*.28);
+    g.restore();
+    shapePath(g,bx,by,bw,bh,shape);
+    g.lineWidth=1.4;g.strokeStyle=rim2||edgeColor;g.stroke();
+    shapePath(g,bx+1.7,by+1.7,bw-3.4,bh-3.4,shape);
+    g.lineWidth=1;g.strokeStyle=rim;g.stroke();
   }else{
     shapePath(g,bx,by,bw,bh,shape);
     g.save();g.clip();
@@ -4124,23 +4212,37 @@ function buildShapedNoteSprite(kind,bw,bh,pad,SK){
       bg.addColorStop(0,'#3a2a0c');bg.addColorStop(.35,'#100b04');bg.addColorStop(.6,'#211605');bg.addColorStop(1,'#060403');
       g.fillStyle=bg;g.fillRect(bx,by,bw,bh);
       g.fillStyle='rgba(255,186,55,.10)';g.fillRect(bx,by,bw,bh);
+      /* 顶部金色高光（宝石切面反光） */
+      const topHi=g.createLinearGradient(0,by,0,by+bh*.45);
+      topHi.addColorStop(0,'rgba(255,224,150,.55)');topHi.addColorStop(1,'rgba(255,224,150,0)');
+      g.fillStyle=topHi;g.fillRect(bx,by,bw,bh*.45);
       const core=Math.max(3,bh*.15);
       const coreGrad=g.createLinearGradient(bx,0,bx+bw,0);
       coreGrad.addColorStop(0,'rgba(255,190,40,0)');coreGrad.addColorStop(.12,'#ffd36a');coreGrad.addColorStop(.5,'#fffdf0');coreGrad.addColorStop(.88,'#ffd36a');coreGrad.addColorStop(1,'rgba(255,190,40,0)');
-      g.fillStyle=coreGrad;g.fillRect(bx,cy-core/2,bw,core);
+      g.fillStyle=coreGrad;g.shadowBlur=16;g.shadowColor='rgba(255,215,110,.9)';
+      g.fillRect(bx,cy-core/2,bw,core);g.shadowBlur=0;
+      /* 白金星点（高光） */
+      g.fillStyle='rgba(255,255,255,.96)';
+      for(const px of [bx+bw*.17,bx+bw*.83]){
+        g.beginPath();g.arc(px,cy,Math.max(1.2,bh*.07),0,Math.PI*2);g.fill();
+        g.fillStyle='rgba(255,255,255,.3)';g.beginPath();g.arc(px,cy,Math.max(3,bh*.18),0,Math.PI*2);g.fill();
+        g.fillStyle='rgba(255,255,255,.96)';
+      }
       g.restore();
+      /* 金属镶嵌：外深金棕 + 内亮金白 */
       shapePath(g,bx,by,bw,bh,SH);
-      g.lineWidth=2.4;g.strokeStyle='rgba(255,209,102,.98)';g.shadowBlur=16;g.shadowColor='rgba(255,190,60,.65)';g.stroke();
+      g.lineWidth=2.4;g.strokeStyle='rgba(122,80,24,.95)';g.shadowBlur=16;g.shadowColor='rgba(255,190,60,.65)';g.stroke();
       g.shadowBlur=0;
-      g.lineWidth=1;g.strokeStyle='rgba(255,240,190,.5)';g.stroke();
+      shapePath(g,bx+1.7,by+1.7,bw-3.4,bh-3.4,SH);
+      g.lineWidth=1.2;g.strokeStyle='rgba(255,224,150,.85)';g.stroke();
       g.restore();return;
     }
     /* 押键（双押/多押）就是蓝键 + 金色双向括号，跟原皮肤一套语义：
        金色只留给碎点/黄键，绝不拿"变黄"来表示多押，否则分不清黄键和押键。 */
-    let top,mid,bot,edgeC,glowC,glowA;
-    if(kind==='final'){top='#fff';mid='#fff';bot='#ffd479';edgeC='#fff';glowC=[255,255,255];glowA=.6;}
-    else if(kind==='hold'){top='#dffcff';mid='#22b4d4';bot='#062b3a';edgeC='rgba(190,250,255,.9)';glowC=[34,228,255];glowA=.32;}
-    else{const B=SK.blue;top=B.top;mid=B.mid;bot=B.bot;edgeC=rgba(B.edge,B.edgeA);glowC=B.glow;glowA=B.glowA;}
+    let top,mid,bot,edgeC,glowC,glowA,rim,rim2;
+    if(kind==='final'){top='#fff';mid='#fff';bot='#ffd479';edgeC='#fff';glowC=[255,255,255];glowA=.6;rim=null;rim2=null;}
+    else if(kind==='hold'){top='#dffcff';mid='#22b4d4';bot='#062b3a';edgeC='rgba(190,250,255,.9)';glowC=[34,228,255];glowA=.32;rim=null;rim2=null;}
+    else{const B=SK.blue;top=B.top;mid=B.mid;bot=B.bot;edgeC=rgba(B.edge,B.edgeA);glowC=B.glow;glowA=B.glowA;rim=B.rim;rim2=B.rim2;}
     g.save();g.translate(cx,cy);g.scale(1,.6);
     const rg=g.createRadialGradient(0,0,bw*.05,0,0,bw*.95);
     rg.addColorStop(0,rgba(glowC,glowA));
@@ -4149,7 +4251,7 @@ function buildShapedNoteSprite(kind,bw,bh,pad,SK){
     g.fillStyle=rg;g.beginPath();g.arc(0,0,bw*.95,0,Math.PI*2);g.fill();g.restore();
     const bg=g.createLinearGradient(0,by,0,by+bh);
     bg.addColorStop(0,top);bg.addColorStop(.38,mid);bg.addColorStop(1,bot);
-    paintNoteShape(g,bx,by,bw,bh,SH,bg,edgeC,glowC,glowA);
+    paintNoteShape(g,bx,by,bw,bh,SH,bg,edgeC,glowC,glowA,rim,rim2);
     if(kind==='final'){
       shapePath(g,bx-4,by-4,bw+8,bh+8,SH);
       g.strokeStyle='rgba(255,255,255,.95)';g.lineWidth=1.3;g.shadowBlur=14;g.shadowColor='#fff';g.stroke();g.shadowBlur=0;
@@ -4812,8 +4914,13 @@ window.addEventListener('keyup',e=>{
   if(idx>=0)game.keyHold[idx]=false;
 });
 document.addEventListener('visibilitychange',()=>{
-  if(document.hidden){if(state==='GAME')pauseGame();playUIMusic(null);}
-  else syncUIMusic();
+  if(document.hidden){
+    if(state==='GAME')pauseGame();
+    playUIMusic(null);
+    if(storeAppEl&&storeAppEl.classList.contains('active'))stopStoreMusic();
+  }else{
+    syncUIMusic();
+  }
 });
 
 /* ============================================================
@@ -7250,6 +7357,11 @@ function wireUI(){
     if(!account.scenery){showExNotice('LOCKED','抽中「黄金奢华外景」后解锁');uiSound(.6);return;}
     account.sceneryOn=!account.sceneryOn;saveAccount();applySkins();
     setSwitch('#tScenery',account.sceneryOn);syncSettingsUI();uiSound(1.3);
+  });
+  bind('#tPhoneui','click',()=>{
+    if(!account.phoneui){showExNotice('LOCKED','抽中「鎏金天幕 · 皇室天气屏」后解锁');uiSound(.6);return;}
+    account.phoneuiOn=!account.phoneuiOn;saveAccount();applySkins();
+    setSwitch('#tPhoneui',account.phoneuiOn);syncSettingsUI();uiSound(1.3);
   });
   bind('#btnExport','click',()=>{
     const code=exportSave();
