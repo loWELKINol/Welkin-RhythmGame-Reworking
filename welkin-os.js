@@ -366,25 +366,26 @@ function hexa(hex,a){
 }
 function buildPrizePool(){
   const P=[];
-  /* SSS 0.1%：3 件，各 1/3 × 0.1% */
-  const sssP=0.001/3;
+  /* SSS 1%：3 件，各 1/3 × 1% */
+  const sssP=0.01/3;
   P.push({id:'sss-phone',tier:'SSS',p:sssP,kind:'phone',name:'鎏金终端 · 皇室手机',desc:'高奢黄金风格手机外壳 · 鎏金按键 · 金工雕花',owned:()=>!!account.phone});
   P.push({id:'sss-lobby',tier:'SSS',p:sssP,kind:'lobby',name:'金殿 · 皇室大厅',desc:'手机背后大厅焕新为皇室奢华风 · 窗外夜景保留',owned:()=>!!account.lobby});
   P.push({id:'sss-scenery',tier:'SSS',p:sssP,kind:'scenery',name:'黄金苍穹 · 黄金奢华外景',desc:'窗外风景焕新为黄金科技炫酷风格 · 金辉天际线 · 鎏金霓虹',owned:()=>!!account.scenery});
-  /* S 0.3%：3 件，各 0.1% */
-  P.push({id:'note-1',tier:'S',p:0.001,kind:'note',skinIndex:1,name:'按键皮肤 · 白昼',desc:'轮廓环光 · 冰白配色',owned:()=>isNoteUnlocked(1)});
-  P.push({id:'note-2',tier:'S',p:0.001,kind:'note',skinIndex:2,name:'按键皮肤 · 晨曦',desc:'暖阳渐变 · 削角轮廓',owned:()=>isNoteUnlocked(2)});
-  P.push({id:'track-20',tier:'S',p:0.001,kind:'track',skinIndex:20,name:'轨道皮肤 · 黄金奢华',desc:'黄金奢华风轨道 · 鎏金流光 · 高端质感',owned:()=>isTrackUnlocked(20)});
-  /* A 9.6%：19 款轨道皮肤（除默认） */
-  const aEach=0.096/19;
+  /* S 5%：3 件，各 1/3 × 5% */
+  const sP=0.05/3;
+  P.push({id:'note-1',tier:'S',p:sP,kind:'note',skinIndex:1,name:'按键皮肤 · 白昼',desc:'轮廓环光 · 冰白配色',owned:()=>isNoteUnlocked(1)});
+  P.push({id:'note-2',tier:'S',p:sP,kind:'note',skinIndex:2,name:'按键皮肤 · 晨曦',desc:'暖阳渐变 · 削角轮廓',owned:()=>isNoteUnlocked(2)});
+  P.push({id:'track-20',tier:'S',p:sP,kind:'track',skinIndex:20,name:'轨道皮肤 · 黄金奢华',desc:'黄金奢华风轨道 · 鎏金流光 · 高端质感',owned:()=>isTrackUnlocked(20)});
+  /* A 24%：19 款轨道皮肤（除默认） */
+  const aEach=0.24/19;
   for(let i=1;i<20;i++){
     const sk=TRACK_SKINS[i];
     P.push({id:'track-'+i,tier:'A',p:aEach,kind:'track',skinIndex:i,name:'轨道皮肤 · '+(sk?sk.name:('NO.'+(i+1))),desc:'第 '+(i+1)+' 款轨道背景皮肤',owned:()=>isTrackUnlocked(i)});
   }
-  /* B 90%：苍穹星 67(10%) / 30(50%) / 15(40%)（相对 B 内占比） */
-  P.push({id:'b-67',tier:'B',p:0.09,kind:'currency',amount:67,name:'苍穹星 ×67',desc:'十份星屑',owned:()=>false});
-  P.push({id:'b-30',tier:'B',p:0.45,kind:'currency',amount:30,name:'苍穹星 ×30',desc:'一捧星屑',owned:()=>false});
-  P.push({id:'b-15',tier:'B',p:0.36,kind:'currency',amount:15,name:'苍穹星 ×15',desc:'几粒星屑',owned:()=>false});
+  /* B 70%：苍穹星 67(10%) / 30(50%) / 15(40%)（相对 B 内占比） */
+  P.push({id:'b-67',tier:'B',p:0.07,kind:'currency',amount:67,name:'苍穹星 ×67',desc:'大量星屑',owned:()=>false});
+  P.push({id:'b-30',tier:'B',p:0.35,kind:'currency',amount:30,name:'苍穹星 ×30',desc:'一捧星屑',owned:()=>false});
+  P.push({id:'b-15',tier:'B',p:0.28,kind:'currency',amount:15,name:'苍穹星 ×15',desc:'几粒星屑',owned:()=>false});
   return P;
 }
 function rollOnce(){
@@ -475,7 +476,26 @@ function openStore(){
   stopAllUIMusic();
   playStoreMusic();
   renderStore();
+  initStoreScrollHint();
   uiSound(1.25);
+}
+function updateStoreScrollHint(){
+  const body=$('.store-body'),hint=$('#storeScrollHint');
+  if(!body||!hint)return;
+  const canScroll=body.scrollHeight>body.clientHeight+12;
+  const nearBottom=body.scrollTop+body.clientHeight>=body.scrollHeight-48;
+  hint.classList.toggle('show',canScroll&&!nearBottom);
+}
+function initStoreScrollHint(){
+  const body=$('.store-body');
+  if(!body)return;
+  if(!body.__storeHintBound){
+    body.__storeHintBound=true;
+    body.addEventListener('scroll',updateStoreScrollHint,{passive:true});
+    window.addEventListener('resize',updateStoreScrollHint);
+  }
+  body.scrollTop=0;
+  updateStoreScrollHint();
 }
 function closeStore(){
   const app=$('#storeApp');if(!app)return;
@@ -582,7 +602,7 @@ function playDrawAnimation(items,ten){
   }
   cancelAnimationFrame(drawRaf);
   royalSfx('spin');
-  const t0=performance.now(),DUR=3000;
+  const t0=performance.now(),DUR=1500;
   const step=now=>{
     const k=clamp((now-t0)/DUR,0,1);
     if(cv)drawDrawLight(cv,k,top);
@@ -604,37 +624,158 @@ function drawDrawLight(cv,k,tier){
   c.clearRect(0,0,W,H);
   const T=TIER_LIGHT[tier]||TIER_LIGHT.B;
   const rainbow=!!T.rainbow;
+  const TAU=Math.PI*2;
   const x=W*1.06-k*(W*1.14);
+  const hue0=(k*320)%360;
+  const glow=a=>rainbow?('hsla('+hue0+',100%,78%,'+a+')'):hexa(T.css,a);
   c.globalCompositeOperation='lighter';
-  const L=W*.42,N=56;
+
+  /* 0 · 整屏柔光底座 */
+  const halo=c.createRadialGradient(x,cy,0,x,cy,W*.52);
+  halo.addColorStop(0,glow(.16));halo.addColorStop(1,'rgba(0,0,0,0)');
+  c.fillStyle=halo;c.beginPath();c.arc(x,cy,W*.52,0,TAU);c.fill();
+
+  /* 1 · 能量彗尾：由远及近放大的一串光球 */
+  const L=W*.46,N=64;
   for(let i=0;i<N;i++){
     const u=i/N;
     const px=x-L*u;
-    const fade=Math.pow(1-u,1.6);
-    const r=(4+46*Math.pow(1-u,1.15));
-    const hue=(k*320+u*210)%360;
-    const col=rainbow?('hsla('+hue+',100%,72%,'+(fade*.5)+')'):hexa(T.css,fade*.42);
+    const fade=Math.pow(1-u,1.7);
+    const r=3+54*Math.pow(1-u,1.12);
+    const hue=(k*340+u*220)%360;
+    const col=rainbow?('hsla('+hue+',100%,74%,'+(fade*.55).toFixed(3)+')'):hexa(T.css,fade*.46);
     const g=c.createRadialGradient(px,cy,0,px,cy,r);
     g.addColorStop(0,col);g.addColorStop(1,'rgba(0,0,0,0)');
-    c.fillStyle=g;c.beginPath();c.arc(px,cy,r,0,7);c.fill();
+    c.fillStyle=g;c.beginPath();c.arc(px,cy,r,0,TAU);c.fill();
   }
-  const hue0=(k*320)%360;
-  const head=rainbow?('hsla('+hue0+',100%,80%,1)'):hexa(T.css,1);
-  const hg=c.createRadialGradient(x,cy,0,x,cy,30);
-  hg.addColorStop(0,'rgba(255,255,255,.96)');
-  hg.addColorStop(.32,head);
+
+  /* 2 · 旋转放射光芒：绕头部的星芒束 */
+  c.save();c.translate(x,cy);c.rotate(k*2.4);
+  const rays=11;
+  for(let i=0;i<rays;i++){
+    c.rotate(TAU/rays);
+    const len=W*.3*(.5+.5*Math.sin(k*6+i*2.1));
+    const wA=3.4+5.5*Math.abs(Math.sin(k*5+i*1.7));
+    const hueR=(k*300+i*40)%360;
+    const g=c.createLinearGradient(20,0,len,0);
+    g.addColorStop(0,rainbow?('hsla('+hueR+',100%,90%,.95)'):hexa(T.css,.9));
+    g.addColorStop(1,'rgba(0,0,0,0)');
+    c.fillStyle=g;
+    c.beginPath();c.moveTo(18,0);c.lineTo(len,-wA);c.lineTo(len,wA);c.closePath();c.fill();
+  }
+  c.restore();
+
+  /* 3 · 白热核心 + 呼吸色环 */
+  const head=rainbow?('hsla('+hue0+',100%,82%,1)'):hexa(T.css,1);
+  const hg=c.createRadialGradient(x,cy,0,x,cy,34);
+  hg.addColorStop(0,'rgba(255,255,255,.98)');
+  hg.addColorStop(.3,head);
+  hg.addColorStop(.62,glow(.4));
   hg.addColorStop(1,'rgba(0,0,0,0)');
-  c.fillStyle=hg;c.beginPath();c.arc(x,cy,30,0,7);c.fill();
-  const bh=H*.72,by0=cy-bh/2,bw=9;
-  const bcol=rainbow?('hsla('+hue0+',100%,76%,.55)'):hexa(T.css,.5);
+  c.fillStyle=hg;c.beginPath();c.arc(x,cy,34,0,TAU);c.fill();
+  c.strokeStyle=glow(.7);c.lineWidth=2.4;
+  c.beginPath();c.arc(x,cy,30+5*Math.sin(k*8),0,TAU);c.stroke();
+
+  /* 4 · 纵向镜头光斑：主光 + 两条细副光 */
+  const bh=H*.74,by0=cy-bh/2;
+  const bcol=glow(.6);
   const bg=c.createLinearGradient(0,by0,0,by0+bh);
   bg.addColorStop(0,'rgba(0,0,0,0)');bg.addColorStop(.5,bcol);bg.addColorStop(1,'rgba(0,0,0,0)');
   c.fillStyle=bg;
   c.beginPath();
   c.moveTo(x,by0);
-  c.quadraticCurveTo(x+bw*1.6,cy,x,by0+bh);
-  c.quadraticCurveTo(x-bw*1.6,cy,x,by0);
+  c.quadraticCurveTo(x+11,cy,x,by0+bh);
+  c.quadraticCurveTo(x-11,cy,x,by0);
   c.closePath();c.fill();
+  for(const off of [-1,1]){
+    const xx=x+off*W*.018;
+    const b2=c.createLinearGradient(0,cy-bh*.3,0,cy+bh*.3);
+    b2.addColorStop(0,'rgba(0,0,0,0)');
+    b2.addColorStop(.5,rainbow?('hsla('+((hue0+off*40)%360)+',100%,70%,.3)'):hexa(T.css,.28));
+    b2.addColorStop(1,'rgba(0,0,0,0)');
+    c.fillStyle=b2;
+    c.beginPath();
+    c.moveTo(xx,cy-bh*.3);
+    c.quadraticCurveTo(xx+4,cy,xx,cy+bh*.3);
+    c.quadraticCurveTo(xx-4,cy,xx,cy-bh*.3);
+    c.closePath();c.fill();
+  }
+
+  /* 5 · 横向贯穿光带 */
+  const bw=W*.5,bx0=x-bw/2;
+  const hb=c.createLinearGradient(bx0,0,bx0+bw,0);
+  hb.addColorStop(0,'rgba(0,0,0,0)');hb.addColorStop(.5,glow(.5));hb.addColorStop(1,'rgba(0,0,0,0)');
+  c.fillStyle=hb;c.fillRect(bx0,cy-1.4,bw,2.8);
+
+  /* 6 · 扩散冲击环 */
+  for(let r=0;r<3;r++){
+    const phase=(k*1.4+r/3)%1;
+    const rr=phase*W*.42;
+    const hueC=(k*300+r*60)%360;
+    c.strokeStyle=rainbow?('hsla('+hueC+',100%,80%,'+((1-phase)*.5).toFixed(3)+')'):hexa(T.css,(1-phase)*.5);
+    c.lineWidth=2+(1-phase)*4;
+    c.beginPath();c.arc(x,cy,rr,0,TAU);c.stroke();
+  }
+
+  /* 7 · 星尘微粒（闪烁） */
+  const rnd=n=>{const s=Math.sin(n)*43758.5453;return s-Math.floor(s);};
+  for(let i=0;i<52;i++){
+    const sx=x-W*.55*rnd(i*1.37);
+    const sy=cy+(rnd(i*2.71)-.5)*H*.7;
+    const tw=.5+.5*Math.sin(k*14+i*2.4);
+    const sr=1+2.8*tw;
+    const hueS=(k*300+i*37)%360;
+    c.fillStyle=rainbow?('hsla('+hueS+',100%,85%,'+(tw*.9).toFixed(3)+')'):hexa(T.css,tw*.72);
+    c.beginPath();c.arc(sx,sy,sr,0,TAU);c.fill();
+  }
+
+  /* 8 · 四芒星十字耀斑：头部忽大忽小的星芒十字 */
+  const fs=30+11*Math.sin(k*9);
+  c.save();c.translate(x,cy);c.rotate(k*.7);
+  for(let q=0;q<2;q++){
+    c.rotate(q?Math.PI/4:0);
+    const fg=c.createLinearGradient(-fs,0,fs,0);
+    fg.addColorStop(0,'rgba(0,0,0,0)');
+    fg.addColorStop(.5,rainbow?('hsla('+hue0+',100%,90%,.85)'):hexa(T.css,.8));
+    fg.addColorStop(1,'rgba(0,0,0,0)');
+    c.fillStyle=fg;
+    c.beginPath();c.moveTo(-fs,0);c.lineTo(0,-fs*.32);c.lineTo(fs,0);c.lineTo(0,fs*.32);c.closePath();c.fill();
+  }
+  c.restore();
+
+  /* 9 · 环绕椭圆光环：两条细光环斜向绕转 */
+  c.save();c.translate(x,cy);
+  for(let q=0;q<2;q++){
+    c.rotate(k*1.5+q*Math.PI/2);
+    c.strokeStyle=glow(.45);
+    c.lineWidth=1.6;
+    c.beginPath();c.ellipse(0,0,42,14+4*Math.sin(k*7),0,0,TAU);c.stroke();
+  }
+  c.restore();
+
+  /* 10 · 漂浮大光斑：柔和散景缓缓漂移 */
+  for(let i=0;i<7;i++){
+    const bx=x+Math.sin(k*2.1+i*2.7)*W*.26;
+    const by=cy+Math.cos(k*1.7+i*2.1)*H*.28;
+    const br=10+16*rnd(i*3.13);
+    const ba=.08+.11*(.5+.5*Math.sin(k*6+i*1.9));
+    const bcol=rainbow?('hsla('+((hue0+i*51)%360)+',100%,78%,'+ba.toFixed(3)+')'):hexa(T.css,ba);
+    const bg2=c.createRadialGradient(bx,by,0,bx,by,br);
+    bg2.addColorStop(0,bcol);bg2.addColorStop(1,'rgba(0,0,0,0)');
+    c.fillStyle=bg2;c.beginPath();c.arc(bx,by,br,0,TAU);c.fill();
+  }
+
+  /* 11 · 火花飞溅：从头部螺旋甩出的细小亮星 */
+  for(let i=0;i<24;i++){
+    const ang=i/24*TAU + k*1.3;
+    const d=(26+74*((i*.61)%1))*(.35+.65*k);
+    const px2=x+Math.cos(ang)*d;
+    const py2=cy+Math.sin(ang)*d*.62;
+    const pr=1.1+2.2*((i*.61)%1);
+    c.fillStyle=rainbow?('hsla('+((hue0+i*15)%360)+',100%,90%,.85)'):hexa(T.css,.7);
+    c.beginPath();c.arc(px2,py2,pr,0,TAU);c.fill();
+  }
+
   c.globalCompositeOperation='source-over';
 }
 function showDrawReveal(items,ten){
@@ -1614,11 +1755,11 @@ const CH2_COVER_FILES=['init.avif','an.avif','La.avif','bn.avif','pen.avif','fb.
    ca=CyberAttack）。id 沿用 ch2-2…ch2-6 / ch2-boss，La 用独立 id ch2-7，避免撞旧通关记录。 */
 const CH2_INIT={id:'ch2-2',chapterId:'ch2',no:'TRACK 01',title:'init()',artist:'WELKIN',charter:'Welkin',bpm:'180',length:'02:22',notes:920,level:10,boss:false,chart:'init',audio:'init.mp3',cover:'init.avif',state:'locked',fingers:'dual'};
 const CH2_AN={id:'ch2-3',chapterId:'ch2',no:'TRACK 02',title:'时逝',artist:'WELKIN',charter:'Welkin',bpm:'199',length:'02:09',notes:1152,level:14,boss:false,chart:'an',audio:'an.mp3',cover:'an.avif',state:'locked',fingers:'dual'};
-const CH2_LA={id:'ch2-7',chapterId:'ch2',no:'TRACK 03',title:'Lamentation',artist:'WELKIN',charter:'Welkin',bpm:'98',length:'02:22',notes:790,level:15,boss:false,chart:'la',audio:'La.mp3',cover:'La.avif',state:'locked',fingers:'multi'};
-const CH2_LADY={id:'ch2-4',chapterId:'ch2',no:'TRACK 04',title:'Grievous Lady',artist:'WELKIN',charter:'Welkin',bpm:'106',length:'02:22',notes:1515,level:17,boss:false,chart:'lady',audio:'Lady.mp3',cover:'bn.avif',state:'locked',fingers:'multi'};
+const CH2_LA={id:'ch2-7',chapterId:'ch2',no:'TRACK 03',title:'Lamentation',artist:'WELKIN',charter:'Welkin',bpm:'98',length:'02:22',notes:770,level:15,boss:false,chart:'la',audio:'La.mp3',cover:'La.avif',state:'locked',fingers:'multi'};
+const CH2_LADY={id:'ch2-4',chapterId:'ch2',no:'TRACK 04',title:'Grievous Lady',artist:'WELKIN',charter:'Welkin',bpm:'106',length:'02:22',notes:1505,level:17,boss:false,chart:'lady',audio:'Lady.mp3',cover:'bn.avif',state:'locked',fingers:'multi'};
 const CH2_PEN={id:'ch2-5',chapterId:'ch2',no:'TRACK 05',title:'Pentiment',artist:'WELKIN',charter:'Welkin',bpm:'111',length:'02:41',notes:1217,level:18,boss:false,chart:'pen',audio:'pen.mp3',cover:'pen.avif',state:'locked',fingers:'dual'};
-const CH2_FB={id:'ch2-6',chapterId:'ch2',no:'TRACK 06',title:'Tempestissimo',artist:'WELKIN',charter:'Welkin',bpm:'116',length:'02:18',notes:1815,level:19,boss:false,chart:'fb',audio:'fb.mp3',cover:'fb.avif',state:'locked',fingers:'multi'};
-const CH2_CYBER={id:'ch2-boss',chapterId:'ch2',no:'TRACK 07',title:'CyberAttack',artist:'WELKIN',charter:'Welkin',bpm:'130',length:'03:21',notes:2274,level:20,boss:true,chart:'cyber',audio:'Cyber.mp3',cover:'ca.avif',state:'locked',fingers:'multi'};
+const CH2_FB={id:'ch2-6',chapterId:'ch2',no:'TRACK 06',title:'Tempestissimo',artist:'WELKIN',charter:'Welkin',bpm:'116',length:'02:18',notes:1790,level:19,boss:false,chart:'fb',audio:'fb.mp3',cover:'fb.avif',state:'locked',fingers:'multi'};
+const CH2_CYBER={id:'ch2-boss',chapterId:'ch2',no:'TRACK 07',title:'CyberAttack',artist:'WELKIN',charter:'Welkin',bpm:'130',length:'03:21',notes:2270,level:20,boss:true,chart:'cyber',audio:'Cyber.mp3',cover:'ca.avif',state:'locked',fingers:'multi'};
 function makeCh2Songs(){return [CH2_CYBER,CH2_INIT,CH2_AN,CH2_LA,CH2_LADY,CH2_PEN,CH2_FB];}
 const EFFULGENCE={
   id:'ch1-2',chapterId:'ch1',no:'TRACK 01',title:'Effulgence',artist:'WELKIN',charter:'Welkin',
