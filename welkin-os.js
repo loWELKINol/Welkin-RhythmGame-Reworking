@@ -107,6 +107,8 @@ settings.volume=clamp(Number(settings.volume)||0,0,100);
 settings.hitVol=clamp(Number(settings.hitVol)||0,0,100);
 settings.inputOffset=clamp(Number(settings.inputOffset)||0,-150,150);
 settings.trackSkin=clamp(Math.floor(Number(settings.trackSkin)||0),0,20);
+/* 上限先按旧的 7 套留到 6：老存档里的 3/4/5/6 要等 ensureAccount 按新表重排，
+   这里先截断会把「旧 5=圣铠」压成 4，重排后就认错皮肤了。 */
 settings.keySkin=clamp(Math.floor(Number(settings.keySkin)||0),0,6);
 settings.hit=!!settings.hit;settings.ui=!!settings.ui;settings.early=!!settings.early;settings.motion=!!settings.motion;settings.mirror=!!settings.mirror;
 if(settings.perfMode!=='low'&&settings.perfMode!=='high'&&settings.perfMode!=='ultra')settings.perfMode='auto';
@@ -158,11 +160,7 @@ const NOTE_SKINS=[
    blue:{top:'#fff9f0',mid:'#a8dcf8',bot:'#4a8fc0',edge:[240,250,255],edgeA:.92,glow:[56,189,248],glowA:.4},
    hold:{body:['rgba(104,148,172,.74)','rgba(196,224,242,.72)','rgba(84,126,158,.78)'],
          edge:'rgba(220,248,255,.80)',cap:['#fff9f0','#cfeafc','#4a8fc0']}},
-  /* —— 皇室奢华四套：蓝键仍蓝、黄键仍金、押键金括号，只升材质与轮廓 —— */
-  {name:'冠冕',classic:false,shape:'shield',
-   blue:{top:'#f2fbff',mid:'#2e7cc0',bot:'#0b2b50',edge:[205,235,255],edgeA:.95,glow:[64,156,255],glowA:.42,rim:'#f4f9ff',rim2:'#061c34'},
-   hold:{body:['rgba(10,22,38,.94)','rgba(24,44,72,.90)','rgba(7,16,28,.95)'],
-         edge:'rgba(150,232,255,.85)',cap:['#f2fbff','#bfe8ff','#0b2b50']}},
+  /* —— 皇室奢华两套：蓝键仍蓝、黄键仍金、押键金括号，只升材质与轮廓 —— */
   {name:'蓝宝',classic:false,shape:'gem',
    blue:{top:'#eafaff',mid:'#35a0e8',bot:'#0c4f8f',edge:[200,246,255],edgeA:.95,glow:[80,200,255],glowA:.45,rim:'#eafcff',rim2:'#07273f'},
    hold:{body:['rgba(12,26,46,.92)','rgba(30,58,96,.88)','rgba(8,18,34,.95)'],
@@ -170,11 +168,7 @@ const NOTE_SKINS=[
   {name:'圣铠',classic:false,shape:'arch',
    blue:{top:'#f4f6ff',mid:'#3a6ea8',bot:'#12263f',edge:[214,228,255],edgeA:.95,glow:[120,180,255],glowA:.4,rim:'#eef2ff',rim2:'#0a1a30'},
    hold:{body:['rgba(14,24,38,.94)','rgba(26,44,66,.90)','rgba(9,16,26,.95)'],
-         edge:'rgba(160,212,255,.82)',cap:['#f4f6ff','#c8d8f2','#12263f']}},
-  {name:'星冠',classic:false,shape:'diamond',
-   blue:{top:'#ffffff',mid:'#2f86d8',bot:'#0a3a70',edge:[224,246,255],edgeA:.96,glow:[90,190,255],glowA:.46,rim:'#f2fbff',rim2:'#052b4e'},
-   hold:{body:['rgba(12,24,42,.94)','rgba(28,54,92,.90)','rgba(8,16,30,.95)'],
-         edge:'rgba(160,235,255,.85)',cap:['#ffffff','#c8ecff','#0a3a70']}}
+         edge:'rgba(160,212,255,.82)',cap:['#f4f6ff','#c8d8f2','#12263f']}}
 ];
 function noteSkinCount(){return NOTE_SKINS.length;}
 function getNoteSkin(){
@@ -321,6 +315,24 @@ function isNoteUnlocked(i){const n=Math.floor(Number(i));if(n<=0)return true;ret
 function isTrackUnlocked(i){const n=Math.floor(Number(i));if(n<=0)return true;return account.unlockedTrack.includes(n);}
 function unlockedNoteList(){return account.unlockedNote.slice().sort((a,b)=>a-b);}
 function unlockedTrackList(){return account.unlockedTrack.slice().sort((a,b)=>a-b);}
+/* 冠冕 / 星冠两套皮肤已彻底删除（NOTE_SKINS 从 7 套减到 5 套），旧存档里的序号要
+   跟着重排，否则老玩家手里的蓝宝会变成圣铠：旧 4（蓝宝）→3、旧 5（圣铠）→4，
+   旧 3（冠冕）/ 旧 6（星冠）直接丢掉。存档码 v2 及更早的码也走同一张表。 */
+const LEGACY_NOTE_IDX_MAP={0:0,1:1,2:2,4:3,5:4};
+const LEGACY_NOTE_IDX_KEY='welkin_os_note_idx_v2';
+function remapLegacyNoteList(list){
+  const out=[];
+  for(const v of (Array.isArray(list)?list:[])){
+    const m=LEGACY_NOTE_IDX_MAP[Math.floor(Number(v))];
+    if(m!==undefined&&!out.includes(m))out.push(m);
+  }
+  if(!out.includes(0))out.unshift(0);
+  return out;
+}
+function remapLegacyKeySkin(v){
+  const m=LEGACY_NOTE_IDX_MAP[Math.floor(Number(v))||0];
+  return m===undefined?0:m;
+}
 function applySkins(){
   try{
     document.body.classList.toggle('sss-phone',!!account.phoneOn);
@@ -331,6 +343,15 @@ function applySkins(){
 }
 function ensureAccount(){
   loadAccount();
+  /* 一次性迁移：冠冕 / 星冠删除后，旧存档的按键皮肤解锁序号重排 */
+  let noteIdxMigrated=false;
+  try{noteIdxMigrated=localStorage.getItem(LEGACY_NOTE_IDX_KEY)==='1';}catch(e){}
+  if(!noteIdxMigrated){
+    account.unlockedNote=remapLegacyNoteList(account.unlockedNote);
+    settings.keySkin=remapLegacyKeySkin(settings.keySkin);
+    try{localStorage.setItem(LEGACY_NOTE_IDX_KEY,'1');}catch(e){}
+    saveAccount();saveSettings();
+  }
   /* 一次性迁移：按键皮肤 / 轨道皮肤进入奖池 → 所有玩家恢复默认并锁住 */
   let migrated=false;
   try{migrated=localStorage.getItem(STORE_FLAG_KEY)==='1';}catch(e){}
@@ -390,12 +411,12 @@ function buildPrizePool(){
   P.push({id:'sss-lobby',tier:'SSS',p:sssP,kind:'lobby',name:'金殿 · 皇室大厅',desc:'手机背后大厅焕新为皇室奢华风 · 窗外夜景保留',owned:()=>!!account.lobby});
   P.push({id:'sss-scenery',tier:'SSS',p:sssP,kind:'scenery',name:'黄金苍穹 · 黄金奢华外景',desc:'窗外风景焕新为黄金科技炫酷风格 · 金辉天际线 · 鎏金霓虹',owned:()=>!!account.scenery});
   P.push({id:'sss-phoneui',tier:'SSS',p:sssP,kind:'phoneui',name:'鎏金天幕 · 皇室天气屏',desc:'手机天气屏焕新为皇室黄金动态鎏金风格 · 金箔流光 · 动态鎏金',owned:()=>!!account.phoneui});
-  /* S 5%：5 件，各 1/5 × 5% */
+  /* S 5%：5 件，各 1/5 × 5%（白昼 / 晨曦 / 蓝宝 / 圣铠 + 黄金奢华轨道） */
   const sP=0.05/5;
   P.push({id:'note-1',tier:'S',p:sP,kind:'note',skinIndex:1,name:'按键皮肤 · 白昼',desc:'轮廓环光 · 冰白配色',owned:()=>isNoteUnlocked(1)});
   P.push({id:'note-2',tier:'S',p:sP,kind:'note',skinIndex:2,name:'按键皮肤 · 晨曦',desc:'暖阳渐变 · 削角轮廓',owned:()=>isNoteUnlocked(2)});
-  P.push({id:'note-4',tier:'S',p:sP,kind:'note',skinIndex:4,name:'按键皮肤 · 蓝宝',desc:'蓝宝石八面切面 · 皇室高奢材质',owned:()=>isNoteUnlocked(4)});
-  P.push({id:'note-5',tier:'S',p:sP,kind:'note',skinIndex:5,name:'按键皮肤 · 圣铠',desc:'哥特尖拱圣铠 · 皇室高奢材质',owned:()=>isNoteUnlocked(5)});
+  P.push({id:'note-3',tier:'S',p:sP,kind:'note',skinIndex:3,name:'按键皮肤 · 蓝宝',desc:'蓝宝石八面切面 · 皇室高奢材质',owned:()=>isNoteUnlocked(3)});
+  P.push({id:'note-4',tier:'S',p:sP,kind:'note',skinIndex:4,name:'按键皮肤 · 圣铠',desc:'哥特尖拱圣铠 · 皇室高奢材质',owned:()=>isNoteUnlocked(4)});
   P.push({id:'track-20',tier:'S',p:sP,kind:'track',skinIndex:20,name:'轨道皮肤 · 黄金奢华',desc:'黄金奢华风轨道 · 鎏金流光 · 高端质感',owned:()=>isTrackUnlocked(20)});
   /* A 24%：19 款轨道皮肤（除默认） */
   const aEach=0.24/19;
@@ -570,7 +591,7 @@ function renderStore(){
   const svgA=$('.s-cur-svg');if(svgA)svgA.innerHTML=starSVG(16);
   const svgB=$('.s-cur2-svg');if(svgB)svgB.innerHTML=starSVG(14);
   const svgC=$('.sbr-svg');if(svgC)svgC.innerHTML=starSVG(14);
-  const ownNote=$('#storeOwnNote');if(ownNote)ownNote.textContent=account.unlockedNote.length+'/'+NOTE_SKINS.length;
+  const ownNote=$('#storeOwnNote');if(ownNote)ownNote.textContent=account.unlockedNote.filter(i=>i>=1&&i<NOTE_SKINS.length).length+'/'+(NOTE_SKINS.length-1);
   const ownTrack=$('#storeOwnTrack');if(ownTrack)ownTrack.textContent=account.unlockedTrack.filter(i=>i>=1&&i<20).length+'/19';
   const oPhone=$('#storeOwnPhone');if(oPhone)oPhone.textContent=account.phone?'OWNED':'—';
   const oLobby=$('#storeOwnLobby');if(oLobby)oLobby.textContent=account.lobby?'OWNED':'—';
@@ -657,12 +678,12 @@ function playDrawAnimation(items,ten){
     if(cv)drawDrawLight(cv,k,top);
     if(k<1){drawRaf=requestAnimationFrame(step);}
     else{
+      /* 揭晓前那道白屏：CSS 里是暖白淡入淡出（不再是瞬闪纯白），
+         所以先亮 430ms 再让结果淡进来，600ms 后把遮罩层撤掉。 */
       overlay.classList.add('flash');
       royalSfx(top==='SSS'?'sss':'reveal');
-      setTimeout(()=>{
-        overlay.classList.remove('flash');
-        showDrawReveal(items,ten);
-      },230);
+      setTimeout(()=>showDrawReveal(items,ten),430);
+      setTimeout(()=>overlay.classList.remove('flash'),700);
     }
   };
   drawRaf=requestAnimationFrame(step);
@@ -880,50 +901,242 @@ function cycleNoteSkin(dir){
   uiSound(1.3);
 }
 
-/* ---- 存档码：跨浏览器 / 跨设备迁移 ----------------------------------------- */
-function exportSave(){
-  const blob={
-    v:1,id:account.id,exportedAt:Date.now(),
-    user:(user||null),
-    account,
-    bestMap,clears,settings,likes,
-    exUnlocked:!!exUnlocked,devUnlockAll:!!devUnlockAll
-  };
-  try{
-    return btoa(unescape(encodeURIComponent(JSON.stringify(blob))));
-  }catch(e){
-    try{return btoa(JSON.stringify(blob));}catch(e2){return '';}
-  }
+/* ---- 存档码：跨浏览器 / 跨设备迁移 -----------------------------------------
+   v2：存档先压成紧凑 JSON（账号进短数组、解锁位压成位掩码、设置只存改动项），
+   再用 deflate-raw 压缩、base64url 编码。出来的码比 v1 的裸 base64 短一大截，
+   换了浏览器 / 换了手机只要粘这一串就能整份恢复（进度、苍穹星、皮肤、设置都带）。
+   旧版 v1 的码仍然能导入，不丢老用户。 */
+const SAVE_CODE_HEAD='WK';
+function bitsFromList(list,maxBits){
+  let m=0;const arr=Array.isArray(list)?list:[];
+  for(const v of arr){const i=Math.floor(Number(v));if(i>=0&&i<maxBits)m|=(1<<i);}
+  return m;
 }
-function importSave(code){
-  if(!code)return false;
-  let obj=null;
-  try{obj=JSON.parse(decodeURIComponent(escape(atob(code))));}catch(e){
-    try{obj=JSON.parse(atob(code));}catch(e2){return false;}
+function listFromBits(m,maxBits){
+  const out=[];const n=Math.floor(Number(m)||0);
+  for(let i=0;i<maxBits;i++){if((n>>i)&1)out.push(i);}
+  if(!out.includes(0))out.unshift(0);
+  return out;
+}
+function compactSaveBlob(){
+  const a=account||{};
+  let flags=0;
+  if(a.phone)flags|=1;
+  if(a.lobby)flags|=2;
+  if(a.scenery)flags|=4;
+  if(a.phoneui)flags|=8;
+  if(a.phoneOn)flags|=16;
+  if(a.lobbyOn)flags|=32;
+  if(a.sceneryOn)flags|=64;
+  if(a.phoneuiOn)flags|=128;
+  const s={};
+  for(const k in DEFAULT_SETTINGS){if(settings[k]!==DEFAULT_SETTINGS[k])s[k]=settings[k];}
+  const b={};
+  for(const id in bestMap){
+    const v=bestMap[id];if(!v)continue;
+    b[id]=[v.score|0,Math.round((Number(v.acc)||0)*100)/100,v.ap?1:0,v.fc?1:0,v.combo|0,String(v.rank||'')];
   }
-  if(!obj||typeof obj!=='object')return false;
+  return {v:3,
+    a:[String(a.id||''),Math.max(0,Math.floor(Number(a.currency)||0)),
+       bitsFromList(a.unlockedNote,16),bitsFromList(a.unlockedTrack,32),flags],
+    b:b,s:s,c:(clears||{}),l:(likes||{}),
+    u:user?[String(user.name||''),String(user.avatar||'')]:null,
+    e:exUnlocked?1:0,d:devUnlockAll?1:0};
+}
+function bytesToB64u(u8){
+  let s='';
+  for(let i=0;i<u8.length;i++)s+=String.fromCharCode(u8[i]);
+  return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function b64uToBytes(txt){
+  let s=String(txt).replace(/-/g,'+').replace(/_/g,'/').replace(/[^A-Za-z0-9+/]/g,'');
+  while(s.length%4)s+='=';
+  const bin=atob(s);
+  const u8=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);
+  return u8;
+}
+async function deflateBytes(u8){
+  if(typeof CompressionStream!=='function')return null;
   try{
-    if(obj.account&&typeof obj.account==='object'){
-      account=Object.assign(freshAccount(),obj.account);
+    const cs=new CompressionStream('deflate-raw');
+    const buf=await new Response(new Blob([u8]).stream().pipeThrough(cs)).arrayBuffer();
+    return new Uint8Array(buf);
+  }catch(e){return null;}
+}
+async function inflateBytes(u8,raw){
+  if(typeof DecompressionStream!=='function')return null;
+  try{
+    const ds=new DecompressionStream(raw?'deflate-raw':'deflate');
+    const buf=await new Response(new Blob([u8]).stream().pipeThrough(ds)).arrayBuffer();
+    return new Uint8Array(buf);
+  }catch(e){return null;}
+}
+async function exportSave(){
+  try{
+    const u8=new TextEncoder().encode(JSON.stringify(compactSaveBlob()));
+    const z=await deflateBytes(u8);
+    if(z&&z.length>0&&z.length<u8.length)return SAVE_CODE_HEAD+'3-'+bytesToB64u(z);
+    return SAVE_CODE_HEAD+'1-'+bytesToB64u(u8);
+  }catch(e){return '';}
+}
+async function decodeSaveCode(code){
+  let s=String(code||'').replace(/\s+/g,'');
+  if(!s)return null;
+  const m=/^WK([123])-([\s\S]+)$/i.exec(s);
+  if(m){
+    try{
+      const u8=b64uToBytes(m[2]);
+      let plain=null;
+      if(m[1]!=='1'){plain=await inflateBytes(u8,true);if(!plain)plain=await inflateBytes(u8,false);}
+      else plain=u8;
+      if(plain&&plain.length){
+        const txt=new TextDecoder().decode(plain);
+        return JSON.parse(txt);
+      }
+    }catch(e){}
+    return null;
+  }
+  /* 旧版（v1）：裸 base64(JSON)；也接受直接粘 JSON */
+  try{return JSON.parse(s);}catch(e){}
+  try{return JSON.parse(decodeURIComponent(escape(atob(s.replace(/-/g,'+').replace(/_/g,'/')))));}catch(e){}
+  try{return JSON.parse(atob(s));}catch(e){}
+  return null;
+}
+function applySaveBlob(obj){
+  if(!obj||typeof obj!=='object')return false;
+  /* v2 及更早的存档码是在 7 套按键皮肤（含冠冕/星冠）时期导出的，序号按老表重排；
+     v3 起直接用新表的 5 套序号。 */
+  const legacyNoteIdx=!(Number(obj.v)>=3);
+  try{
+    let acctSrc=null;
+    if(Array.isArray(obj.a)){
+      const a=obj.a,f=Number(a[4])||0;
+      acctSrc={
+        id:String(a[0]||''),
+        currency:Number(a[1])||0,
+        unlockedNote:listFromBits(a[2],16),
+        unlockedTrack:listFromBits(a[3],32),
+        phone:!!(f&1),lobby:!!(f&2),scenery:!!(f&4),phoneui:!!(f&8),
+        phoneOn:!!(f&16),lobbyOn:!!(f&32),sceneryOn:!!(f&64),phoneuiOn:!!(f&128)
+      };
+    }else if(obj.account&&typeof obj.account==='object'){
+      acctSrc=obj.account;
+    }
+    if(acctSrc){
+      account=Object.assign(freshAccount(),acctSrc);
       if(!Array.isArray(account.unlockedNote))account.unlockedNote=[0];
       if(!Array.isArray(account.unlockedTrack))account.unlockedTrack=[0];
+      if(legacyNoteIdx)account.unlockedNote=remapLegacyNoteList(account.unlockedNote);
       if(!account.unlockedNote.includes(0))account.unlockedNote.unshift(0);
       if(!account.unlockedTrack.includes(0))account.unlockedTrack.unshift(0);
       account.currency=Math.max(0,Math.floor(Number(account.currency)||0));
       saveAccount();
     }
-    if(obj.bestMap&&typeof obj.bestMap==='object'){bestMap=obj.bestMap;try{localStorage.setItem(BEST_MAP_KEY,JSON.stringify(bestMap));}catch(e){}}
-    if(obj.clears&&typeof obj.clears==='object'){clears=obj.clears;saveClears();}
-    if(obj.settings&&typeof obj.settings==='object'){settings=Object.assign({},DEFAULT_SETTINGS,obj.settings);saveSettings();}
-    if(obj.likes&&typeof obj.likes==='object'){likes=obj.likes;saveLikes();}
-    if(typeof obj.exUnlocked==='boolean'){exUnlocked=obj.exUnlocked;try{localStorage.setItem(EX_KEY,exUnlocked?'1':'0');}catch(e){}}
-    if(typeof obj.devUnlockAll==='boolean'){devUnlockAll=obj.devUnlockAll;saveDevUnlock();}
-    if(obj.user){try{localStorage.setItem('welkin_os_user',JSON.stringify(obj.user));}catch(e){}}
+    const bmSrc=(obj.b&&typeof obj.b==='object')?obj.b:((obj.bestMap&&typeof obj.bestMap==='object')?obj.bestMap:null);
+    if(bmSrc){
+      const next={};
+      for(const id in bmSrc){
+        const v=bmSrc[id];if(!v)continue;
+        if(Array.isArray(v))next[id]={score:v[0]|0,acc:Number(v[1])||0,ap:!!v[2],fc:!!v[3],combo:v[4]|0,rank:String(v[5]||'—')};
+        else if(typeof v==='object')next[id]=Object.assign(emptyBest(),v);
+      }
+      bestMap=next;
+      try{localStorage.setItem(BEST_MAP_KEY,JSON.stringify(bestMap));}catch(e){}
+    }
+    const cSrc=(obj.c&&typeof obj.c==='object')?obj.c:((obj.clears&&typeof obj.clears==='object')?obj.clears:null);
+    if(cSrc){clears=cSrc;saveClears();}
+    const sSrc=(obj.s&&typeof obj.s==='object')?obj.s:((obj.settings&&typeof obj.settings==='object')?obj.settings:null);
+    if(sSrc){
+      settings=Object.assign({},DEFAULT_SETTINGS,sSrc);
+      if(legacyNoteIdx&&sSrc.keySkin!==undefined)settings.keySkin=remapLegacyKeySkin(settings.keySkin);
+      saveSettings();
+    }
+    const lSrc=(obj.l&&typeof obj.l==='object')?obj.l:((obj.likes&&typeof obj.likes==='object')?obj.likes:null);
+    if(lSrc){likes=lSrc;saveLikes();}
+    if(typeof obj.e==='number'||typeof obj.e==='boolean'){exUnlocked=!!obj.e;try{localStorage.setItem(EX_KEY,exUnlocked?'1':'0');}catch(e){}}
+    else if(typeof obj.exUnlocked==='boolean'){exUnlocked=obj.exUnlocked;try{localStorage.setItem(EX_KEY,exUnlocked?'1':'0');}catch(e){}}
+    if(typeof obj.d==='number'||typeof obj.d==='boolean'){devUnlockAll=!!obj.d;saveDevUnlock();}
+    else if(typeof obj.devUnlockAll==='boolean'){devUnlockAll=obj.devUnlockAll;saveDevUnlock();}
+    if(Array.isArray(obj.u)){
+      user={name:String(obj.u[0]||'').trim().slice(0,10),avatar:String(obj.u[1]||'')};
+      try{localStorage.setItem('welkin_os_user',JSON.stringify(user));}catch(e){}
+    }else if(obj.user&&typeof obj.user==='object'){
+      try{localStorage.setItem('welkin_os_user',JSON.stringify(obj.user));}catch(e){}
+      user=readUser();
+    }
     activeTrackSkin=isTrackUnlocked(settings.trackSkin)?settings.trackSkin:0;
     if(!isNoteUnlocked(settings.keySkin))settings.keySkin=0;
+    saveSettings();
     try{localStorage.setItem(STORE_FLAG_KEY,'1');}catch(e){}
     applySkins();applyUnlocks();applySettings();
     return true;
+  }catch(e){return false;}
+}
+async function importSave(code){
+  if(!code)return false;
+  const obj=await decodeSaveCode(code);
+  return applySaveBlob(obj);
+}
+
+/* 存档码对话框：生成后直接把码摆出来并自动全选 + 尝试复制，手抄不了就长按复制。
+   不依赖 prompt()（手机 webview 里 prompt 可能被拦、也可能不支持粘贴）。 */
+let saveModalMode='export',saveModalCode='';
+function openSaveModal(mode,code){
+  const m=$('#saveModal');if(!m)return;
+  saveModalMode=mode;
+  saveModalCode=code||'';
+  const kick=$('#saveModalKicker'),title=$('#saveModalTitle'),tip=$('#saveModalTip');
+  const ta=$('#saveCodeArea'),meta=$('#saveModalMeta'),ok=$('#saveModalOk');
+  if(!ta||!ok)return;
+  if(mode==='export'){
+    if(kick)kick.textContent='SAVE CODE · 跨设备存档码';
+    if(title)title.textContent='存档码已生成';
+    if(tip)tip.textContent='点 COPY 复制；没复制上的话，长按框里就是全选。到另一台设备打开 IMPORT 粘进来即可整份恢复。';
+    ta.value=saveModalCode;
+    ta.readOnly=true;
+    ta.setAttribute('readonly','readonly');
+    if(meta)meta.textContent='共 '+saveModalCode.length+' 个字符 · 含进度 / 苍穹星 / 皮肤 / 设置';
+    ok.textContent='COPY';
+  }else{
+    if(kick)kick.textContent='SAVE CODE · 恢复存档';
+    if(title)title.textContent='粘贴存档码';
+    if(tip)tip.textContent='把在别的浏览器 / 设备上 EXPORT 出来的那串码整段粘进来，空格换行都不用管。恢复会覆盖当前进度。';
+    ta.value='';
+    ta.readOnly=false;
+    ta.removeAttribute('readonly');
+    if(meta)meta.textContent='支持新旧两种存档码';
+    ok.textContent='RESTORE';
+  }
+  m.classList.add('active');
+  setTimeout(()=>{
+    try{
+      ta.focus();
+      if(mode==='export'){ta.select();ta.setSelectionRange(0,ta.value.length);}
+    }catch(e){}
+  },60);
+}
+function closeSaveModal(){
+  const m=$('#saveModal');if(!m)return;
+  m.classList.remove('active');
+  const ta=$('#saveCodeArea');if(ta&&saveModalMode==='export')ta.blur();
+}
+async function copyTextSmart(text){
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  }catch(e){}
+  try{
+    const ta=$('#saveCodeArea');
+    if(!ta)return false;
+    const wasReadonly=ta.readOnly;
+    ta.readOnly=false;
+    ta.focus();ta.select();ta.setSelectionRange(0,text.length);
+    const ok=document.execCommand('copy');
+    ta.readOnly=wasReadonly;
+    return !!ok;
   }catch(e){return false;}
 }
 
@@ -1808,7 +2021,7 @@ const CH2_AN={id:'ch2-3',chapterId:'ch2',no:'TRACK 02',title:'时逝',artist:'WE
 const CH2_LA={id:'ch2-7',chapterId:'ch2',no:'TRACK 03',title:'Lamentation',artist:'WELKIN',charter:'Welkin',bpm:'98',length:'02:22',notes:770,level:15,boss:false,chart:'la',audio:'La.mp3',cover:'La.avif',state:'locked',fingers:'multi'};
 const CH2_LADY={id:'ch2-4',chapterId:'ch2',no:'TRACK 04',title:'Grievous Lady',artist:'WELKIN',charter:'Welkin',bpm:'106',length:'02:22',notes:1505,level:17,boss:false,chart:'lady',audio:'Lady.mp3',cover:'bn.avif',state:'locked',fingers:'multi'};
 const CH2_PEN={id:'ch2-5',chapterId:'ch2',no:'TRACK 05',title:'Pentiment',artist:'WELKIN',charter:'Welkin',bpm:'111',length:'02:41',notes:1217,level:18,boss:false,chart:'pen',audio:'pen.mp3',cover:'pen.avif',state:'locked',fingers:'dual'};
-const CH2_FB={id:'ch2-6',chapterId:'ch2',no:'TRACK 06',title:'Tempestissimo',artist:'WELKIN',charter:'Welkin',bpm:'116',length:'02:18',notes:1790,level:19,boss:false,chart:'fb',audio:'fb.mp3',cover:'fb.avif',state:'locked',fingers:'multi'};
+const CH2_FB={id:'ch2-6',chapterId:'ch2',no:'TRACK 06',title:'Tempestissimo',artist:'WELKIN',charter:'Welkin',bpm:'116',length:'02:18',notes:1770,level:19,boss:false,chart:'fb',audio:'fb.mp3',cover:'fb.avif',state:'locked',fingers:'multi'};
 const CH2_CYBER={id:'ch2-boss',chapterId:'ch2',no:'TRACK 07',title:'CyberAttack',artist:'WELKIN',charter:'Welkin',bpm:'130',length:'03:21',notes:2270,level:20,boss:true,chart:'cyber',audio:'Cyber.mp3',cover:'ca.avif',state:'locked',fingers:'multi'};
 function makeCh2Songs(){return [CH2_CYBER,CH2_INIT,CH2_AN,CH2_LA,CH2_LADY,CH2_PEN,CH2_FB];}
 const EFFULGENCE={
@@ -2823,6 +3036,9 @@ function openSettings(from){
   if(settingsApp.classList.contains('active'))return;
   settingsReturn=from||'PHONE';
   syncSettingsUI();
+  /* 每次进来都从顶部开始：PHONE UI 区在最上面，别让上次滚到底的位置把它藏起来 */
+  const sbody=settingsApp.querySelector('.set-body');
+  if(sbody)sbody.scrollTop=0;
   settingsApp.classList.add('active');
   playUIMusic('setting',true);
   uiSound(1.1);
@@ -2860,6 +3076,8 @@ function syncSettingsUI(){
   const tui=$('#tPhoneui');if(tui){tui.classList.toggle('locked',!account.phoneui);setSwitch('#tPhoneui',!!account.phoneuiOn);}
   if(user)$('#setUser').textContent=user.name;
 }
+/* ---- 手机新 UI（皇室外观）：四件 SSS 各一个开关 ---------------------------------
+   鎏金终端（手机壳）/ 金殿（大厅）/ 黄金苍穹（外景）/ 鎏金天幕（天气屏）。 */
 function syncTrackSkinUI(){
   const sk=getTrackSkin();
   const el=$('#vTrackSkin');
@@ -4065,12 +4283,6 @@ function shapePath(g,bx,by,bw,bh,shape){
     const d=Math.min(bh*.42,bw*.18);
     g.moveTo(bx+d,by);g.lineTo(bx+bw-d,by);g.lineTo(bx+bw,by+d);g.lineTo(bx+bw,by+bh-d);
     g.lineTo(bx+bw-d,by+bh);g.lineTo(bx+d,by+bh);g.lineTo(bx,by+bh-d);g.lineTo(bx,by+d);g.closePath();
-  }else if(shape==='shield'){
-    /* 纹章盾：上沿平、两肩向下斜收、底端收成尖角 */
-    const w=bw*.16;
-    g.moveTo(bx,by);g.lineTo(bx+bw,by);
-    g.lineTo(bx+bw-w,by+bh*.72);g.lineTo(cx,by+bh);
-    g.lineTo(bx+w,by+bh*.72);g.closePath();
   }else if(shape==='gem'){
     /* 宝石切面：左右尖、上下各斜切（横长八面） */
     const tx=Math.min(bw*.16,bh*.9),ty=Math.min(bh*.28,bw*.1);
@@ -4081,9 +4293,6 @@ function shapePath(g,bx,by,bw,bh,shape){
     const leg=bh*.34;
     g.moveTo(bx,by+bh);g.lineTo(bx,by+leg);g.lineTo(cx,by);
     g.lineTo(bx+bw,by+leg);g.lineTo(bx+bw,by+bh);g.closePath();
-  }else if(shape==='diamond'){
-    /* 菱形：四角尖（上下尖 + 左右尖） */
-    g.moveTo(cx,by);g.lineTo(bx+bw,cy);g.lineTo(cx,by+bh);g.lineTo(bx,cy);g.closePath();
   }else{
     rr(g,bx,by,bw,bh,bh*.34);
   }
@@ -7363,19 +7572,45 @@ function wireUI(){
     account.phoneuiOn=!account.phoneuiOn;saveAccount();applySkins();
     setSwitch('#tPhoneui',account.phoneuiOn);syncSettingsUI();uiSound(1.3);
   });
-  bind('#btnExport','click',()=>{
-    const code=exportSave();
-    if(!code){showExNotice('EXPORT FAILED','无法生成存档码');return;}
-    try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(code).catch(()=>{});}}catch(e){}
-    prompt('你的存档码（已尝试复制，也可手动复制保存；可在任何浏览器/设备恢复）：',code);
+  bind('#btnExport','click',async()=>{
     uiSound(1.3);
+    const code=await exportSave();
+    if(!code){showExNotice('EXPORT FAILED','无法生成存档码');return;}
+    openSaveModal('export',code);
+    const copied=await copyTextSmart(code);
+    const meta=$('#saveModalMeta');
+    if(meta)meta.textContent=(copied?'✓ 已自动复制 · ':'')+'共 '+code.length+' 个字符 · 含进度 / 苍穹星 / 皮肤 / 设置';
+    if(copied)showExNotice('COPIED','存档码已复制');
   });
-  bind('#btnImport','click',()=>{
-    const code=prompt('粘贴存档码以恢复全部进度（跨浏览器/设备）');
-    if(!code||!code.trim())return;
-    const ok=importSave(code.trim());
-    if(ok){syncSettingsUI();renderUser();applyUnlocks();showExNotice('IMPORT OK','进度已恢复');uiSound(1.4);}
-    else{showExNotice('IMPORT FAILED','存档码无效');uiSound(.6);}
+  bind('#btnImport','click',()=>{openSaveModal('import','');uiSound(1.3);});
+  bind('#saveModalCancel','click',closeSaveModal);
+  bind('#saveModal','click',e=>{if(e.target===e.currentTarget)closeSaveModal();});
+  bind('#saveModalOk','click',async()=>{
+    if(saveModalMode==='export'){
+      const ok=await copyTextSmart(saveModalCode);
+      const meta=$('#saveModalMeta');
+      if(ok){if(meta)meta.textContent='✓ 已复制 · 共 '+saveModalCode.length+' 个字符';showExNotice('COPIED','存档码已复制');}
+      else{
+        const ta=$('#saveCodeArea');if(ta){ta.focus();ta.select();ta.setSelectionRange(0,ta.value.length);}
+        if(meta)meta.textContent='没复制上 · 请在框里长按「全选 → 复制」';
+        showExNotice('SELECT ALL','点住框里全选后复制');
+      }
+      uiSound(1.3);
+      return;
+    }
+    const ta=$('#saveCodeArea');
+    const code=ta?(ta.value||'').trim():'';
+    if(!code){showExNotice('EMPTY','先粘贴存档码');return;}
+    const ok=await importSave(code);
+    if(ok){
+      closeSaveModal();
+      syncSettingsUI();renderUser();applyUnlocks();
+      showExNotice('IMPORT OK','进度已恢复');
+      uiSound(1.4);
+    }else{
+      showExNotice('IMPORT FAILED','存档码无效');
+      uiSound(.6);
+    }
   });
   bind('#btnSwitchUser','click',()=>{
     closeSettings();
