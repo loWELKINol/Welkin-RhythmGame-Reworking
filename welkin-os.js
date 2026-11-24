@@ -408,19 +408,22 @@ function rollTen(){
   }
   return res;
 }
+/* 重复转化：A/S/SSS 抽中已拥有的道具时，当场按品质转化为苍穹星。
+   A → 267，S → 666，SSS → 6700（B 类为星屑，无重复概念，不在此列）。 */
+function dupRefund(tier){return tier==='SSS'?6700:(tier==='S'?666:(tier==='A'?267:0));}
 function grantPrize(p){
   if(p.kind==='currency'){account.currency+=p.amount;return {dup:false,amount:p.amount};}
   if(p.kind==='note'){
-    if(isNoteUnlocked(p.skinIndex)){account.currency+=30;return {dup:true,amount:30};}
+    if(isNoteUnlocked(p.skinIndex)){const amt=dupRefund(p.tier);account.currency+=amt;return {dup:true,amount:amt};}
     account.unlockedNote.push(p.skinIndex);return {dup:false};
   }
   if(p.kind==='track'){
-    if(isTrackUnlocked(p.skinIndex)){account.currency+=30;return {dup:true,amount:30};}
+    if(isTrackUnlocked(p.skinIndex)){const amt=dupRefund(p.tier);account.currency+=amt;return {dup:true,amount:amt};}
     account.unlockedTrack.push(p.skinIndex);return {dup:false};
   }
-  if(p.kind==='phone'){if(account.phone){account.currency+=30;return {dup:true,amount:30};}account.phone=true;return {dup:false};}
-  if(p.kind==='lobby'){if(account.lobby){account.currency+=30;return {dup:true,amount:30};}account.lobby=true;return {dup:false};}
-  if(p.kind==='scenery'){if(account.scenery){account.currency+=30;return {dup:true,amount:30};}account.scenery=true;return {dup:false};}
+  if(p.kind==='phone'){if(account.phone){const amt=dupRefund(p.tier);account.currency+=amt;return {dup:true,amount:amt};}account.phone=true;return {dup:false};}
+  if(p.kind==='lobby'){if(account.lobby){const amt=dupRefund(p.tier);account.currency+=amt;return {dup:true,amount:amt};}account.lobby=true;return {dup:false};}
+  if(p.kind==='scenery'){if(account.scenery){const amt=dupRefund(p.tier);account.currency+=amt;return {dup:true,amount:amt};}account.scenery=true;return {dup:false};}
   return {dup:false};
 }
 
@@ -798,7 +801,7 @@ function showDrawReveal(items,ten){
       <div class="dr-name">${esc(p.name)}</div>
       <div class="dr-sub">${esc(sub)}</div>
       <div class="dr-tier" style="color:${p.tier==='SSS'?'#fff':T.css}">${p.tier}</div>
-      ${it.dup?'<div class="dr-dup">已拥有 · +30 苍穹星</div>':''}
+      ${it.dup?'<div class="dr-dup">已拥有 · 转化为 +'+it.amount+' 苍穹星</div>':''}
     </div>`;
   }
   html+='</div><button class="dr-confirm" id="drConfirm" type="button">CONFIRM</button>';
