@@ -928,13 +928,13 @@ const CH2_COVER_FILES=['init.avif','an.avif','La.avif','bn.avif','pen.avif','fb.
 /* 承章七首正式接入：顺序 TRACK 01→06 = init / 时逝 / Lamentation / Grievous Lady /
    Pentiment / Tempestissimo，魔王曲 = CyberAttack。曲绘沿用旧的短名文件（bn=Grievous Lady，
    ca=CyberAttack）。id 沿用 ch2-2…ch2-6 / ch2-boss，La 用独立 id ch2-7，避免撞旧通关记录。 */
-const CH2_INIT={id:'ch2-2',chapterId:'ch2',no:'TRACK 01',title:'init()',artist:'WELKIN',charter:'Welkin',bpm:'180',length:'02:19',notes:929,level:10,boss:false,chart:'init',audio:'init.mp3',cover:'init.avif',state:'locked',fingers:'dual'};
-const CH2_AN={id:'ch2-3',chapterId:'ch2',no:'TRACK 02',title:'时逝',artist:'WELKIN',charter:'Welkin',bpm:'199',length:'02:08',notes:1152,level:14,boss:false,chart:'an',audio:'an.mp3',cover:'an.avif',state:'locked',fingers:'dual'};
-const CH2_LA={id:'ch2-7',chapterId:'ch2',no:'TRACK 03',title:'Lamentation',artist:'WELKIN',charter:'Welkin',bpm:'98',length:'02:18',notes:805,level:15,boss:false,chart:'la',audio:'La.mp3',cover:'La.avif',state:'locked',fingers:'multi'};
-const CH2_LADY={id:'ch2-4',chapterId:'ch2',no:'TRACK 04',title:'Grievous Lady',artist:'WELKIN',charter:'Welkin',bpm:'106',length:'02:19',notes:1518,level:17,boss:false,chart:'lady',audio:'Lady.mp3',cover:'bn.avif',state:'locked',fingers:'multi'};
-const CH2_PEN={id:'ch2-5',chapterId:'ch2',no:'TRACK 05',title:'Pentiment',artist:'WELKIN',charter:'Welkin',bpm:'111',length:'02:37',notes:1217,level:18,boss:false,chart:'pen',audio:'pen.mp3',cover:'pen.avif',state:'locked',fingers:'dual'};
-const CH2_FB={id:'ch2-6',chapterId:'ch2',no:'TRACK 06',title:'Tempestissimo',artist:'WELKIN',charter:'Welkin',bpm:'116',length:'02:16',notes:1815,level:19,boss:false,chart:'fb',audio:'fb.mp3',cover:'fb.avif',state:'locked',fingers:'multi'};
-const CH2_CYBER={id:'ch2-boss',chapterId:'ch2',no:'TRACK 07',title:'CyberAttack',artist:'WELKIN',charter:'Welkin',bpm:'130',length:'03:14',notes:2274,level:20,boss:true,chart:'cyber',audio:'Cyber.mp3',cover:'ca.avif',state:'locked',fingers:'multi'};
+const CH2_INIT={id:'ch2-2',chapterId:'ch2',no:'TRACK 01',title:'init()',artist:'WELKIN',charter:'Welkin',bpm:'180',length:'02:22',notes:920,level:10,boss:false,chart:'init',audio:'init.mp3',cover:'init.avif',state:'locked',fingers:'dual'};
+const CH2_AN={id:'ch2-3',chapterId:'ch2',no:'TRACK 02',title:'时逝',artist:'WELKIN',charter:'Welkin',bpm:'199',length:'02:09',notes:1152,level:14,boss:false,chart:'an',audio:'an.mp3',cover:'an.avif',state:'locked',fingers:'dual'};
+const CH2_LA={id:'ch2-7',chapterId:'ch2',no:'TRACK 03',title:'Lamentation',artist:'WELKIN',charter:'Welkin',bpm:'98',length:'02:22',notes:790,level:15,boss:false,chart:'la',audio:'La.mp3',cover:'La.avif',state:'locked',fingers:'multi'};
+const CH2_LADY={id:'ch2-4',chapterId:'ch2',no:'TRACK 04',title:'Grievous Lady',artist:'WELKIN',charter:'Welkin',bpm:'106',length:'02:22',notes:1515,level:17,boss:false,chart:'lady',audio:'Lady.mp3',cover:'bn.avif',state:'locked',fingers:'multi'};
+const CH2_PEN={id:'ch2-5',chapterId:'ch2',no:'TRACK 05',title:'Pentiment',artist:'WELKIN',charter:'Welkin',bpm:'111',length:'02:41',notes:1217,level:18,boss:false,chart:'pen',audio:'pen.mp3',cover:'pen.avif',state:'locked',fingers:'dual'};
+const CH2_FB={id:'ch2-6',chapterId:'ch2',no:'TRACK 06',title:'Tempestissimo',artist:'WELKIN',charter:'Welkin',bpm:'116',length:'02:18',notes:1815,level:19,boss:false,chart:'fb',audio:'fb.mp3',cover:'fb.avif',state:'locked',fingers:'multi'};
+const CH2_CYBER={id:'ch2-boss',chapterId:'ch2',no:'TRACK 07',title:'CyberAttack',artist:'WELKIN',charter:'Welkin',bpm:'130',length:'03:21',notes:2274,level:20,boss:true,chart:'cyber',audio:'Cyber.mp3',cover:'ca.avif',state:'locked',fingers:'multi'};
 function makeCh2Songs(){return [CH2_CYBER,CH2_INIT,CH2_AN,CH2_LA,CH2_LADY,CH2_PEN,CH2_FB];}
 const EFFULGENCE={
   id:'ch1-2',chapterId:'ch1',no:'TRACK 01',title:'Effulgence',artist:'WELKIN',charter:'Welkin',
@@ -1032,14 +1032,17 @@ CHAPTERS.forEach(ch=>{
 });
 const sessionLabel=song=>'SESSION '+String((song&&song.session)||0).padStart(3,'0');
 /* 跨章解锁：每章第一关挂在上一章最后一关上，过了才开。
-   ch1 第一关要序章通关（prologue-1）；ch2 第一关要初章最后一关 TRACK 06 WELKIN（ch1-5）；
-   ch3 第一关要承章最后一关 TRACK 06 魔王曲（ch2-boss）。章内仍是逐关开。 */
+   ch1 第一关要序章通关（prologue-1）；ch2 第一关要初章最后一关 TRACK 06 WELKIN（ch1-5）。
+   ch3 那条门已经不走了——终章是永封（见 sealChapter3），表里留着只是为了完整。 */
 const CH_GATE={ch1:'prologue-1',ch2:'ch1-5',ch3:'ch2-boss'};
 function songClearedAnywhere(id){
   for(const k in clears){if(Array.isArray(clears[k])&&clears[k].includes(id))return true;}
-  return false;
+  /* 个人最佳只会在「真的把这局打完」时写入。开发者模式里刷过的关、或者早期被
+     「必须按顺序通关」那道判断吞掉的清关，clears 里查不到，但 bestMap 里有记录，
+     一样算通过——省得老存档卡在初章→承章那道门上。 */
+  return !!(bestMap&&bestMap[id]);
 }
-function applyUnlocks(){
+function applyUnlocksInner(){
   if(devUnlockAll){
     /* 全解锁模式：所有章节打开、所有曲目全开（保留 clear 标记）。
        未接入谱面的曲目 state 也照常置 available，但详情页/开局的 chart 判断
@@ -1073,11 +1076,8 @@ function applyUnlocks(){
       ch.songs.forEach(s=>{s.state=ch.locked?'locked':(ids.includes(s.id)?'clear':'available');});
       return;
     }
-    /* 终章：以前 CHAPTERS 里写死 locked:true，没有任何地方把它翻回来，
-       于是开发者模式以外永远 SIGNAL SEALED（承章魔王曲打完了也不揭）。
-       现在每次 applyUnlocks 都按跨章门重新算：承章魔王曲（CH_GATE.ch3 = ch2-boss）
-       通关就揭封条，没通关就继续锁；章内还是逐关开。 */
-    if(ch.id==='ch3')ch.locked=!songClearedAnywhere(CH_GATE.ch3);
+    /* 终章不归这里管：封条由 sealChapter3 在每次 applyUnlocks 收尾时压死，
+       跟进度、跟开发者模式、跟老存档都没关系。这里只兜住「已经锁着」的那条分支。 */
     if(ch.locked){ch.cleared=0;ch.progress='LOCKED';ch.songs.forEach(s=>{s.state='locked';});return;}
     const order=chapterTrackOrder(ch);
     order.forEach((id,i)=>{
@@ -1095,6 +1095,24 @@ function applyUnlocks(){
     ch.progress=`${ids.length} / ${ch.songs.length}`;
   });
 }
+/* 终章封条。作者定死的规则：第三章永远锁着——
+   承章全清不开、开发者模式不开、老存档里有过清关记录也不开。
+   每次算完解锁状态都在最后压一次，任何分支（包括全解锁）都翻不过去。
+   真要放人进去，只改 CH3_SEALED 这一行。 */
+const CH3_SEALED=true;
+function sealChapter3(){
+  if(!CH3_SEALED)return;
+  const ch=CHAPTERS.find(c=>c.id==='ch3');
+  if(!ch)return;
+  ch.locked=true;
+  ch.cleared=0;
+  ch.progress='LOCKED';
+  ch.songs.forEach(s=>{s.state='locked';});
+}
+function applyUnlocks(){
+  applyUnlocksInner();
+  sealChapter3();
+}
 /* 解锁状态变了而玩家正停在章节选择页时，卡片不会自己重画（SIGNAL SEALED 会赖在 DOM 上）。
    开发者模式开关完主动刷一次，免得「已经解锁了但界面还锁着」。 */
 function refreshChapterSelectIfActive(){
@@ -1103,12 +1121,8 @@ function refreshChapterSelectIfActive(){
 function markSongCleared(song){
   if(!song)return;
   const ch=CHAPTERS.find(c=>c.id===song.chapterId);if(!ch)return;
-  const order=chapterTrackOrder(ch);
-  const idx=order.indexOf(song.id);
-  if(idx>0){
-    const prev=order[idx-1];
-    if(!(Array.isArray(clears[ch.id])&&clears[ch.id].includes(prev))){applyUnlocks();return;}
-  }
+  /* 以前这里有一条「上一关没通关就不记账」的保护，开发者模式直接跳关时会被它吞掉。
+     能进这一局本身就说明关是开着的，所以清关一律照记。 */
   if(!Array.isArray(clears[ch.id]))clears[ch.id]=[];
   if(!clears[ch.id].includes(song.id))clears[ch.id].push(song.id);
   song.state='clear';
@@ -1172,6 +1186,8 @@ function updateChapterFocus(i){
 function enterChapter(ch){
   if(!ch)return;
   if(ch.id==='prologue'&&!ch.locked){openPrologue();return;}
+  /* 终章永久封条：不管 locked 被谁改成什么样，这里再压一次，进不去就是进不去。 */
+  if(ch.id==='ch3'&&CH3_SEALED){sealChapter3();ch.locked=true;}
   if(ch.locked){
     if(ch.id==='ex'){
       unlockExIfPossible();
@@ -1533,6 +1549,8 @@ function openChapterSelect(){
   chapterFocus=0;selectedChapter=CHAPTERS[0];
   state='CHAPTER';
   uiLockUntil=performance.now()+300;
+  /* 每次打开章节页都按当前 clears / best 重算一遍解锁，别让上一轮的锁定状态挂在 DOM 上。 */
+  applyUnlocks();
   gateChapterCovers(CHAPTERS[0],()=>{
     chapterScreen.classList.add('active');
     chapterScreen.classList.remove('closing');
@@ -2462,6 +2480,11 @@ const MUSIC_DELAY=.3;
 let AUDIO_DELAY=0;
 function audioTime(clock){return clock-MUSIC_DELAY-AUDIO_DELAY;}
 let SONG_DURATION=242.0,FINAL_CHORD_TIME=239.0+CHART_OFFSET;
+/* 本次加载到的音频真实时长（秒），加载完歌曲时由 bgm.duration 填，resetGameData 拿它兜底。 */
+let AUDIO_LOADED_DURATION=0;
+/* duration = 这一局跑到哪个音乐时间就结束。承章七首原来写的是「最后一颗音符再往后一点点」，
+   比音频里真正最后一声短了 1.6~5.6s：铺面打完了、音乐还在响，画面就被切去结果页。
+   现在改成按音频实测结尾（最后一声的位置）+0.25s。其它章不动。 */
 const CHART_META={
   effulgence:{duration:161,final:157.2},
   spark:{duration:146,final:145.3},
@@ -2470,13 +2493,13 @@ const CHART_META={
   w:{duration:86.34,final:82.006},
   ltzz:{duration:152.1,final:148.621},
   welkin:{duration:252,final:242.833},
-  init:{duration:140.6,final:139.027},
-  an:{duration:129.6,final:127.839},
-  la:{duration:139.4,final:132.397},
-  lady:{duration:140.4,final:133.867},
-  pen:{duration:158.7,final:156.756},
-  fb:{duration:137.9,final:136.034},
-  cyber:{duration:195.9,final:194.395}
+  init:{duration:142.44,final:139.027},
+  an:{duration:128.67,final:127.839},
+  la:{duration:141.25,final:132.397},
+  lady:{duration:140.83,final:133.867},
+  pen:{duration:160.06,final:156.756},
+  fb:{duration:138.57,final:136.034},
+  cyber:{duration:201.51,final:194.395}
 };
 const KEYS=['c','v','b','n'];
 
@@ -3301,7 +3324,11 @@ function buildStars(){
    ============================================================ */
 function resetGameData(){
   const meta=CHART_META[selectedSong&&selectedSong.chart]||CHART_META.effulgence;
-  SONG_DURATION=meta.duration;FINAL_CHORD_TIME=meta.final;
+  SONG_DURATION=meta.duration;
+  /* 表里的值若比音频还长（换过文件、编码头不同），压到音频长度，别让结束点跑到音乐后面去干等。
+     只对承章这么做：其它章的时长是原来定好的，这次不动。 */
+  if(selectedSong&&selectedSong.chapterId==='ch2'&&AUDIO_LOADED_DURATION>0)SONG_DURATION=Math.min(SONG_DURATION,AUDIO_LOADED_DURATION);
+  FINAL_CHORD_TIME=meta.final;
   LTZZ_END_FOG.ready=false; // 尾杀黑雾的区间每局按当前谱面重新算
   welkinPopups=[];
   ch2ResetFxCaches(); // 承章各曲的「最后一根长条」区间每局按当前谱面重算
@@ -3488,7 +3515,8 @@ function stepGame(dt){
   const judged=game.perfect+game.good+game.bad+game.miss;
   const ta=judged===0?100:((game.perfect+game.good*.65)/judged)*100;
   displayAcc=clamp(lerp(displayAcc,ta,dt*15),0,100);
-  if(game.clock>SONG_DURATION+MUSIC_DELAY)endGame();
+  /* +.2 秒余量：让最后一个尾音真的播完，再切结果页 */
+  if(game.clock>SONG_DURATION+MUSIC_DELAY+.2)endGame();
 }
 function updateGameHud(){
   const sc=pad7(displayScore);
@@ -3544,6 +3572,7 @@ function loadSongForSession(song,done){
   $('#slChapter').textContent=`${song.chapterEn||'ORIGIN'} / ${song.no}`;
   $('#slBytes').textContent='0.00 MB';
   songLoadingSet(0,'REQUESTING','OPENING AUDIO CHANNEL');
+  AUDIO_LOADED_DURATION=0;
   try{bgm.pause();bgm.src=song.audio;bgm.preload='auto';bgm.load();}catch(e){}
   let settled=false,lastPct=0;
   const finish=()=>{
@@ -3577,7 +3606,7 @@ function loadSongForSession(song,done){
       }
       const loaded=bgm.readyState>=3?99:bgm.readyState>=2?72:bgm.readyState>=1?28:8;
       pct=Math.max(pct,loaded);
-      if(bgm.duration&&isFinite(bgm.duration)){selectedSong.length=fmtTime(bgm.duration);$('#slBytes').textContent='DUR '+fmtTime(bgm.duration);}
+      if(bgm.duration&&isFinite(bgm.duration)){AUDIO_LOADED_DURATION=bgm.duration;selectedSong.length=fmtTime(bgm.duration);$('#slBytes').textContent='DUR '+fmtTime(bgm.duration);}
     }catch(e){}
     lastPct=Math.max(lastPct,pct);
     songLoadingSet(lastPct,lastPct>70?'DECODING':'STREAMING',lastPct>70?'BUILDING WAVEFORM':'RECEIVING PACKETS');
@@ -5375,7 +5404,11 @@ function applyBreakConversion(){
     n.type='break';n.end=0;
   }
 }
+/* 承章黑雾的总强度。所有黑雾都从 ch2FillFog 出去（an / la / lady / pen / cyber 的定时黑雾、
+   fb 尾杀长条黑雾），所以要整体增强/减弱只改这一个数：1.2 = 黑雾出现时在原来基础上再浓 20%。 */
+const CH2_FOG_BOOST=1.2;
 function ch2FillFog(level){
+  level=Math.min(1,level*CH2_FOG_BOOST);
   if(level<=.005)return;
   const c=sctx,w=V.w,h=V.h;
   c.save();
@@ -5629,17 +5662,36 @@ function drawFbWind(mt){
   }
   c.restore();
 }
-/* ---------- pen：史诗光（70-80s 主 / 98-124s 弱），魔王战前奏 ---------- */
 function penEpicAmp(mt){
   if(mt>=70&&mt<80)return Math.min(clamp((mt-70)/2.5,0,1),clamp((80-mt)/2,0,1));
   if(mt>=98&&mt<124)return .6*Math.min(clamp((mt-98)/4,0,1),clamp((124-mt)/4,0,1));
   return 0;
 }
-function drawPenEpic(mt){
-  const env=penEpicAmp(mt);if(env<=.01)return;
-  const c=sctx,w=V.w,h=V.h;
-  const weak=mt>=98;
-  c.save();c.globalCompositeOperation='lighter';c.globalAlpha=env*(weak?.7:.8);
+/* ---------- pen：史诗光（70-80s 主 / 98-124s 弱），魔王战前奏 ----------
+   以前是每帧现场建 7 个径向渐变、往整块画布铺 3 次，再叠 4 根巨型光柱；
+   中段 98–124s 连着 26 秒这么画，手机/平板直接掉帧。
+   现在把不动的那几层（顶部天窗、核心辉光、耀斑、光柱、底部光带）按当前画布尺寸
+   烘焙成一张离屏贴图，每帧只 drawImage 一次；只有光尘还在动，用缓存的小光点画。
+   画布尺寸变了（旋转、地址栏收放）就重建贴图。 */
+const _penEpicLayer={main:null,weak:null,w:0,h:0};
+let _glowDotSpr=null;
+function glowDotSprite(){
+  if(_glowDotSpr)return _glowDotSpr;
+  const S=64,cv=document.createElement('canvas');
+  cv.width=cv.height=S;
+  const g=cv.getContext('2d');
+  const rg=g.createRadialGradient(S/2,S/2,0,S/2,S/2,S/2);
+  rg.addColorStop(0,'rgba(222,238,255,1)');
+  rg.addColorStop(1,'rgba(222,238,255,0)');
+  g.fillStyle=rg;g.fillRect(0,0,S,S);
+  _glowDotSpr=cv;
+  return cv;
+}
+function buildPenEpicLayer(weak,w,h){
+  const cv=document.createElement('canvas');
+  cv.width=Math.max(1,Math.round(w));cv.height=Math.max(1,Math.round(h));
+  const c=cv.getContext('2d');
+  c.globalCompositeOperation='lighter';
   const cx=w*.5,cy=h*.26;
   // 顶部宽幅柔光：让主光柱像是从一片「天窗」漏下来，而不是一个点
   const win=c.createRadialGradient(cx,cy*.9,0,cx,cy*.9,Math.max(w,h)*.60);
@@ -5670,27 +5722,46 @@ function drawPenEpic(mt){
     c.fillStyle=g;c.beginPath();c.arc(0,0,rx,0,Math.PI*2);c.fill();
     c.restore();
   };
-  const breathe=.5+.5*Math.sin(mt*.32);
-  pillar(cx-w*.10, w*.15, h*(1.9+.12*Math.sin(mt*.3+.8)), (weak?.08:.12));
-  pillar(cx+w*.10, w*.15, h*(1.9+.12*Math.sin(mt*.3+2.2)), (weak?.08:.12));
-  pillar(cx,        w*.19, h*(2.1+.12*breathe),              (weak?.09:.13));
+  /* 呼吸幅度只有 ±6%，烘焙时取中间相位，看不出来，但把每帧 4 次巨型填充省掉了。 */
+  pillar(cx-w*.10, w*.15, h*1.96, (weak?.08:.12));
+  pillar(cx+w*.10, w*.15, h*1.96, (weak?.08:.12));
+  pillar(cx,        w*.19, h*2.16, (weak?.09:.13));
   // 中心亮芯：细而柔，给光柱一个「心」
-  pillar(cx,        w*.045, h*(2.2+.10*Math.sin(mt*.4)),     (weak?.16:.23));
-  // 下落的冷白光尘：更少、更暗
-  const dust=V.lowFx?10:18;
-  for(let k=0;k<dust;k++){
-    const px=cx+(((k*137)%100)/100-.5)*w*.86+Math.sin(mt*.5+k*1.3)*5;
-    const py=h*.72-((k*83+mt*18)%(h*.5));
-    const tw=.4+.6*Math.sin(mt*1.6+k*1.7);
-    const rr=1.0+((k*7)%3)*.6;
-    fxGlowDot(c,px,py,rr*2.2,'rgba(222,238,255,'+(.05+.07*tw).toFixed(3)+')');
-  }
+  pillar(cx,        w*.045,h*2.25, (weak?.16:.23));
   // 底部冷白地平线光带（暗）
   const band=c.createLinearGradient(0,h*.74,0,h*.94);
   band.addColorStop(0,'rgba(200,224,255,0)');
   band.addColorStop(.5,'rgba(200,224,255,'+(weak?.03:.05)+')');
   band.addColorStop(1,'rgba(200,224,255,0)');
   c.fillStyle=band;c.fillRect(0,h*.74,w,h*.2);
+  return cv;
+}
+function drawPenEpic(mt){
+  const env=penEpicAmp(mt);if(env<=.01)return;
+  const w=V.w,h=V.h;if(w<2||h<2)return;
+  const weak=mt>=98;
+  if(_penEpicLayer.w!==w||_penEpicLayer.h!==h){
+    _penEpicLayer.main=null;_penEpicLayer.weak=null;
+    _penEpicLayer.w=w;_penEpicLayer.h=h;
+  }
+  const key=weak?'weak':'main';
+  let layer=_penEpicLayer[key];
+  if(!layer)layer=_penEpicLayer[key]=buildPenEpicLayer(weak,w,h);
+  const c=sctx;
+  const base=env*(weak?.7:.8);
+  c.save();c.globalCompositeOperation='lighter';
+  c.globalAlpha=base;
+  c.drawImage(layer,0,0,w,h);
+  // 下落的冷白光尘：更少、更暗（缓存的软光点，不再每颗现建渐变）
+  const dust=V.lowFx?10:18,spr=glowDotSprite();
+  for(let k=0;k<dust;k++){
+    const px=w*.5+(((k*137)%100)/100-.5)*w*.86+Math.sin(mt*.5+k*1.3)*5;
+    const py=h*.72-((k*83+mt*18)%(h*.5));
+    const tw=.4+.6*Math.sin(mt*1.6+k*1.7);
+    const rr=(1.0+((k*7)%3)*.6)*2.2;
+    c.globalAlpha=base*(.05+.07*tw);
+    c.drawImage(spr,px-rr,py-rr,rr*2,rr*2);
+  }
   c.restore();
 }
 function drawCh2Ambient(){
