@@ -379,22 +379,23 @@ function ensureAccount(){
 /* ---- 苍穹星获取算法 ----------------------------------------------------------
    「难度定基数、评级定折扣、AP / 全连定倍数」：
 
-   难度基数：Lv.2 = 67，Lv.20 = 67000，中间按指数插值（曲线和以前完全一样）。
-   基准值：AP 的 1/5。以前是 AP 的 1/10 —— 倍数从「AP ×10 / 全连 ×5」降成
-           「AP ×5 / 全连 ×2.5」，AP / 全连的绝对数不动，其他评级整体翻倍。
-   评级系数：SSS 1.0 / S .85 / A .7 / B .5 / C .3。
-   AP   = 难度基数 × 5
-   全连 = 难度基数 ÷ 5 × 2.5    （和以前一样不看评级：只要全连就按这个给，
-                                   所以任何一档的全连都不会比以前少）
-   普通 = 难度基数 ÷ 5 × 评级系数
-   难度越高基数越大：高难曲的同档评级一定压过低难曲；低难曲的 AP（×5）也仍
-   压得住高一档曲子的全连（2.5 × 1.469 ≈ 3.67 < 5）。0 分不给。 */
-const STAR_AP_LV_LO=67;        /* Lv.2 的 AP 值 */
-const STAR_AP_LV_HI=67000;     /* Lv.20 的 AP 值 */
+   难度基准 B（= 该曲 AP 能拿到的苍穹星）：Lv.2 = 670，Lv.20 = 67000，中间指数插值。
+       低难曲整体抬高：Lv.2 是旧值的 10 倍，越往上越回落，Lv.20 仍是 67000 封顶。
+   结算（都在 B 的基础上算）：
+       AP   = B
+       全连 = B ÷ 2          （不看评级：只要全连就按这个给）
+       普通 = B ÷ 5 × 评级系数（SSS 1.0 / S .85 / A .7 / B .5 / C .3）
+   例：Lv.2  AP 670 / 全连 335 / SSS 134 / B 67 / C 40
+       Lv.20 AP 67000 / 全连 33500 / SSS 13400
+   难度越高 B 越大，高难曲的同档评级一定压过低难曲；低难曲的 AP（B）也仍压得住
+   高一档的全连（0.645B）。0 分不给，单次封顶 67000。 */
+const STAR_AP_LV_LO=670;       /* Lv.2 的 AP 值 */
+const STAR_AP_LV_HI=67000;     /* Lv.20 的 AP 值（也是单次封顶） */
 const STAR_LV_LO=2, STAR_LV_HI=20;
 const STAR_MULT_AP=5, STAR_MULT_FC=2.5;   /* AP ×5 / 全连 ×2.5（相对基准值） */
+const STAR_CAP=67000;                     /* 单次结算封顶 */
 const STAR_RANK_SCALE={SSS:1.0,S:0.85,A:0.7,B:0.5,C:0.3};
-/* 难度基数（= 该曲 AP 能拿到的苍穹星） */
+/* 难度基准（= 该曲 AP 能拿到的苍穹星） */
 function starAPFor(level){
   const L=clamp(Math.floor(Number(level)||STAR_LV_LO),STAR_LV_LO,STAR_LV_HI);
   return STAR_AP_LV_LO*Math.pow(STAR_AP_LV_HI/STAR_AP_LV_LO,(L-STAR_LV_LO)/(STAR_LV_HI-STAR_LV_LO));
@@ -402,11 +403,15 @@ function starAPFor(level){
 function stardustFor(level,rank,isAP,isFC,score){
   if(!score||score<=0)return 0;
   const ap=starAPFor(level);
-  if(isAP)return Math.max(1,Math.round(ap));
   const base=ap/STAR_MULT_AP;   /* 满评级（SSS）、不 AP、不全连的基准值 */
-  if(isFC)return Math.max(1,Math.round(base*STAR_MULT_FC));
-  const m=(rank&&STAR_RANK_SCALE[rank]!==undefined)?STAR_RANK_SCALE[rank]:0.5;
-  return Math.max(1,Math.round(base*m));
+  let v;
+  if(isAP)v=ap;
+  else if(isFC)v=base*STAR_MULT_FC;
+  else{
+    const m=(rank&&STAR_RANK_SCALE[rank]!==undefined)?STAR_RANK_SCALE[rank]:0.5;
+    v=base*m;
+  }
+  return Math.min(STAR_CAP,Math.max(1,Math.round(v)));
 }
 
 /* ---- 奖池 ------------------------------------------------------------------ */
