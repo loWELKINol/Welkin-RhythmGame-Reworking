@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#04070d">
 <title>WELKIN // ORBITAL TERMINAL</title>
-<link rel="stylesheet" href="welkin-os.css?v=20261124g">
+<link rel="stylesheet" href="welkin-os.css?v=20261125d">
 </head>
 <body>
 
@@ -154,6 +154,10 @@
   <div class="room-shade"></div>
   <div class="room-noise"></div>
 </div>
+
+<!-- 导航底衬：选章 / 选曲 / 曲目详情互相切换时垫在大厅之上，
+     页面淡入的那几帧只看见底衬，不会再漏出大厅 UI -->
+<div id="navBase" class="nav-base" aria-hidden="true"></div>
 
 <!-- ================= LOADING ================= -->
 <div id="loading" class="layer boot active">
@@ -472,7 +476,6 @@
     <div class="st-drape dr"><i></i></div>
     <div class="st-pillar pl"><i class="cap"></i><i class="shaft"></i><i class="base"></i></div>
     <div class="st-pillar pr"><i class="cap"></i><i class="shaft"></i><i class="base"></i></div>
-    <div class="st-crest"></div>
     <div class="st-carpet"></div>
     <div class="st-sconce sl"><i></i></div>
     <div class="st-sconce sr"><i></i></div>
@@ -480,7 +483,6 @@
   <header class="store-top">
     <button class="back-btn" id="storeBack" aria-label="返回" onclick="closeStore()">←</button>
     <div class="store-brand">ROYAL <span>//</span> VAULT</div>
-    <div class="store-balance-top"><span id="storeCur2" class="s-cur2">0</span><span class="s-cur2-svg"></span><em>苍穹星</em></div>
   </header>
 
   <div class="store-body">
@@ -514,6 +516,13 @@
           <div class="sc-tier">SSS</div>
           <div class="sc-name">鎏金天幕 · 皇室天气屏</div>
           <div class="sc-own" id="storeOwnPhoneui">—</div>
+        </div>
+        <div class="sc-card sss">
+          <div class="sc-glow"></div>
+          <div class="sc-ico pianobgm" id="scIcoPiano" aria-hidden="true"></div>
+          <div class="sc-tier">SSS</div>
+          <div class="sc-name">大厅奢华钢琴 · 背景音乐</div>
+          <div class="sc-own" id="storeOwnPiano">—</div>
         </div>
         <div class="sc-card s">
           <div class="sc-glow"></div>
@@ -708,6 +717,10 @@
       <div class="set-row">
         <div class="set-name">WEATHER SCREEN SKIN <small>鎏金天幕 · 皇室天气屏（SSS）</small></div>
         <button class="switch" id="tPhoneui" role="switch" aria-checked="false"><i></i></button>
+      </div>
+      <div class="set-row">
+        <div class="set-name">LOBBY BGM <small>大厅奢华钢琴 · 背景音乐（SSS）</small></div>
+        <button class="switch" id="tLobbyMusic" role="switch" aria-checked="false"><i></i></button>
       </div>
     </div>
 
@@ -951,7 +964,10 @@
 
 <audio id="bgm" preload="none"></audio>
 <audio id="uiMusic" src="Ui.mp3" loop preload="auto" playsinline style="position:fixed;left:-9999px;top:0;width:1px;height:1px"></audio>
-<audio id="storeMusic" src="Store.mp3" loop preload="auto" playsinline style="position:fixed;left:-9999px;top:0;width:1px;height:1px"></audio>
+<!-- Store 音乐：?v= 是为了让浏览器丢掉旧缓存，真去读更新后的 Store.mp3 -->
+<audio id="storeMusic" src="Store.mp3?v=20261125" loop preload="auto" playsinline style="position:fixed;left:-9999px;top:0;width:1px;height:1px"></audio>
+<!-- SSS 奖品「大厅奢华钢琴」：独立一条音轨，循环；反复进出只续播不重载 -->
+<audio id="lobbyBgm" src="Audio.mp3" loop preload="auto" playsinline style="position:fixed;left:-9999px;top:0;width:1px;height:1px"></audio>
 
 <script src="corr_chart.js"></script>
 <script src="still_chart.js"></script>
@@ -965,6 +981,6 @@
 <script src="pen_chart.js"></script>
 <script src="fb_chart.js"></script>
 <script src="cyber_chart.js"></script>
-<script src="welkin-os.js?v=20261125b"></script>
+<script src="welkin-os.js?v=20261125e"></script>
 </body>
 </html>

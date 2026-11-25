@@ -24,6 +24,14 @@ h1,h2,h3,p{margin:0}
 .mono{font-family:var(--font-m)}
 .layer{position:fixed;inset:0;z-index:40;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .5s var(--ease),visibility .5s}
 .layer.active{opacity:1;visibility:visible;pointer-events:auto}
+/* 导航底衬（#navBase）：选章 / 选曲 / 曲目详情之间切换时垫在大厅上面。
+   这些页面本身有 .5s 的淡入，淡入的那几帧若直接压在大厅上就会闪出大厅 UI。
+   底衬进入时立刻不透明（transition:none），退出时再淡出，让页面照常淡回大厅。 */
+.nav-base{position:fixed;inset:0;z-index:49;background:#02040a;opacity:0;visibility:hidden;pointer-events:none;
+  transition:opacity .42s var(--ease),visibility .42s}
+.nav-base.on{opacity:1;visibility:visible;transition:none}
+/* 正在交叉淡出的旧页：留在下面当背景，但绝不吃点击 */
+.layer[data-retiring]{pointer-events:none!important}
 .back-btn{width:44px;height:44px;display:grid;place-items:center;border:1px solid var(--line);background:rgba(8,16,28,.55);font:400 20px/1 var(--font-d);color:#bfe6f7;transition:.2s;border-radius:3px;backdrop-filter:blur(10px)}
 .back-btn:hover{border-color:var(--line2);color:#fff;box-shadow:0 0 22px rgba(34,228,255,.18)}
 
@@ -2354,9 +2362,17 @@ body.perf-lite .gd-panel::after{animation-duration:15s}
 .sc-ico.scenery{background:
   radial-gradient(circle at 50% 26%,#ffe9ad,transparent 44%),
   linear-gradient(180deg,#2b1d07,#8a6a1f 58%,#f0d68a);box-shadow:0 0 0 1px #f7e3a8,0 0 26px rgba(232,200,118,.5)}
+/* 黄金奢华轨道：图标由 JS 画成 SVG（鎏金轨道 + 菱形嵌饰），这里只留一层鎏金底 */
 .sc-ico.royal-track{background:
-  linear-gradient(90deg,#ffd76a 0 12%,#241a08 12% 20%,#ffd76a 20% 32%,#241a08 32% 40%,#ffd76a 40% 52%,#241a08 52% 60%,#ffd76a 60% 72%,#241a08 72% 80%,#ffd76a 80% 100%);
+  radial-gradient(circle at 50% 16%,rgba(255,246,219,.5),transparent 58%),
+  linear-gradient(160deg,#f7e3a8,#c9983a 48%,#7d5c18);
   box-shadow:0 0 0 1px #f7e3a8,0 0 26px rgba(232,200,118,.55)}
+.sc-ico.royal-track svg,.sc-ico.pianobgm svg{width:100%;height:100%;display:block;border-radius:inherit}
+/* 大厅奢华钢琴：同样走 JS 的 SVG，底子是一块鎏金 + 暗色琴身 */
+.sc-ico.pianobgm{background:
+  radial-gradient(circle at 50% 18%,rgba(255,246,219,.46),transparent 60%),
+  linear-gradient(160deg,#f0d68a,#8a6a1f 55%,#4a3810);
+  box-shadow:0 0 0 1px #f7e3a8,0 0 26px rgba(232,200,118,.5)}
 .sc-tier{font:800 20px/1 var(--font-d);letter-spacing:.08em}
 .sc-card.sss .sc-tier{color:#fff;text-shadow:0 0 14px rgba(255,255,255,.6)}
 .sc-card.s .sc-tier{color:#ffd76a;text-shadow:0 0 12px rgba(255,215,106,.6)}
@@ -2626,14 +2642,6 @@ body.perf-eco .dr-card.tier-sss .dr-glow{animation:none!important}
   background:linear-gradient(180deg,#d8b45c,#8a6a1f);border-radius:6px;
   box-shadow:inset 0 1px 0 rgba(247,227,168,.5),0 6px 18px rgba(0,0,0,.4)}
 .st-pillar .base::after{content:'';position:absolute;left:-8%;right:-8%;bottom:0;height:40%;border-radius:50%;background:linear-gradient(180deg,#9a7423,#5c4514)}
-/* 皇冠纹章 */
-.st-crest{position:absolute;left:50%;top:0;width:150px;height:104px;transform:translateX(-50%);z-index:4}
-.st-crest::before{content:'';position:absolute;inset:0 10px 8px;
-  background:linear-gradient(180deg,#fff6db 0%,#f0d68a 34%,#c9983a 68%,#8a6a1f 100%);
-  clip-path:polygon(8% 100%,8% 44%,20% 12%,31% 46%,42% 4%,50% 34%,58% 4%,69% 46%,80% 12%,92% 44%,92% 100%);
-  filter:drop-shadow(0 5px 12px rgba(0,0,0,.5))}
-.st-crest::after{content:'';position:absolute;left:50%;bottom:0;width:124px;height:18px;transform:translateX(-50%);
-  background:linear-gradient(180deg,#d8b45c,#8a6a1f);border-radius:4px;box-shadow:inset 0 1px 0 rgba(247,227,168,.6)}
 /* 波斯地毯 */
 .st-carpet{position:absolute;left:50%;bottom:0;width:min(900px,74vw);height:13vh;transform:translateX(-50%);z-index:0;
   background:

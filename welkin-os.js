@@ -68,6 +68,8 @@ const songSelectScreen=$('#songSelectScreen');
 const prologueScreen=$('#prologueScreen');
 const exScreen=$('#exScreen');
 const songLoading=$('#songLoading');
+const navBase=$('#navBase');
+const lobbyBgm=$('#lobbyBgm');
 const imApp=$('#imApp');
 const settingsApp=$('#settingsApp');
 const gameWrap=$('#gameWrap');
@@ -291,7 +293,7 @@ const STORE_FLAG_KEY='welkin_os_store_v1_init';
 const CURR_GRANT_KEY='welkin_os_store_v2_currency';
 const STAR_COST_ONE=67, STAR_COST_TEN=666;
 function genId(){return 'WK-'+Date.now().toString(36).toUpperCase()+'-'+Math.random().toString(36).slice(2,8).toUpperCase();}
-function freshAccount(){return {id:'',currency:666,unlockedNote:[0],unlockedTrack:[0],phone:false,lobby:false,scenery:false,phoneui:false,phoneOn:false,lobbyOn:false,sceneryOn:false,phoneuiOn:false};}
+function freshAccount(){return {id:'',currency:666,unlockedNote:[0],unlockedTrack:[0],phone:false,lobby:false,scenery:false,phoneui:false,phoneOn:false,lobbyOn:false,sceneryOn:false,phoneuiOn:false,lobbyMusic:false,lobbyMusicOn:false};}
 let account=freshAccount();
 function loadAccount(){
   try{
@@ -428,12 +430,13 @@ function hexa(hex,a){
 }
 function buildPrizePool(){
   const P=[];
-  /* SSS 1%：4 件，各 1/4 × 1% */
-  const sssP=0.01/4;
+  /* SSS 1%：5 件，各 1/5 × 1% */
+  const sssP=0.01/5;
   P.push({id:'sss-phone',tier:'SSS',p:sssP,kind:'phone',name:'鎏金终端 · 皇室手机',desc:'高奢黄金风格手机外壳 · 鎏金按键 · 金工雕花',owned:()=>!!account.phone});
   P.push({id:'sss-lobby',tier:'SSS',p:sssP,kind:'lobby',name:'金殿 · 皇室大厅',desc:'手机背后大厅焕新为皇室奢华风 · 窗外夜景保留',owned:()=>!!account.lobby});
   P.push({id:'sss-scenery',tier:'SSS',p:sssP,kind:'scenery',name:'黄金苍穹 · 黄金奢华外景',desc:'窗外风景焕新为黄金科技炫酷风格 · 金辉天际线 · 鎏金霓虹',owned:()=>!!account.scenery});
   P.push({id:'sss-phoneui',tier:'SSS',p:sssP,kind:'phoneui',name:'鎏金天幕 · 皇室天气屏',desc:'手机天气屏焕新为皇室黄金动态鎏金风格 · 金箔流光 · 动态鎏金',owned:()=>!!account.phoneui});
+  P.push({id:'sss-lobbymusic',tier:'SSS',p:sssP,kind:'lobbymusic',name:'大厅奢华钢琴 · 背景音乐',desc:'大厅背景音乐替换为奢华钢琴曲 · 循环播放 · 设置内可开关',owned:()=>!!account.lobbyMusic});
   /* S 5%：5 件，各 1/5 × 5%（白昼 / 晨曦 / 蓝宝 / 圣铠 + 黄金奢华轨道） */
   const sP=0.05/5;
   P.push({id:'note-1',tier:'S',p:sP,kind:'note',skinIndex:1,name:'按键皮肤 · 白昼',desc:'轮廓环光 · 冰白配色',owned:()=>isNoteUnlocked(1)});
@@ -490,6 +493,13 @@ function grantPrize(p){
   if(p.kind==='lobby'){if(account.lobby){const amt=dupRefund(p.tier);account.currency+=amt;return {dup:true,amount:amt};}account.lobby=true;return {dup:false};}
   if(p.kind==='scenery'){if(account.scenery){const amt=dupRefund(p.tier);account.currency+=amt;return {dup:true,amount:amt};}account.scenery=true;return {dup:false};}
   if(p.kind==='phoneui'){if(account.phoneui){const amt=dupRefund(p.tier);account.currency+=amt;return {dup:true,amount:amt};}account.phoneui=true;return {dup:false};}
+  if(p.kind==='lobbymusic'){
+    if(account.lobbyMusic){const amt=dupRefund(p.tier);account.currency+=amt;return {dup:true,amount:amt};}
+    account.lobbyMusic=true;
+    /* 第一次抽到就直接换上，不用再进设置手动开；之后关掉了再抽到也不会被动打开 */
+    account.lobbyMusicOn=true;
+    return {dup:false};
+  }
   return {dup:false};
 }
 
@@ -516,9 +526,11 @@ function playStoreMusic(){
     storeMusicWant=true;
     storeMusicEl.loop=true;
     storeMusicEl.volume=uiMusicVolume();
+    /* 已经在响就别从头再来：同一个商店里 syncUIMusic 被多叫一次也不会打断 */
+    if(!storeMusicEl.paused)return;
     /* 二次进入时音频可能已被浏览器回收（networkState 回到 EMPTY）或残留上次 error，
        先重新 load 再播，避免 play() 静默失败导致音乐“丢失” */
-    if(storeMusicEl.error||storeMusicEl.networkState===0||storeMusicEl.readyState===0){
+    if(storeMusicEl.error||storeMusicEl.networkState===0){
       try{storeMusicEl.load();}catch(e){}
     }
     const start=()=>{
@@ -539,6 +551,12 @@ function stopStoreMusic(){
   storeMusicWant=false;
   try{if(storeMusicEl)storeMusicEl.pause();}catch(e){}
 }
+/* 被浏览器静默拦下 / 元素被回收时的补救：用户下一次点按界面时再尝试，
+   不重载、不重置进度，只把 play() 再叫一次。 */
+function kickStoreMusic(){
+  if(!storeMusicWant||!storeMusicEl||!storeMusicEl.paused)return;
+  try{storeMusicEl.volume=uiMusicVolume();const p=storeMusicEl.play();if(p&&p.catch)p.catch(()=>{});}catch(e){}
+}
 
 /* ---- Store 落地页（iM 01 位） --------------------------------------------- */
 function renderStoreLanding(){
@@ -546,9 +564,7 @@ function renderStoreLanding(){
   feed.innerHTML=`
     <div class="store-landing">
       <div class="store-hero">
-        <div class="store-kicker">ROYAL VAULT · 皇室宝库</div>
         <h2>STORE</h2>
-        <p>以苍穹星兑换皇室珍宝 · SSS 级珍品静候有缘人</p>
         <div class="store-balance">${starSVG(20)}<b id="storeLandCur">${account.currency}</b><span>苍穹星</span></div>
       </div>
       <button class="store-bigbtn" id="btnOpenStore" type="button">
@@ -595,7 +611,115 @@ function closeStore(){
   syncUIMusic(true);
   uiSound(.9);
 }
+/* ---- 奖池里的金色图标（SVG） ------------------------------------------------
+   原来「黄金奢华轨道」在奖池区就是一个黄底 + 几条黑竖线，太像占位图。
+   这里用 SVG 画成真正的鎏金轨道：金属外框、四条内凹轨道、分界上的菱形嵌饰、
+   上下回纹横带和斜向流光；详情弹窗 / 抽奖揭晓也用同一枚，缩小后仍然有层次。
+   钢琴那件同样画成金色三角钢琴 + 音符，和 SSS 的皇室金风格对得上。 */
+let _goldIcoUid=0;
+function royalTrackSVG(size){
+  const s=Math.max(20,Math.round(size||48)),n='rt'+(_goldIcoUid++);
+  return `<svg class="gold-ico" width="${s}" height="${s}" viewBox="0 0 100 100" fill="none" aria-hidden="true">
+    <defs>
+      <linearGradient id="${n}g" x1="0" y1="0" x2=".3" y2="1">
+        <stop offset="0" stop-color="#fff9e6"/><stop offset=".2" stop-color="#f6df9c"/>
+        <stop offset=".52" stop-color="#d6ac53"/><stop offset=".78" stop-color="#9a7423"/><stop offset="1" stop-color="#5c4514"/>
+      </linearGradient>
+      <linearGradient id="${n}l" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#6b5217"/><stop offset=".28" stop-color="#3a2a0a"/>
+        <stop offset=".62" stop-color="#1a1206"/><stop offset="1" stop-color="#4a3810"/>
+      </linearGradient>
+      <linearGradient id="${n}s" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#fff8e2" stop-opacity=".5"/>
+        <stop offset=".38" stop-color="#ffe9ad" stop-opacity=".14"/>
+        <stop offset="1" stop-color="#fff8e2" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    <rect x="1.6" y="1.6" width="96.8" height="96.8" rx="17" fill="url(#${n}g)"/>
+    <rect x="6.6" y="6.6" width="86.8" height="86.8" rx="12.6" stroke="#fff6d8" stroke-opacity=".85" stroke-width="1.5"/>
+    <rect x="10.5" y="12.5" width="79" height="75" rx="7" fill="#160f05" stroke="#a37d28" stroke-width="1.6"/>
+    <g fill="url(#${n}l)" stroke="#b8902f" stroke-width=".9">
+      <rect x="13" y="15" width="16.7" height="70" rx="2.6"/>
+      <rect x="32.1" y="15" width="16.7" height="70" rx="2.6"/>
+      <rect x="51.2" y="15" width="16.7" height="70" rx="2.6"/>
+      <rect x="70.3" y="15" width="16.7" height="70" rx="2.6"/>
+    </g>
+    <g stroke="url(#${n}g)" stroke-width="2" stroke-linecap="round">
+      <path d="M31.2 15.5V84.5"/><path d="M50.3 15.5V84.5"/><path d="M69.4 15.5V84.5"/>
+    </g>
+    <g stroke="#fff6d8" stroke-opacity=".7" stroke-width=".7">
+      <path d="M29.6 16V84"/><path d="M48.7 16V84"/><path d="M67.8 16V84"/>
+    </g>
+    <g>
+      <path d="M31.2 24.6l3.9 3.9-3.9 3.9-3.9-3.9z" fill="url(#${n}g)" stroke="#fff6d8" stroke-opacity=".5" stroke-width=".4"/><path d="M31.2 27.2l1.3 1.3-1.3 1.3-1.3-1.3z" fill="#fffdf2"/>
+      <path d="M50.3 24.6l3.9 3.9-3.9 3.9-3.9-3.9z" fill="url(#${n}g)" stroke="#fff6d8" stroke-opacity=".5" stroke-width=".4"/><path d="M50.3 27.2l1.3 1.3-1.3 1.3-1.3-1.3z" fill="#fffdf2"/>
+      <path d="M69.4 24.6l3.9 3.9-3.9 3.9-3.9-3.9z" fill="url(#${n}g)" stroke="#fff6d8" stroke-opacity=".5" stroke-width=".4"/><path d="M69.4 27.2l1.3 1.3-1.3 1.3-1.3-1.3z" fill="#fffdf2"/>
+      <path d="M31.2 45.8l4.8 4.8-4.8 4.8-4.8-4.8z" fill="url(#${n}g)" stroke="#fff6d8" stroke-opacity=".55" stroke-width=".4"/><path d="M31.2 48.6l2 2-2 2-2-2z" fill="#fffdf2"/>
+      <path d="M50.3 45.8l4.8 4.8-4.8 4.8-4.8-4.8z" fill="url(#${n}g)" stroke="#fff6d8" stroke-opacity=".55" stroke-width=".4"/><path d="M50.3 48.6l2 2-2 2-2-2z" fill="#fffdf2"/>
+      <path d="M69.4 45.8l4.8 4.8-4.8 4.8-4.8-4.8z" fill="url(#${n}g)" stroke="#fff6d8" stroke-opacity=".55" stroke-width=".4"/><path d="M69.4 48.6l2 2-2 2-2-2z" fill="#fffdf2"/>
+      <path d="M31.2 67.1l3.9 3.9-3.9 3.9-3.9-3.9z" fill="url(#${n}g)" stroke="#fff6d8" stroke-opacity=".5" stroke-width=".4"/><path d="M31.2 69.7l1.3 1.3-1.3 1.3-1.3-1.3z" fill="#fffdf2"/>
+      <path d="M50.3 67.1l3.9 3.9-3.9 3.9-3.9-3.9z" fill="url(#${n}g)" stroke="#fff6d8" stroke-opacity=".5" stroke-width=".4"/><path d="M50.3 69.7l1.3 1.3-1.3 1.3-1.3-1.3z" fill="#fffdf2"/>
+      <path d="M69.4 67.1l3.9 3.9-3.9 3.9-3.9-3.9z" fill="url(#${n}g)" stroke="#fff6d8" stroke-opacity=".5" stroke-width=".4"/><path d="M69.4 69.7l1.3 1.3-1.3 1.3-1.3-1.3z" fill="#fffdf2"/>
+    </g>
+    <rect x="12.6" y="12.6" width="74.8" height="3" rx="1.5" fill="url(#${n}g)"/>
+    <rect x="12.6" y="84.4" width="74.8" height="3" rx="1.5" fill="url(#${n}g)"/>
+    <g fill="#fff6d8" fill-opacity=".85">
+      <circle cx="18" cy="14.1" r=".8"/><circle cx="26" cy="14.1" r=".8"/><circle cx="34" cy="14.1" r=".8"/>
+      <circle cx="42" cy="14.1" r=".8"/><circle cx="50" cy="14.1" r=".8"/><circle cx="58" cy="14.1" r=".8"/>
+      <circle cx="66" cy="14.1" r=".8"/><circle cx="74" cy="14.1" r=".8"/><circle cx="82" cy="14.1" r=".8"/>
+    </g>
+    <rect x="10.5" y="12.5" width="79" height="75" rx="7" fill="url(#${n}s)"/>
+  </svg>`;
+}
+function pianoBGMThumb(size){
+  const s=Math.max(20,Math.round(size||48)),n='pb'+(_goldIcoUid++);
+  return `<svg class="gold-ico" width="${s}" height="${s}" viewBox="0 0 100 100" fill="none" aria-hidden="true">
+    <defs>
+      <linearGradient id="${n}g" x1="0" y1="0" x2=".3" y2="1">
+        <stop offset="0" stop-color="#fff9e6"/><stop offset=".22" stop-color="#f6df9c"/>
+        <stop offset=".55" stop-color="#d0a64c"/><stop offset=".8" stop-color="#9a7423"/><stop offset="1" stop-color="#5c4514"/>
+      </linearGradient>
+      <linearGradient id="${n}d" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#1b1306"/><stop offset="1" stop-color="#080602"/>
+      </linearGradient>
+      <linearGradient id="${n}i" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#fffdf4"/><stop offset="1" stop-color="#e6d7b0"/>
+      </linearGradient>
+      <linearGradient id="${n}s" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#fff8e2" stop-opacity=".36"/><stop offset=".5" stop-color="#fff8e2" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    <rect x="2.5" y="2.5" width="95" height="95" rx="16" fill="url(#${n}g)"/>
+    <rect x="6.6" y="6.6" width="86.8" height="86.8" rx="12.6" stroke="#fff4cd" stroke-opacity=".72" stroke-width="1.3"/>
+    <rect x="10" y="10" width="80" height="80" rx="10" fill="url(#${n}d)"/>
+    <g fill="url(#${n}g)" stroke="#fff4cd" stroke-width=".7" stroke-linejoin="round">
+      <path d="M27 65V45c0-8 6.4-14 14.6-14h15.6C69.4 31 79 39.6 79 51v14H27z"/>
+    </g>
+    <path d="M32 63V47c0-6 4.6-10.6 11-10.6h13.4C66 36.4 74 43 74 52v11H32z" fill="#120c04" stroke="url(#${n}g)" stroke-width="1"/>
+    <path d="M36 44c6-4.6 14-5.4 21-2.2 5 2.2 8 6 7.4 10.6" stroke="url(#${n}g)" stroke-width="1.4" stroke-linecap="round" fill="none" stroke-opacity=".85"/>
+    <rect x="25" y="63" width="54" height="11" rx="1.6" fill="url(#${n}i)" stroke="#b8862a" stroke-width=".9"/>
+    <g fill="#241a08">
+      <rect x="30" y="63" width="2.4" height="6.2"/><rect x="37" y="63" width="2.4" height="6.2"/>
+      <rect x="44" y="63" width="2.4" height="6.2"/><rect x="51" y="63" width="2.4" height="6.2"/>
+      <rect x="58" y="63" width="2.4" height="6.2"/><rect x="65" y="63" width="2.4" height="6.2"/>
+      <rect x="72" y="63" width="2.4" height="6.2"/>
+    </g>
+    <g stroke="url(#${n}g)" stroke-width="3" stroke-linecap="round">
+      <path d="M30 74.6V86"/><path d="M52 74.6V88"/><path d="M74 74.6V86"/>
+    </g>
+    <g fill="url(#${n}g)">
+      <ellipse cx="35" cy="23" rx="5.4" ry="4.2" transform="rotate(-18 35 23)"/>
+      <rect x="39.4" y="9.5" width="2.4" height="13.6" rx="1.2"/>
+      <path d="M41.8 9.6c5.4 1 8.6 3.6 8 9.4-1.6-3.8-4.2-5.6-8-6.2z"/>
+      <ellipse cx="57" cy="18" rx="4.2" ry="3.3" transform="rotate(-18 57 18)"/>
+      <rect x="60.4" y="7.4" width="2" height="10.6" rx="1"/>
+    </g>
+    <rect x="10" y="10" width="80" height="80" rx="10" fill="url(#${n}s)"/>
+  </svg>`;
+}
 function trackSkinThumb(i){
+  /* 黄金奢华轨道不套通用渐变，直接用那枚鎏金轨道图标 */
+  if(Number(i)===20)return royalTrackSVG(48);
   const sk=TRACK_SKINS[i];if(!sk)return '';
   const a='rgb('+sk.a[0]+','+sk.a[1]+','+sk.a[2]+')';
   const b=sk.b?('rgb('+sk.b[0]+','+sk.b[1]+','+sk.b[2]+')'):a;
@@ -609,10 +733,8 @@ function noteSkinThumb(i){
 }
 function renderStore(){
   const cur=$('#storeCur');if(cur)cur.textContent=account.currency;
-  const cur2=$('#storeCur2');if(cur2)cur2.textContent=account.currency;
   const cur3=$('#storeCur3');if(cur3)cur3.textContent=account.currency;
   const svgA=$('.s-cur-svg');if(svgA)svgA.innerHTML=starSVG(16);
-  const svgB=$('.s-cur2-svg');if(svgB)svgB.innerHTML=starSVG(14);
   const svgC=$('.sbr-svg');if(svgC)svgC.innerHTML=starSVG(14);
   const ownNote=$('#storeOwnNote');if(ownNote)ownNote.textContent=account.unlockedNote.filter(i=>i>=1&&i<NOTE_SKINS.length).length+'/'+(NOTE_SKINS.length-1);
   const ownTrack=$('#storeOwnTrack');if(ownTrack)ownTrack.textContent=account.unlockedTrack.filter(i=>i>=1&&i<20).length+'/19';
@@ -620,6 +742,10 @@ function renderStore(){
   const oLobby=$('#storeOwnLobby');if(oLobby)oLobby.textContent=account.lobby?'OWNED':'—';
   const oScenery=$('#storeOwnScenery');if(oScenery)oScenery.textContent=account.scenery?'OWNED':'—';
   const oPhoneui=$('#storeOwnPhoneui');if(oPhoneui)oPhoneui.textContent=account.phoneui?'OWNED':'—';
+  const oPiano=$('#storeOwnPiano');if(oPiano)oPiano.textContent=account.lobbyMusic?'OWNED':'—';
+  /* 展台的两枚金色图标由 SVG 画（只填一次，重复渲染不重建） */
+  const rtIco=$('.sc-ico.royal-track');if(rtIco&&!rtIco.dataset.filled){rtIco.innerHTML=royalTrackSVG(74);rtIco.dataset.filled='1';}
+  const pbIco=$('#scIcoPiano');if(pbIco&&!pbIco.dataset.filled){pbIco.innerHTML=pianoBGMThumb(74);pbIco.dataset.filled='1';}
   const oRTrack=$('#storeOwnRoyalTrack');if(oRTrack)oRTrack.textContent=isTrackUnlocked(20)?'OWNED':'—';
   const bOne=$('#btnDrawOne');if(bOne)bOne.innerHTML='单抽 <span>'+STAR_COST_ONE+'</span>'+starSVG(14);
   const bTen=$('#btnDrawTen');if(bTen)bTen.innerHTML='十连抽 <span>'+STAR_COST_TEN+'</span>'+starSVG(14);
@@ -646,6 +772,7 @@ function renderPrizeDetail(){
       else if(p.kind==='lobby')ico='<span class="pm-ico lobby"></span>';
       else if(p.kind==='scenery')ico='<span class="pm-ico scenery"></span>';
       else if(p.kind==='phoneui')ico='<span class="pm-ico phoneui"></span>';
+      else if(p.kind==='lobbymusic')ico=pianoBGMThumb(40);
       html+=`<div class="pm-item ${owned?'owned':''}">
         <div class="pm-ico-wrap">${ico}</div>
         <div class="pm-name">${esc(p.name)}</div>
@@ -884,6 +1011,7 @@ function showDrawReveal(items,ten){
     else if(p.kind==='lobby')ico='<span class="dr-ico lobby"></span>';
     else if(p.kind==='scenery')ico='<span class="dr-ico scenery"></span>';
     else if(p.kind==='phoneui')ico='<span class="dr-ico phoneui"></span>';
+    else if(p.kind==='lobbymusic')ico=pianoBGMThumb(48);
     html+=`<div class="dr-card tier-${p.tier.toLowerCase()}">
       <i class="dr-corner tl"></i><i class="dr-corner tr"></i><i class="dr-corner bl"></i><i class="dr-corner br"></i>
       <i class="dr-gem"></i>
@@ -952,6 +1080,8 @@ function compactSaveBlob(){
   if(a.lobbyOn)flags|=32;
   if(a.sceneryOn)flags|=64;
   if(a.phoneuiOn)flags|=128;
+  if(a.lobbyMusic)flags|=256;
+  if(a.lobbyMusicOn)flags|=512;
   const s={};
   for(const k in DEFAULT_SETTINGS){if(settings[k]!==DEFAULT_SETTINGS[k])s[k]=settings[k];}
   const b={};
@@ -1041,7 +1171,8 @@ function applySaveBlob(obj){
         unlockedNote:listFromBits(a[2],16),
         unlockedTrack:listFromBits(a[3],32),
         phone:!!(f&1),lobby:!!(f&2),scenery:!!(f&4),phoneui:!!(f&8),
-        phoneOn:!!(f&16),lobbyOn:!!(f&32),sceneryOn:!!(f&64),phoneuiOn:!!(f&128)
+        phoneOn:!!(f&16),lobbyOn:!!(f&32),sceneryOn:!!(f&64),phoneuiOn:!!(f&128),
+        lobbyMusic:!!(f&256),lobbyMusicOn:!!(f&512)
       };
     }else if(obj.account&&typeof obj.account==='object'){
       acctSrc=obj.account;
@@ -1876,9 +2007,13 @@ function waitImage(src){
   });
 }
 function preload(){
+  /* 大厅 BGM 已经换成钢琴曲时，开机就直接预载 Audio.mp3（phone.mp3 等要用再按需加载） */
+  const lobbyJob=lobbyMusicAllowed()
+    ?{label:'LOBBY PIANO',w:.18,run:()=>waitAudioReady(lobbyBgm,14000)}
+    :{label:'PHONE CHANNEL',w:.18,run:()=>waitAudioReady(getUITrack('phone'),10000)};
   const jobs=[
     {label:'SELECT CHANNEL',w:.26,run:()=>waitAudioReady(getUITrack('select'),14000)},
-    {label:'PHONE CHANNEL',w:.18,run:()=>waitAudioReady(getUITrack('phone'),10000)},
+    lobbyJob,
     {label:'CONFIG CHANNEL',w:.08,run:()=>waitAudioReady(getUITrack('setting'),10000)},
     {label:'NEURAL FEED',w:.18,run:()=>waitAudioReady(getUITrack('im'),10000)},
     {label:'UI AUDIO BUS',w:.02,run:()=>{try{uiPlayer.src=UI_TRACK_FILES.select;uiPlayer.load();uiPlayerKey='select';}catch(e){}}},
@@ -2543,14 +2678,15 @@ function renderPrologue(){
 function openPrologue(){
   state='LOADING';
   uiLockUntil=performance.now()+400;
+  navBaseOn();
   gatePrologue(()=>{
     const ch=CHAPTERS.find(c=>c.id==='prologue');
     selectedChapter=ch||CHAPTERS[0];
-    chapterScreen.classList.remove('active');
-    exScreen.classList.remove('active');
-    songSelectScreen.classList.remove('active');
-    songScreen.classList.remove('active');
-    prologueScreen.classList.add('active');
+    retireNavLayer(chapterScreen);
+    retireNavLayer(exScreen);
+    retireNavLayer(songSelectScreen);
+    retireNavLayer(songScreen);
+    showNavLayer(prologueScreen);
     state='SONGSELECT';
     renderPrologue();
     stopExRain();
@@ -2590,12 +2726,12 @@ function closeProGuide(){
 }
 function closeSolo(){
   if(!prologueScreen.classList.contains('active')&&!exScreen.classList.contains('active'))return;
-  prologueScreen.classList.remove('active');
-  exScreen.classList.remove('active');
+  retireNavLayer(prologueScreen);
+  retireNavLayer(exScreen);
   stopPrologueRain();
   stopExRain();
   proDecodeToken++;
-  chapterScreen.classList.add('active');
+  showNavLayer(chapterScreen);
   state='CHAPTER';
   chapterFocus=Math.max(0,CHAPTERS.findIndex(c=>c.id===(selectedChapter&&selectedChapter.id)));
   renderChapterSelect();
@@ -2624,11 +2760,11 @@ function showExScreen(){
   const ex=CHAPTERS.find(c=>c.id==='ex');
   selectedChapter=ex||CHAPTERS[CHAPTERS.length-1];
   stopPrologueRain();
-  chapterScreen.classList.remove('active');
-  prologueScreen.classList.remove('active');
-  songSelectScreen.classList.remove('active');
-  songScreen.classList.remove('active');
-  exScreen.classList.add('active');
+  retireNavLayer(chapterScreen);
+  retireNavLayer(prologueScreen);
+  retireNavLayer(songSelectScreen);
+  retireNavLayer(songScreen);
+  showNavLayer(exScreen);
   state='SONGSELECT';
   renderExScreen();
   startExRain();
@@ -2639,6 +2775,7 @@ function openExChapter(){
   if(!exUnlocked&&!devUnlockAll)return;
   state='LOADING';
   uiLockUntil=performance.now()+400;
+  navBaseOn();
   gateStillCover(showExScreen);
 }
 function startExSession(){
@@ -2655,18 +2792,51 @@ function closeStillLetter(){
   const ov=$('#letterOverlay');if(ov)ov.classList.remove('active');
   uiSound(.9);
 }
+/* ---------- 页面切换：底衬 + 交叉淡出 ----------
+   大厅（.room）在 z-index 0，选章 / 选曲 / 曲目 / 序章 / EX 都是 .layer（opacity 淡入 .5s）。
+   以前切页是「旧页立刻 remove、新页从 0 淡入」，那半秒里最底下的大厅就露了出来——
+   这就是点进章节 / 点开曲目时闪几帧大厅的根因。
+   现在两层保障：
+     1. #navBase（z-index 49，垫在所有选择页下面、大厅上面）在进入这些页面时立刻不透明；
+     2. 旧页不立刻抽走，等新页淡入完成再撤，两页真正交叉淡化。
+   离开这些页面回大厅时才撤底衬，于是「回大厅」依旧是正常的淡出。 */
+const NAV_RETIRE_MS=560;
+function navBaseOn(){
+  if(navBase)navBase.classList.add('on');
+  /* 进选章 / 选曲 / 曲目页时大厅钢琴 BGM 立刻收住，别和选曲 BGM 叠在一起 */
+  stopLobbyBgm();
+}
+function navBaseOff(){if(navBase)navBase.classList.remove('on');}
+function showNavLayer(el){
+  if(!el)return;
+  if(el.__retireTimer){clearTimeout(el.__retireTimer);el.__retireTimer=0;}
+  delete el.dataset.retiring;
+  el.classList.add('active');
+}
+function retireNavLayer(el){
+  if(!el||!el.classList.contains('active'))return;
+  if(el.__retireTimer)clearTimeout(el.__retireTimer);
+  el.dataset.retiring='1';
+  el.__retireTimer=setTimeout(()=>{
+    el.__retireTimer=0;
+    if(el.dataset.retiring!=='1')return;
+    delete el.dataset.retiring;
+    el.classList.remove('active');
+  },NAV_RETIRE_MS);
+}
 function openChapterSelect(){
   if(state==='GAME'||state==='PAUSED'||state==='RESULT'||state==='CHAPTER'||state==='SONGSELECT'||state==='LOADING')return;
   chapterFocus=0;selectedChapter=CHAPTERS[0];
   state='CHAPTER';
   uiLockUntil=performance.now()+300;
+  navBaseOn();
   /* 每次打开章节页都按当前 clears / best 重算一遍解锁，别让上一轮的锁定状态挂在 DOM 上。 */
   applyUnlocks();
   gateChapterCovers(CHAPTERS[0],()=>{
-    chapterScreen.classList.add('active');
+    showNavLayer(chapterScreen);
     chapterScreen.classList.remove('closing');
-    songSelectScreen.classList.remove('active');
-    songScreen.classList.remove('active');
+    retireNavLayer(songSelectScreen);
+    retireNavLayer(songScreen);
     renderChapterSelect();
     playUIMusic('select',true);
     uiSound(1.15);
@@ -2676,6 +2846,7 @@ function closeChapterSelect(){
   if(!chapterScreen.classList.contains('active'))return;
   chapterScreen.classList.remove('active');
   if(state==='CHAPTER')state='PHONE';
+  navBaseOff();
   syncUIMusic(true);
   uiSound(.9);
 }
@@ -2684,10 +2855,11 @@ function openSongSelect(ch){
   currentChapter=ch;selectedChapter=ch;
   state='SONGSELECT';
   uiLockUntil=performance.now()+240;
+  navBaseOn();
   gateChapterCovers(ch,()=>{
-    chapterScreen.classList.remove('active');
-    songScreen.classList.remove('active');
-    songSelectScreen.classList.add('active');
+    retireNavLayer(chapterScreen);
+    retireNavLayer(songScreen);
+    showNavLayer(songSelectScreen);
     renderSongSelect();
     /* 进章时回到最上面（终章那首收尾曲藏在魔王曲上方，得从顶部看起）；
        从曲目详情返回时不重置，保持刚才滚到的位置。 */
@@ -2698,8 +2870,8 @@ function openSongSelect(ch){
 }
 function closeSongSelect(){
   if(!songSelectScreen.classList.contains('active'))return;
-  songSelectScreen.classList.remove('active');
-  chapterScreen.classList.add('active');
+  retireNavLayer(songSelectScreen);
+  showNavLayer(chapterScreen);
   state='CHAPTER';
   renderChapterSelect();
   playUIMusic('select',false);
@@ -2987,13 +3159,14 @@ function renderSongDetail(song){
 }
 function openSongDetail(song,source){
   selectedSong=song;detailSource=source||'songselect';detailReadyAt=performance.now()+300;
-  prologueScreen.classList.remove('active');
-  exScreen.classList.remove('active');
+  navBaseOn();
+  retireNavLayer(prologueScreen);
+  retireNavLayer(exScreen);
   stopPrologueRain();
   stopExRain();
-  chapterScreen.classList.remove('active');
-  songSelectScreen.classList.remove('active');
-  songScreen.classList.add('active');
+  retireNavLayer(chapterScreen);
+  retireNavLayer(songSelectScreen);
+  showNavLayer(songScreen);
   state='SONG';
   renderSongDetail(song);
   playUIMusic('select',false);
@@ -3001,24 +3174,24 @@ function openSongDetail(song,source){
 }
 function closeSongDetail(){
   if(!songScreen.classList.contains('active'))return;
-  songScreen.classList.remove('active');
+  retireNavLayer(songScreen);
   if(detailSource==='ex'){
-    exScreen.classList.add('active');
+    showNavLayer(exScreen);
     state='SONGSELECT';
     renderExScreen();
     startExRain();
   }else if(detailSource==='prologue'){
-    prologueScreen.classList.add('active');
+    showNavLayer(prologueScreen);
     state='SONGSELECT';
     renderPrologue();
     startPrologueRain();
   }else if(detailSource==='chapter'){
-    chapterScreen.classList.add('active');
+    showNavLayer(chapterScreen);
     state='CHAPTER';
     chapterFocus=Math.max(0,CHAPTERS.findIndex(c=>c.id===selectedSong.chapterId));
     renderChapterSelect();
   }else{
-    songSelectScreen.classList.add('active');
+    showNavLayer(songSelectScreen);
     state='SONGSELECT';
     renderSongSelect();
   }
@@ -3097,10 +3270,12 @@ function syncSettingsUI(){
   const tl=$('#tLobby');if(tl){tl.classList.toggle('locked',!account.lobby);setSwitch('#tLobby',!!account.lobbyOn);}
   const ts=$('#tScenery');if(ts){ts.classList.toggle('locked',!account.scenery);setSwitch('#tScenery',!!account.sceneryOn);}
   const tui=$('#tPhoneui');if(tui){tui.classList.toggle('locked',!account.phoneui);setSwitch('#tPhoneui',!!account.phoneuiOn);}
+  const tlbm=$('#tLobbyMusic');if(tlbm){tlbm.classList.toggle('locked',!account.lobbyMusic);setSwitch('#tLobbyMusic',!!account.lobbyMusicOn);}
   if(user)$('#setUser').textContent=user.name;
 }
-/* ---- 手机新 UI（皇室外观）：四件 SSS 各一个开关 ---------------------------------
-   鎏金终端（手机壳）/ 金殿（大厅）/ 黄金苍穹（外景）/ 鎏金天幕（天气屏）。 */
+/* ---- 手机新 UI / 大厅 BGM：五件 SSS 各一个开关 --------------------------------
+   鎏金终端（手机壳）/ 金殿（大厅）/ 黄金苍穹（外景）/ 鎏金天幕（天气屏）/
+   大厅奢华钢琴（背景音乐，走独立的 #lobbyBgm 音轨）。 */
 function syncTrackSkinUI(){
   const sk=getTrackSkin();
   const el=$('#vTrackSkin');
@@ -3215,6 +3390,8 @@ function setSwitch(sel,on){
 function applySettings(){
   bgm.volume=clamp(settings.volume/100,0,1);
   try{uiPlayer.volume=uiMusicVolume();}catch(e){}
+  try{if(lobbyBgm)lobbyBgm.volume=uiMusicVolume();}catch(e){}
+  try{if(storeMusicEl&&storeMusicWant)storeMusicEl.volume=uiMusicVolume();}catch(e){}
   Object.keys(uiTracks).forEach(k=>{const a=uiTracks[k];if(a)a.volume=uiMusicVolume();});
   if(typeof updateScrollSpeed==='function')updateScrollSpeed();
   document.body.classList.toggle('reduce-motion',settings.motion);
@@ -3566,6 +3743,39 @@ uiPlayer.loop=true;uiPlayer.preload='auto';uiPlayer.volume=0;
 uiPlayer.playsInline=true;uiPlayer.setAttribute('playsinline','');
 let uiCurrent='',uiFadeToken=0,uiPlayerKey='select';
 function uiMusicVolume(){return clamp(settings.volume/100*.9,0,1);}
+/* ---- 大厅奢华钢琴 BGM（SSS 奖品 · Audio.mp3） -------------------------------
+   独立一条 <audio id="lobbyBgm">，不跟 uiPlayer 共用同一个元素：
+   反复进出商店 / 设置 / 选曲再回到大厅，只 pause / resume，不会重新 load 把进度清零，
+   也不会像以前商店音乐那样「第二次进来就没声」。loop 由元素自身保持。
+   抽到这件奖品后它就替换默认的大厅 BGM（phone.mp3），两首绝不会同时响。 */
+let lobbyBgmWant=false;
+function lobbyMusicAllowed(){return !!(account&&account.lobbyMusic&&account.lobbyMusicOn);}
+function playLobbyBgm(){
+  if(!lobbyBgm||!lobbyMusicAllowed())return;
+  lobbyBgmWant=true;
+  try{
+    lobbyBgm.loop=true;
+    lobbyBgm.volume=uiMusicVolume();
+    /* 被浏览器回收（networkState EMPTY）或残留 error 时先重新 load 一次，
+       否则 play() 会静默失败——这正是「再进来就没音乐」的老毛病。 */
+    if(lobbyBgm.error||lobbyBgm.networkState===0){
+      try{lobbyBgm.load();}catch(e){}
+    }
+    if(lobbyBgm.paused){
+      const p=lobbyBgm.play();
+      if(p&&p.catch)p.catch(()=>{});
+    }
+  }catch(e){}
+}
+function stopLobbyBgm(){
+  lobbyBgmWant=false;
+  try{if(lobbyBgm)lobbyBgm.pause();}catch(e){}
+}
+function retryLobbyBgm(){
+  if(lobbyBgmWant&&lobbyBgm&&lobbyBgm.paused&&lobbyMusicAllowed()){
+    try{lobbyBgm.volume=uiMusicVolume();const p=lobbyBgm.play();if(p&&p.catch)p.catch(()=>{});}catch(e){}
+  }
+}
 function getUITrack(key){
   if(uiTracks[key])return uiTracks[key];
   const file=UI_TRACK_FILES[key];if(!file)return null;
@@ -3596,6 +3806,8 @@ function fadeInUIMusic(a){
 }
 function playUIMusic(key,restart=false){
   key=key||'';
+  /* 选曲 / 设置 / 商店 / iM 任一 UI 音乐要接管时，大厅钢琴先退场（它有自己的元素） */
+  stopLobbyBgm();
   if(!key){
     uiFadeToken++;
     try{uiPlayer.pause();uiPlayer.volume=0;}catch(e){}
@@ -3626,11 +3838,26 @@ function syncUIMusic(restart=false){
   if(storeAppEl&&storeAppEl.classList.contains('active')){stopAllUIMusic();playStoreMusic();return;}
   if(settingsApp.classList.contains('active'))return playUIMusic('setting',restart);
   if(imApp.classList.contains('active')&&!imApp.classList.contains('im-closing'))return playUIMusic('im',restart);
-  if(state==='PHONE')return playUIMusic('phone',restart);
+  if(state==='PHONE'){
+    if(lobbyMusicAllowed()){
+      /* 钢琴曲接管大厅 BGM：uiPlayer 上的 phone.mp3 静音，只播这一条。
+         已经响着就别动它——重复回大厅、反复开关设置都不会从头开始。 */
+      uiFadeToken++;
+      try{uiPlayer.pause();uiPlayer.volume=0;}catch(e){}
+      uiCurrent='';
+      playLobbyBgm();
+      return;
+    }
+    stopLobbyBgm();
+    return playUIMusic('phone',restart);
+  }
+  stopLobbyBgm();
   if((state==='CHAPTER'||state==='SONGSELECT'||state==='SONG')&&(chapterScreen.classList.contains('active')||songSelectScreen.classList.contains('active')||songScreen.classList.contains('active')||prologueScreen.classList.contains('active')||exScreen.classList.contains('active')))return playUIMusic('select',restart);
   playUIMusic(null);
 }
 function retryUIMusic(){
+  retryLobbyBgm();
+  kickStoreMusic();
   if(!uiCurrent)return;
   if(uiPlayer.paused){try{uiPlayer.currentTime=0;}catch(e){}uiPlayer.volume=0;try{const p=uiPlayer.play();if(p&&p.then)p.then(()=>fadeInUIMusic(uiPlayer)).catch(()=>{});}catch(e){}}
 }
@@ -3638,6 +3865,7 @@ function stopAllUIMusic(){
   uiFadeToken++;
   try{uiPlayer.pause();uiPlayer.volume=0;}catch(e){}
   uiCurrent='';
+  stopLobbyBgm();
 }
 
 
@@ -4794,7 +5022,8 @@ function cancelSongLoading(){
   closeSongLoading();
   songLoadingAction('ABORT UPLINK',cancelSongLoading);
   state='SONG';
-  songScreen.classList.add('active');
+  navBaseOn();
+  showNavLayer(songScreen);
   playUIMusic('select',true);
   uiSound(.7);
 }
@@ -7836,6 +8065,16 @@ function wireUI(){
     account.phoneuiOn=!account.phoneuiOn;saveAccount();applySkins();
     setSwitch('#tPhoneui',account.phoneuiOn);syncSettingsUI();uiSound(1.3);
   });
+  bind('#tLobbyMusic','click',()=>{
+    if(!account.lobbyMusic){showExNotice('LOCKED','抽中「大厅奢华钢琴 · 背景音乐」后解锁');uiSound(.6);return;}
+    account.lobbyMusicOn=!account.lobbyMusicOn;saveAccount();
+    setSwitch('#tLobbyMusic',account.lobbyMusicOn);syncSettingsUI();
+    /* 设置页里开关时不要用钢琴曲盖掉设置 BGM：等关掉设置、回大厅时由 syncUIMusic 接管；
+       关掉开关就立刻停，别拖到下一屏。 */
+    if(!account.lobbyMusicOn)stopLobbyBgm();
+    else if(state==='PHONE'&&!settingsApp.classList.contains('active'))syncUIMusic(true);
+    uiSound(1.3);
+  });
   bind('#btnExport','click',async()=>{
     uiSound(1.3);
     const code=await exportSave();
@@ -7889,6 +8128,7 @@ function wireUI(){
     gameWrap.classList.remove('active');gameHud.classList.remove('active');
     songScreen.classList.remove('active');imApp.classList.remove('active');
     chapterScreen.classList.remove('active');songSelectScreen.classList.remove('active');
+    navBaseOff();
     state='LOGIN';showLogin();
   });
 
