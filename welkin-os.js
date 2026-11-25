@@ -377,18 +377,36 @@ function ensureAccount(){
 }
 
 /* ---- 苍穹星获取算法 ----------------------------------------------------------
-   AP 锚点：Lv.2 = 67，Lv.20 = 67000，指数增长；平时 = AP/10；全连 = 5× 平时；
-   评级越高 / 难度越高给的越多。0 分不给。 */
+   「难度定基数、评级定折扣、AP / 全连定倍数」：
+
+   难度基数：Lv.2 = 67，Lv.20 = 67000，中间按指数插值（曲线和以前完全一样）。
+   基准值：AP 的 1/5。以前是 AP 的 1/10 —— 倍数从「AP ×10 / 全连 ×5」降成
+           「AP ×5 / 全连 ×2.5」，AP / 全连的绝对数不动，其他评级整体翻倍。
+   评级系数：SSS 1.0 / S .85 / A .7 / B .5 / C .3。
+   AP   = 难度基数 × 5
+   全连 = 难度基数 ÷ 5 × 2.5    （和以前一样不看评级：只要全连就按这个给，
+                                   所以任何一档的全连都不会比以前少）
+   普通 = 难度基数 ÷ 5 × 评级系数
+   难度越高基数越大：高难曲的同档评级一定压过低难曲；低难曲的 AP（×5）也仍
+   压得住高一档曲子的全连（2.5 × 1.469 ≈ 3.67 < 5）。0 分不给。 */
+const STAR_AP_LV_LO=67;        /* Lv.2 的 AP 值 */
+const STAR_AP_LV_HI=67000;     /* Lv.20 的 AP 值 */
+const STAR_LV_LO=2, STAR_LV_HI=20;
+const STAR_MULT_AP=5, STAR_MULT_FC=2.5;   /* AP ×5 / 全连 ×2.5（相对基准值） */
+const STAR_RANK_SCALE={SSS:1.0,S:0.85,A:0.7,B:0.5,C:0.3};
+/* 难度基数（= 该曲 AP 能拿到的苍穹星） */
+function starAPFor(level){
+  const L=clamp(Math.floor(Number(level)||STAR_LV_LO),STAR_LV_LO,STAR_LV_HI);
+  return STAR_AP_LV_LO*Math.pow(STAR_AP_LV_HI/STAR_AP_LV_LO,(L-STAR_LV_LO)/(STAR_LV_HI-STAR_LV_LO));
+}
 function stardustFor(level,rank,isAP,isFC,score){
   if(!score||score<=0)return 0;
-  const L=clamp(Math.floor(Number(level)||1),1,20);
-  const ap=67*Math.pow(1000,(L-2)/18);
-  if(isAP)return Math.round(ap);
-  const normal=ap/10;
-  if(isFC)return Math.max(1,Math.round(normal*5));
-  const scale={SSS:1.0,S:0.85,A:0.7,B:0.5,C:0.3};
-  const m=(rank&&scale[rank]!==undefined)?scale[rank]:0.5;
-  return Math.max(1,Math.round(normal*m));
+  const ap=starAPFor(level);
+  if(isAP)return Math.max(1,Math.round(ap));
+  const base=ap/STAR_MULT_AP;   /* 满评级（SSS）、不 AP、不全连的基准值 */
+  if(isFC)return Math.max(1,Math.round(base*STAR_MULT_FC));
+  const m=(rank&&STAR_RANK_SCALE[rank]!==undefined)?STAR_RANK_SCALE[rank]:0.5;
+  return Math.max(1,Math.round(base*m));
 }
 
 /* ---- 奖池 ------------------------------------------------------------------ */
@@ -2016,7 +2034,7 @@ const CH2_COVER_FILES=['init.avif','an.avif','La.avif','bn.avif','pen.avif','fb.
 /* 承章七首正式接入：顺序 TRACK 01→06 = init / 时逝 / Lamentation / Grievous Lady /
    Pentiment / Tempestissimo，魔王曲 = CyberAttack。曲绘沿用旧的短名文件（bn=Grievous Lady，
    ca=CyberAttack）。id 沿用 ch2-2…ch2-6 / ch2-boss，La 用独立 id ch2-7，避免撞旧通关记录。 */
-const CH2_INIT={id:'ch2-2',chapterId:'ch2',no:'TRACK 01',title:'init()',artist:'WELKIN',charter:'Welkin',bpm:'180',length:'02:22',notes:920,level:10,boss:false,chart:'init',audio:'init.mp3',cover:'init.avif',state:'locked',fingers:'dual'};
+const CH2_INIT={id:'ch2-2',chapterId:'ch2',no:'TRACK 01',title:'init()',artist:'WELKIN',charter:'Welkin',bpm:'180',length:'02:22',notes:915,level:10,boss:false,chart:'init',audio:'init.mp3',cover:'init.avif',state:'locked',fingers:'dual'};
 const CH2_AN={id:'ch2-3',chapterId:'ch2',no:'TRACK 02',title:'时逝',artist:'WELKIN',charter:'Welkin',bpm:'199',length:'02:09',notes:1152,level:14,boss:false,chart:'an',audio:'an.mp3',cover:'an.avif',state:'locked',fingers:'dual'};
 const CH2_LA={id:'ch2-7',chapterId:'ch2',no:'TRACK 03',title:'Lamentation',artist:'WELKIN',charter:'Welkin',bpm:'98',length:'02:22',notes:770,level:15,boss:false,chart:'la',audio:'La.mp3',cover:'La.avif',state:'locked',fingers:'multi'};
 const CH2_LADY={id:'ch2-4',chapterId:'ch2',no:'TRACK 04',title:'Grievous Lady',artist:'WELKIN',charter:'Welkin',bpm:'106',length:'02:22',notes:1505,level:17,boss:false,chart:'lady',audio:'Lady.mp3',cover:'bn.avif',state:'locked',fingers:'multi'};
@@ -4727,9 +4745,31 @@ function updateGameHud(){
 /* ============================================================
    14. gameplay —start / pause / quit / result
    ============================================================ */
-/* on-demand song loading: only the selected track is fetched */
-let songLoadToken=0,songLoadTimer=0;
+/* on-demand song loading: only the selected track is fetched.
+   =============================================================================
+   打歌加载（2026-11-25 重写）
+
+   旧版只是把 mp3 地址塞给 <audio> 等 canplaythrough：缓存命中、或者上一首的
+   监听器还挂在同一个元素上时，进度会瞬间跳到满、然后「明明加载完了却没有
+   声音」。现在改成按真实数据走，谱面和音频都验过才放人进游戏：
+
+     1. 谱面：确认 *_chart.js 的构建函数已经挂上（index.html 漏了 / 加载失败就
+        当场补一个 <script> 等它跑完），再把谱面真的构建一遍，拿到音符数。
+     2. 音频：整首 mp3 真正下载完（fetch 读流，进度按收到的字节算）→ 转成
+        blob 交给 <audio> → 等 canplaythrough + 时长有效。每次进歌都从 0%
+        重新算，绝不拿上一局的残留冒充「已加载」。
+     3. 失败：停在加载页，按钮变成 RETRY LINK，重试就是整条链路重走一遍；
+        ABORT 照旧退回选歌页。绝不带着坏音频进游戏。
+
+   file:// 下 fetch 不可用，退回 <audio> 强校验（canplaythrough + 时长有效），
+   同样每次从头计。
+   ============================================================================= */
+let songLoadToken=0,songLoadTimer=0,songLoadRetry=null,songLoadAbort=null,songAudioBlobUrl='';
+let songAudioHandlers=[];
+const SONG_LOAD_TIMEOUT=45000;
 function fmtTime(sec){const s=Math.max(0,Math.round(sec||0));return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
+function songLoadingBytes(txt){const el=$('#slBytes');if(el)el.textContent=txt;}
+function songLoadingAction(txt,fn){const b=$('#slCancel');if(b){b.textContent=txt;b.onclick=fn;}}
 function songLoadingSet(pct,stateText,hint){
   const p=clamp(pct,0,100);
   $('#slFill').style.width=p.toFixed(1)+'%';
@@ -4744,76 +4784,282 @@ function closeSongLoading(){
 }
 function cancelSongLoading(){
   songLoadToken++;
+  songLoadRetry=null;
+  dropSongAudio();
   closeSongLoading();
-  try{bgm.pause();}catch(e){}
+  songLoadingAction('ABORT UPLINK',cancelSongLoading);
   state='SONG';
   songScreen.classList.add('active');
   playUIMusic('select',true);
   uiSound(.7);
 }
+/* 拆掉这一次加载留下的一切：监听器、下载、blob、<audio> 的 src */
+function detachSongAudioListeners(){
+  for(let i=0;i<songAudioHandlers.length;i++){
+    const h=songAudioHandlers[i];
+    try{bgm.removeEventListener(h.t,h.f);}catch(e){}
+  }
+  songAudioHandlers=[];
+}
+function bindSongAudio(type,fn){
+  bgm.addEventListener(type,fn);
+  songAudioHandlers.push({t:type,f:fn});
+}
+function releaseSongAudioBlob(){
+  if(!songAudioBlobUrl)return;
+  try{URL.revokeObjectURL(songAudioBlobUrl);}catch(e){}
+  songAudioBlobUrl='';
+}
+function dropSongAudio(){
+  if(songLoadAbort){try{songLoadAbort.abort();}catch(e){}songLoadAbort=null;}
+  detachSongAudioListeners();
+  try{if(!bgm.paused)bgm.pause();}catch(e){}
+  try{bgm.removeAttribute('src');bgm.load();}catch(e){}
+  releaseSongAudioBlob();
+}
+/* ---- 谱面：构建函数 → 按需补加载 → 真建一遍拿到音符数 ---------------------- */
+const CHART_BUNDLE={
+  effulgence:{fn:'EFF'},
+  spark:{fn:'buildSparkChart'},
+  corr:{fn:'buildCorrChart',file:'corr_chart.js'},
+  still:{fn:'buildStillChart',file:'still_chart.js'},
+  w:{fn:'buildWChart',file:'wel_chart.js'},
+  ltzz:{fn:'buildLtzzChart',file:'ltzz_chart.js'},
+  welkin:{fn:'buildWelkinChart',file:'welkin_chart.js'},
+  init:{fn:'buildInitChart',file:'init_chart.js'},
+  an:{fn:'buildAnChart',file:'an_chart.js'},
+  la:{fn:'buildLaChart',file:'la_chart.js'},
+  lady:{fn:'buildLadyChart',file:'lady_chart.js'},
+  pen:{fn:'buildPenChart',file:'pen_chart.js'},
+  fb:{fn:'buildFbChart',file:'fb_chart.js'},
+  cyber:{fn:'buildCyberChart',file:'cyber_chart.js'}
+};
+function chartBuilderReady(chart){
+  const def=CHART_BUNDLE[chart];
+  return !!(def&&typeof window[def.fn]==='function');
+}
+function ensureChartReady(song){
+  return new Promise(resolve=>{
+    const chart=song&&song.chart;
+    if(!chart){resolve(false);return;}
+    if(chartBuilderReady(chart)){resolve(true);return;}
+    const def=CHART_BUNDLE[chart];
+    if(!def||!def.file){resolve(false);return;}
+    /* 正常情况下 index.html 开机就把谱面脚本带进来了；这里只兜底：
+       漏了 / 加载失败时按需补一个 <script>，等它真的执行完。 */
+    const el=document.createElement('script');
+    let done=false;
+    const finish=ok=>{
+      if(done)return;done=true;
+      clearTimeout(timer);
+      el.onload=null;el.onerror=null;
+      resolve(!!ok&&chartBuilderReady(chart));
+    };
+    const timer=setTimeout(()=>finish(false),12000);
+    el.onload=()=>finish(true);
+    el.onerror=()=>finish(false);
+    el.src=def.file;
+    document.head.appendChild(el);
+  });
+}
+/* 把谱面真的构建一遍：确认构建器不炸、音符不是空的。构建完立刻清空，
+   进游戏后 resetGameData 会按当前设置从头再建（mirror 等都要重算）。
+   count = 谱面总数（含 EFFULGENCE 那种不判定的表演键，和曲目表里写的 notes 一致），
+   judged = 真正参与判定的音符数（0 就说明谱面是空的）。 */
+function validateSongChart(song){
+  const keep=game.notes;
+  let total=0,judged=0,ok=false;
+  try{
+    game.notes=[];
+    if(song&&selectedSong!==song)selectedSong=song;
+    generateBeatmap();
+    total=game.notes.length;
+    judged=game.notes.reduce((a,n)=>a+(n.perform?0:1),0);
+    ok=judged>0;
+  }catch(e){
+    ok=false;total=0;judged=0;
+  }
+  game.notes=keep||[];
+  return {ok:ok,count:total,judged:judged};
+}
+/* ---- 音频：真下载（读流算进度）→ blob 交给 <audio> → 等真能播 ------------ */
+function fetchSongAudio(url,onProgress,signal){
+  return fetch(url,{signal:signal}).then(res=>{
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const total=Number(res.headers.get('content-length'))||0;
+    if(!res.body||typeof res.body.getReader!=='function'){
+      return res.blob().then(b=>{onProgress(b.size,b.size||total);return b;});
+    }
+    const reader=res.body.getReader();
+    const chunks=[];
+    let received=0;
+    const pump=()=>reader.read().then(step=>{
+      if(step.done){
+        onProgress(received,total||received);
+        return new Blob(chunks,{type:'audio/mpeg'});
+      }
+      chunks.push(step.value);
+      received+=step.value.length;
+      onProgress(received,total||0);
+      return pump();
+    });
+    return pump();
+  });
+}
+/* 等 <audio> 真的把这首 blob / 文件读进缓冲：canplaythrough + 时长有效才算过 */
+function hydrateSongAudio(src,onTick){
+  return new Promise(resolve=>{
+    let done=false;
+    const finish=ok=>{
+      if(done)return;done=true;
+      clearTimeout(timer);
+      detachSongAudioListeners();
+      resolve(!!ok);
+    };
+    const tick=()=>{
+      if(done)return;
+      try{onTick&&onTick();}catch(e){}
+      if(bgm.readyState>=4&&bgm.duration>0)finish(true);
+    };
+    const timer=setTimeout(()=>{
+      /* 兜底：元数据 + 缓冲都到位就算过；否则判失败，绝不带坏文件进游戏 */
+      finish(bgm.readyState>=2&&bgm.duration>0&&isFinite(bgm.duration));
+    },30000);
+    bindSongAudio('loadedmetadata',tick);
+    bindSongAudio('loadeddata',tick);
+    bindSongAudio('canplay',tick);
+    bindSongAudio('progress',tick);
+    bindSongAudio('canplaythrough',tick);
+    bindSongAudio('error',()=>finish(false));
+    try{bgm.preload='auto';bgm.src=src;bgm.load();}catch(e){finish(false);return;}
+    tick();
+    /* 整段都已缓冲时某些内核不会再补发 canplaythrough，补一次检查 */
+    if(bgm.readyState>=4&&bgm.duration>0)setTimeout(()=>finish(true),0);
+  });
+}
 function loadSongForSession(song,done){
   const token=++songLoadToken;
   const startedAt=performance.now();
+  const alive=()=>token===songLoadToken;
   ensureAudioCtx();unlockAudio();buildHitSounds();
   stopAllUIMusic();
   state='LOADING';
+  songLoadRetry=null;
   const b=$('#btnStartGame');if(b)b.disabled=true;
   songLoading.classList.add('active');
-  $('#slTitle').textContent=song.title.toUpperCase();
-  $('#slChapter').textContent=`${song.chapterEn||'ORIGIN'} / ${song.no}`;
-  $('#slBytes').textContent='0.00 MB';
+  $('#slTitle').textContent=String(song.title||'').toUpperCase();
+  $('#slChapter').textContent=(song.chapterEn||'ORIGIN')+' / '+song.no;
+  songLoadingBytes('0.00 MB');
   songLoadingSet(0,'REQUESTING','OPENING AUDIO CHANNEL');
+  songLoadingAction('ABORT UPLINK',cancelSongLoading);
   AUDIO_LOADED_DURATION=0;
-  try{bgm.pause();bgm.src=song.audio;bgm.preload='auto';bgm.load();}catch(e){}
+  /* 每次进歌都从零开始：上一首的监听器 / 下载 / blob / src 全拆干净 */
+  clearTimeout(songLoadTimer);
+  dropSongAudio();
   let settled=false,lastPct=0;
-  const finish=()=>{
-    if(settled||token!==songLoadToken)return;
+  const setPct=(p,stateText,hint)=>{
+    if(!alive()||settled)return;
+    lastPct=Math.max(lastPct,clamp(p,0,100));
+    songLoadingSet(lastPct,stateText,hint);
+  };
+  const fail=hint=>{
+    if(!alive()||settled)return;
     settled=true;clearTimeout(songLoadTimer);
-    songLoadingSet(94,'LINKED','AUDIO READY');
-    const wait=Math.max(0,860-(performance.now()-startedAt));
+    songLoadingSet(lastPct,'LINK FAILED',hint||'AUDIO FILE UNAVAILABLE');
+    songLoadRetry=()=>{if(!alive())return;loadSongForSession(song,done);};
+    songLoadingAction('RETRY LINK',()=>{if(songLoadRetry)songLoadRetry();});
+    uiSound(.5);
+  };
+  const finish=()=>{
+    if(!alive()||settled)return;
+    settled=true;clearTimeout(songLoadTimer);
+    songLoadingSet(98,'LINKED','AUDIO READY');
+    const wait=Math.max(0,720-(performance.now()-startedAt));
     setTimeout(()=>{
-      if(token!==songLoadToken)return;
+      if(!alive())return;
       songLoadingSet(100,'LINKED','AUDIO READY');
+      songLoadRetry=null;
+      songLoadingAction('ABORT UPLINK',cancelSongLoading);
       setTimeout(()=>{
-        if(token!==songLoadToken)return;
+        if(!alive())return;
         closeSongLoading();
         done();
       },180);
     },wait);
   };
-  const fail=()=>{
-    if(settled||token!==songLoadToken)return;
-    settled=true;clearTimeout(songLoadTimer);
-    songLoadingSet(lastPct,'LINK FAILED','AUDIO FILE UNAVAILABLE');
-    uiSound(.5);
-  };
-  const readProgress=()=>{
-    if(token!==songLoadToken)return;
-    let pct=lastPct;
-    try{
-      if(bgm.duration&&isFinite(bgm.duration)&&bgm.buffered.length){
-        const end=bgm.buffered.end(bgm.buffered.length-1);
-        pct=clamp(end/bgm.duration*100,0,99);
+  /* 总超时：文件在但一直下不完 / 解不开，就当失败处理，别让人干等 */
+  songLoadTimer=setTimeout(()=>fail('AUDIO LOAD TIMEOUT'),SONG_LOAD_TIMEOUT);
+
+  (async()=>{
+    /* ---- 1. 谱面 ---- */
+    setPct(2,'SCANNING','CHART DATA');
+    const chartOk=await ensureChartReady(song);
+    if(!alive()||settled)return;
+    if(!chartOk){fail('CHART DATA UNAVAILABLE');return;}
+    setPct(6,'SYNCED','CHART READY');
+    const chart=validateSongChart(song);
+    if(!alive()||settled)return;
+    if(!chart.ok){fail('CHART DATA EMPTY');return;}
+    songLoadingSet(lastPct,'SYNCED','NOTES '+chart.count);
+
+    /* ---- 2. 音频：真下载一遍（file:// 下 fetch 不可用，直接交给 <audio>） ---- */
+    let src=song.audio;
+    if(typeof fetch==='function'&&location.protocol!=='file:'){
+      const ac=(typeof AbortController!=='undefined')?new AbortController():null;
+      songLoadAbort=ac;
+      try{
+        const blob=await fetchSongAudio(song.audio,(recv,total)=>{
+          if(!alive()||settled)return;
+          /* 服务器没给 Content-Length 时按「这首歌大概 3.2MB」估一个进度，
+             不然进度条会一直卡在 6% 直到下完（下载量本身还是真的）。 */
+          const assumed=total||3355443;
+          const ratio=clamp(recv/assumed,0,total?1:0.96);
+          setPct(6+ratio*78,'STREAMING','RECEIVING PACKETS');
+          songLoadingBytes(total
+            ?(recv/1048576).toFixed(2)+' / '+(total/1048576).toFixed(2)+' MB'
+            :(recv/1048576).toFixed(2)+' MB');
+        },ac?ac.signal:undefined);
+        if(!alive()||settled)return;
+        if(!blob||!blob.size){fail('AUDIO FILE EMPTY');return;}
+        songLoadingBytes((blob.size/1048576).toFixed(2)+' MB · 100%');
+        releaseSongAudioBlob();
+        songAudioBlobUrl=URL.createObjectURL(blob);
+        src=songAudioBlobUrl;
+      }catch(err){
+        if(err&&err.name==='AbortError')return;
+        /* 网络 / 权限问题：退回让 <audio> 直接读源文件，至少还有机会出声 */
+        src=song.audio;
       }
-      const loaded=bgm.readyState>=3?99:bgm.readyState>=2?72:bgm.readyState>=1?28:8;
-      pct=Math.max(pct,loaded);
-      if(bgm.duration&&isFinite(bgm.duration)){AUDIO_LOADED_DURATION=bgm.duration;selectedSong.length=fmtTime(bgm.duration);$('#slBytes').textContent='DUR '+fmtTime(bgm.duration);}
-    }catch(e){}
-    lastPct=Math.max(lastPct,pct);
-    songLoadingSet(lastPct,lastPct>70?'DECODING':'STREAMING',lastPct>70?'BUILDING WAVEFORM':'RECEIVING PACKETS');
-  };
-  bgm.addEventListener('loadedmetadata',readProgress);
-  bgm.addEventListener('progress',readProgress);
-  bgm.addEventListener('canplay',readProgress);
-  bgm.addEventListener('loadeddata',readProgress);
-  bgm.addEventListener('canplaythrough',finish,{once:true});
-  bgm.addEventListener('error',fail,{once:true});
-  readProgress();
-  if(bgm.readyState>=4)setTimeout(finish,0);
-  songLoadTimer=setTimeout(()=>{
-    if(settled||token!==songLoadToken)return;
-    if(bgm.readyState>=2)finish();else fail();
-  },18000);
+    }
+    if(!alive()||settled)return;
+
+    /* ---- 3. 解码 / 缓冲 ---- */
+    setPct(86,'DECODING','BUILDING WAVEFORM');
+    const ok=await hydrateSongAudio(src,()=>{
+      let p=86;
+      try{
+        if(bgm.readyState>=4)p=96;
+        else if(bgm.readyState>=3)p=94;
+        else if(bgm.readyState>=2)p=90;
+        else if(bgm.readyState>=1)p=87;
+      }catch(e){}
+      setPct(p,'DECODING','BUILDING WAVEFORM');
+      try{
+        if(bgm.duration>0&&isFinite(bgm.duration))songLoadingBytes('DUR '+fmtTime(bgm.duration));
+      }catch(e){}
+    });
+    if(!alive()||settled)return;
+    if(!ok){fail('AUDIO FILE UNREADABLE');return;}
+    try{
+      AUDIO_LOADED_DURATION=bgm.duration||0;
+      if(AUDIO_LOADED_DURATION>0)song.length=fmtTime(AUDIO_LOADED_DURATION);
+    }catch(e){AUDIO_LOADED_DURATION=0;}
+    songLoadingBytes('DUR '+fmtTime(AUDIO_LOADED_DURATION));
+    finish();
+  })().catch(()=>{
+    if(!alive()||settled)return;
+    fail('LINK ERROR');
+  });
 }
 function beginSession(){
   stopAllUIMusic();
@@ -4875,6 +5121,8 @@ function quitToSong(){
   cancelAnimationFrame(gameRaf);gameRaf=0;
   state='LOADING';
   resetAudioState();
+  songLoadRetry=null;
+  dropSongAudio();
   stopAllUIMusic();
   gameWrap.classList.remove('active');
   gameHud.classList.remove('active');
@@ -4923,10 +5171,16 @@ function endGame(){
   markSongCleared(selectedSong);
 
   /* 苍穹星：0 分不给；按难度 / 评级 / AP / 全连 结算 */
-  const star=stardustFor(selectedSong?selectedSong.level:1,rank,isAP,isFC,finalScore);
+  const starLv=selectedSong?selectedSong.level:1;
+  const star=stardustFor(starLv,rank,isAP,isFC,finalScore);
   if(star>0){account.currency+=star;saveAccount();}
   const starEl=$('#resStar');
-  if(starEl)starEl.innerHTML=starSVG(18)+'<b>+'+star+'</b> 苍穹星';
+  if(starEl){
+    starEl.innerHTML=starSVG(18)+'<b>+'+star+'</b> 苍穹星';
+    /* 鼠标悬停能看到这一笔怎么算出来的：难度基数 × AP / 全连 / 评级 */
+    const how=isAP?('ALL PERFECT ×'+STAR_MULT_AP):(isFC?('FULL COMBO ×'+STAR_MULT_FC):('RANK '+rank));
+    starEl.title='LV.'+starLv+' · '+how+' · 难度基数 '+Math.round(starAPFor(starLv));
+  }
 
   $('#resRank').textContent=rank;
   $('#resRank').classList.toggle('ap',isRankAP);
@@ -4961,6 +5215,9 @@ function backToSong(){
   if(state!=='RESULT')return;
   resultLayer.classList.remove('active');
   resetAudioState();
+  /* 回选歌页就把这首的 blob 和监听器都放掉，下次再进是干净的一次加载 */
+  songLoadRetry=null;
+  dropSongAudio();
   stopAllUIMusic();
   gameWrap.classList.remove('active');
   gameHud.classList.remove('active');
@@ -5093,6 +5350,8 @@ window.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
     const dm=$('#devModal');
     if(dm&&dm.classList.contains('active')){closeDevModal();return;}
+    /* 加载中按 ESC = 中断这次加载（否则会退回选歌页、加载层却还挂着） */
+    if(songLoading.classList.contains('active')){cancelSongLoading();return;}
     if(settingsApp.classList.contains('active')){closeSettings();return;}
     if(imApp.classList.contains('active')){
       if($('#imDetail').classList.contains('active')){$('#imDetail').classList.remove('active');uiSound(.9);}
