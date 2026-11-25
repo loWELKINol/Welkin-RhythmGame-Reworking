@@ -149,7 +149,10 @@ function setTrackSkin(i){
    默认 = 最初那套原皮肤（轮廓与配色一版不动，只做两处改动：长条玻璃亮度抬一点点、
    长条底部加金色多押提示）；
    白昼 / 晨曦 = 下午那 10 套里挑出来的第 4、9 套，各有各的轮廓。
-   配色只有原来游戏里那几种：蓝键、金押、终结白、碎点金——不引入新颜色。 */
+   配色只有原来游戏里那几种：蓝键、金押、终结白、碎点金——不引入新颜色。
+   2026-11-25：蓝宝更名「蓝宝石」；白昼 / 晨曦 / 蓝宝石 / 圣铠 的长条不再共用一条青蓝光，
+   而是各自带 rail（中心导轨）/ scan（扫描线）/ tail（尾部光）/ sheen（侧棱高光）/ glow（外发光），
+   长条本体因此有了玻璃厚度与材质感；默认皮肤仍然一个字不改。 */
 const NOTE_SKINS=[
   {name:'默认',classic:true,shape:'round',
    hold:{body:['rgba(13,23,30,.92)','rgba(20,36,46,.88)','rgba(11,18,23,.94)'],
@@ -157,20 +160,28 @@ const NOTE_SKINS=[
   {name:'白昼',classic:false,shape:'ring',
    blue:{top:'#ffffff',mid:'#b8e8ff',bot:'#4fa6d8',edge:[235,250,255],edgeA:.95,glow:[125,211,252],glowA:.4},
    hold:{body:['rgba(110,160,190,.72)','rgba(200,232,248,.70)','rgba(92,140,176,.76)'],
-         edge:'rgba(200,246,255,.80)',cap:['#ffffff','#d8f4ff','#4fa6d8']}},
+         edge:'rgba(200,246,255,.80)',cap:['#ffffff','#d8f4ff','#4fa6d8'],
+         glow:[150,224,255],rail:'rgba(232,252,255,.80)',scan:'rgba(200,246,255,.13)',
+         sheen:'rgba(255,255,255,.14)',tail:'rgba(198,242,255,.62)',inner:'rgba(228,250,255,.17)'}},
   {name:'晨曦',classic:false,shape:'chamfer',
    blue:{top:'#fff9f0',mid:'#a8dcf8',bot:'#4a8fc0',edge:[240,250,255],edgeA:.92,glow:[56,189,248],glowA:.4},
    hold:{body:['rgba(104,148,172,.74)','rgba(196,224,242,.72)','rgba(84,126,158,.78)'],
-         edge:'rgba(220,248,255,.80)',cap:['#fff9f0','#cfeafc','#4a8fc0']}},
+         edge:'rgba(220,248,255,.80)',cap:['#fff9f0','#cfeafc','#4a8fc0'],
+         glow:[255,206,150],rail:'rgba(255,238,212,.70)',scan:'rgba(255,234,206,.11)',
+         sheen:'rgba(255,242,224,.12)',tail:'rgba(255,234,204,.60)',inner:'rgba(255,242,222,.15)'}},
   /* —— 皇室奢华两套：蓝键仍蓝、黄键仍金、押键金括号，只升材质与轮廓 —— */
-  {name:'蓝宝',classic:false,shape:'gem',
-   blue:{top:'#eafaff',mid:'#35a0e8',bot:'#0c4f8f',edge:[200,246,255],edgeA:.95,glow:[80,200,255],glowA:.45,rim:'#eafcff',rim2:'#07273f'},
-   hold:{body:['rgba(12,26,46,.92)','rgba(30,58,96,.88)','rgba(8,18,34,.95)'],
-         edge:'rgba(170,240,255,.85)',cap:['#eafaff','#c4efff','#0c4f8f']}},
+  {name:'蓝宝石',classic:false,shape:'gem',
+   blue:{top:'#f4feff',mid:'#43b6f5',bot:'#083a6d',edge:[206,248,255],edgeA:.96,glow:[92,206,255],glowA:.5,rim:'#f2fdff',rim2:'#062037',facet:1},
+   hold:{body:['rgba(9,24,48,.93)','rgba(27,62,110,.89)','rgba(6,15,32,.95)'],
+         edge:'rgba(182,244,255,.90)',cap:['#f4feff','#c8f0ff','#083a6d'],
+         glow:[96,206,255],rail:'rgba(204,246,255,.84)',scan:'rgba(150,228,255,.12)',
+         sheen:'rgba(206,244,255,.15)',tail:'rgba(178,238,255,.64)',inner:'rgba(192,246,255,.17)'}},
   {name:'圣铠',classic:false,shape:'arch',
    blue:{top:'#f4f6ff',mid:'#3a6ea8',bot:'#12263f',edge:[214,228,255],edgeA:.95,glow:[120,180,255],glowA:.4,rim:'#eef2ff',rim2:'#0a1a30'},
    hold:{body:['rgba(14,24,38,.94)','rgba(26,44,66,.90)','rgba(9,16,26,.95)'],
-         edge:'rgba(160,212,255,.82)',cap:['#f4f6ff','#c8d8f2','#12263f']}}
+         edge:'rgba(160,212,255,.82)',cap:['#f4f6ff','#c8d8f2','#12263f'],
+         glow:[152,190,255],rail:'rgba(208,224,255,.74)',scan:'rgba(184,208,255,.10)',
+         sheen:'rgba(222,236,255,.12)',tail:'rgba(196,216,255,.58)',inner:'rgba(212,228,255,.15)'}}
 ];
 function noteSkinCount(){return NOTE_SKINS.length;}
 function getNoteSkin(){
@@ -225,8 +236,18 @@ function renderNoteSkinPreview(){
   const hg=c.createLinearGradient(0,top,0,bot);
   hg.addColorStop(0,SK.hold.body[0]);hg.addColorStop(.45,SK.hold.body[1]);hg.addColorStop(1,SK.hold.body[2]);
   c.fillStyle=hg;c.fillRect(hx-hw,top,hw*2,bot-top);
+  /* 非默认皮肤：预览里也补上侧棱高光 + 中心导轨，和实机长条保持一致 */
+  if(!SK.classic&&SK.hold.sheen){
+    const sh=c.createLinearGradient(hx-hw,0,hx-hw*.28,0);
+    sh.addColorStop(0,'rgba(255,255,255,0)');sh.addColorStop(1,SK.hold.sheen);
+    c.fillStyle=sh;c.fillRect(hx-hw,top,hw*.9,bot-top);
+  }
   c.strokeStyle=SK.hold.edge;c.lineWidth=2;
   c.beginPath();c.moveTo(hx-hw+1,top);c.lineTo(hx-hw+1,bot);c.moveTo(hx+hw-1,top);c.lineTo(hx+hw-1,bot);c.stroke();
+  if(!SK.classic&&SK.hold.rail){
+    c.strokeStyle=SK.hold.rail;c.lineWidth=1;
+    c.beginPath();c.moveTo(hx,top+2);c.lineTo(hx,bot-2);c.stroke();
+  }
   const capH=10;
   const capGrad=c.createLinearGradient(0,top,0,top+capH);
   capGrad.addColorStop(0,SK.hold.cap[0]);capGrad.addColorStop(.45,SK.hold.cap[1]);capGrad.addColorStop(1,SK.hold.cap[2]);
@@ -293,7 +314,7 @@ const STORE_FLAG_KEY='welkin_os_store_v1_init';
 const CURR_GRANT_KEY='welkin_os_store_v2_currency';
 const STAR_COST_ONE=67, STAR_COST_TEN=666;
 function genId(){return 'WK-'+Date.now().toString(36).toUpperCase()+'-'+Math.random().toString(36).slice(2,8).toUpperCase();}
-function freshAccount(){return {id:'',currency:666,unlockedNote:[0],unlockedTrack:[0],phone:false,lobby:false,scenery:false,phoneui:false,phoneOn:false,lobbyOn:false,sceneryOn:false,phoneuiOn:false,lobbyMusic:false,lobbyMusicOn:false};}
+function freshAccount(){return {id:'',currency:666,unlockedNote:[0],unlockedTrack:[0],phone:false,lobby:false,scenery:false,phoneui:false,phoneOn:false,lobbyOn:false,sceneryOn:false,phoneuiOn:false,lobbyMusic:false,lobbyMusicOn:false,giftLaoda:false};}
 let account=freshAccount();
 function loadAccount(){
   try{
@@ -318,7 +339,7 @@ function isTrackUnlocked(i){const n=Math.floor(Number(i));if(n<=0)return true;re
 function unlockedNoteList(){return account.unlockedNote.slice().sort((a,b)=>a-b);}
 function unlockedTrackList(){return account.unlockedTrack.slice().sort((a,b)=>a-b);}
 /* 冠冕 / 星冠两套皮肤已彻底删除（NOTE_SKINS 从 7 套减到 5 套），旧存档里的序号要
-   跟着重排，否则老玩家手里的蓝宝会变成圣铠：旧 4（蓝宝）→3、旧 5（圣铠）→4，
+   跟着重排，否则老玩家手里的蓝宝石会变成圣铠：旧 4（蓝宝石）→3、旧 5（圣铠）→4，
    旧 3（冠冕）/ 旧 6（星冠）直接丢掉。存档码 v2 及更早的码也走同一张表。 */
 const LEGACY_NOTE_IDX_MAP={0:0,1:1,2:2,4:3,5:4};
 const LEGACY_NOTE_IDX_KEY='welkin_os_note_idx_v2';
@@ -437,11 +458,11 @@ function buildPrizePool(){
   P.push({id:'sss-scenery',tier:'SSS',p:sssP,kind:'scenery',name:'黄金苍穹 · 黄金奢华外景',desc:'窗外风景焕新为黄金科技炫酷风格 · 金辉天际线 · 鎏金霓虹',owned:()=>!!account.scenery});
   P.push({id:'sss-phoneui',tier:'SSS',p:sssP,kind:'phoneui',name:'鎏金天幕 · 皇室天气屏',desc:'手机天气屏焕新为皇室黄金动态鎏金风格 · 金箔流光 · 动态鎏金',owned:()=>!!account.phoneui});
   P.push({id:'sss-lobbymusic',tier:'SSS',p:sssP,kind:'lobbymusic',name:'大厅奢华钢琴 · 背景音乐',desc:'大厅背景音乐替换为奢华钢琴曲 · 循环播放 · 设置内可开关',owned:()=>!!account.lobbyMusic});
-  /* S 5%：5 件，各 1/5 × 5%（白昼 / 晨曦 / 蓝宝 / 圣铠 + 黄金奢华轨道） */
+  /* S 5%：5 件，各 1/5 × 5%（白昼 / 晨曦 / 蓝宝石 / 圣铠 + 黄金奢华轨道） */
   const sP=0.05/5;
   P.push({id:'note-1',tier:'S',p:sP,kind:'note',skinIndex:1,name:'按键皮肤 · 白昼',desc:'轮廓环光 · 冰白配色',owned:()=>isNoteUnlocked(1)});
   P.push({id:'note-2',tier:'S',p:sP,kind:'note',skinIndex:2,name:'按键皮肤 · 晨曦',desc:'暖阳渐变 · 削角轮廓',owned:()=>isNoteUnlocked(2)});
-  P.push({id:'note-3',tier:'S',p:sP,kind:'note',skinIndex:3,name:'按键皮肤 · 蓝宝',desc:'蓝宝石八面切面 · 皇室高奢材质',owned:()=>isNoteUnlocked(3)});
+  P.push({id:'note-3',tier:'S',p:sP,kind:'note',skinIndex:3,name:'按键皮肤 · 蓝宝石',desc:'蓝宝石八面切面 · 皇室高奢材质',owned:()=>isNoteUnlocked(3)});
   P.push({id:'note-4',tier:'S',p:sP,kind:'note',skinIndex:4,name:'按键皮肤 · 圣铠',desc:'哥特尖拱圣铠 · 皇室高奢材质',owned:()=>isNoteUnlocked(4)});
   P.push({id:'track-20',tier:'S',p:sP,kind:'track',skinIndex:20,name:'轨道皮肤 · 黄金奢华',desc:'黄金奢华风轨道 · 鎏金流光 · 高端质感',owned:()=>isTrackUnlocked(20)});
   /* A 24%：19 款轨道皮肤（除默认） */
@@ -729,7 +750,10 @@ function noteSkinThumb(i){
   const sk=NOTE_SKINS[i];if(!sk)return '';
   const cap=(sk.hold&&sk.hold.cap)?sk.hold.cap[0]:'#8ec9ff';
   const edge=(sk.hold&&sk.hold.edge)?sk.hold.edge:'#8ec9ff';
-  return `<span class="dr-thumb note" style="background:${cap};border-color:${edge}"></span>`;
+  /* 缩略图直接用这套皮肤自己的蓝键渐变，蓝宝石就真的是蓝宝石那块色，不再一律浅白 */
+  const mid=(sk.blue&&sk.blue.mid)?sk.blue.mid:cap;
+  const bot=(sk.blue&&sk.blue.bot)?sk.blue.bot:mid;
+  return `<span class="dr-thumb note" style="background:linear-gradient(180deg,${cap} 0%,${mid} 52%,${bot} 100%);border-color:${edge}"></span>`;
 }
 function renderStore(){
   const cur=$('#storeCur');if(cur)cur.textContent=account.currency;
@@ -1082,6 +1106,7 @@ function compactSaveBlob(){
   if(a.phoneuiOn)flags|=128;
   if(a.lobbyMusic)flags|=256;
   if(a.lobbyMusicOn)flags|=512;
+  if(a.giftLaoda)flags|=1024;
   const s={};
   for(const k in DEFAULT_SETTINGS){if(settings[k]!==DEFAULT_SETTINGS[k])s[k]=settings[k];}
   const b={};
@@ -1172,7 +1197,7 @@ function applySaveBlob(obj){
         unlockedTrack:listFromBits(a[3],32),
         phone:!!(f&1),lobby:!!(f&2),scenery:!!(f&4),phoneui:!!(f&8),
         phoneOn:!!(f&16),lobbyOn:!!(f&32),sceneryOn:!!(f&64),phoneuiOn:!!(f&128),
-        lobbyMusic:!!(f&256),lobbyMusicOn:!!(f&512)
+        lobbyMusic:!!(f&256),lobbyMusicOn:!!(f&512),giftLaoda:!!(f&1024)
       };
     }else if(obj.account&&typeof obj.account==='object'){
       acctSrc=obj.account;
@@ -2019,7 +2044,9 @@ function preload(){
     {label:'UI AUDIO BUS',w:.02,run:()=>{try{uiPlayer.src=UI_TRACK_FILES.select;uiPlayer.load();uiPlayerKey='select';}catch(e){}}},
     {label:'OPERATOR 01',w:.05,run:()=>waitImage('avatar_im.avif')},
     {label:'OPERATOR 02',w:.04,run:()=>waitImage('nick_avatar.avif')},
-    {label:'OPERATOR 03',w:.03,run:()=>waitImage('bb.im.avif')}
+    {label:'OPERATOR 03',w:.03,run:()=>waitImage('bb.im.avif')},
+    /* 004 号用户（w●ｖ●w）的头像进 iM 时不再现拉，开机 loading 就一起解出来 */
+    {label:'OPERATOR 04',w:.03,run:()=>waitImage('wvw.avif')}
   ];
   return new Promise(resolve=>{
     const started=performance.now();
@@ -2178,8 +2205,8 @@ const CH2_INIT={id:'ch2-2',chapterId:'ch2',no:'TRACK 01',title:'init()',artist:'
 const CH2_AN={id:'ch2-3',chapterId:'ch2',no:'TRACK 02',title:'时逝',artist:'WELKIN',charter:'Welkin',bpm:'199',length:'02:09',notes:1152,level:14,boss:false,chart:'an',audio:'an.mp3',cover:'an.avif',state:'locked',fingers:'dual'};
 const CH2_LA={id:'ch2-7',chapterId:'ch2',no:'TRACK 03',title:'Lamentation',artist:'WELKIN',charter:'Welkin',bpm:'98',length:'02:22',notes:770,level:15,boss:false,chart:'la',audio:'La.mp3',cover:'La.avif',state:'locked',fingers:'multi'};
 const CH2_LADY={id:'ch2-4',chapterId:'ch2',no:'TRACK 04',title:'Grievous Lady',artist:'WELKIN',charter:'Welkin',bpm:'106',length:'02:22',notes:1505,level:17,boss:false,chart:'lady',audio:'Lady.mp3',cover:'bn.avif',state:'locked',fingers:'multi'};
-const CH2_PEN={id:'ch2-5',chapterId:'ch2',no:'TRACK 05',title:'Pentiment',artist:'WELKIN',charter:'Welkin',bpm:'111',length:'02:41',notes:1217,level:18,boss:false,chart:'pen',audio:'pen.mp3',cover:'pen.avif',state:'locked',fingers:'dual'};
-const CH2_FB={id:'ch2-6',chapterId:'ch2',no:'TRACK 06',title:'Tempestissimo',artist:'WELKIN',charter:'Welkin',bpm:'116',length:'02:18',notes:1770,level:19,boss:false,chart:'fb',audio:'fb.mp3',cover:'fb.avif',state:'locked',fingers:'multi'};
+const CH2_PEN={id:'ch2-5',chapterId:'ch2',no:'TRACK 05',title:'Pentiment',artist:'WELKIN',charter:'Welkin',bpm:'111',length:'02:41',notes:1213,level:18,boss:false,chart:'pen',audio:'pen.mp3',cover:'pen.avif',state:'locked',fingers:'dual'};
+const CH2_FB={id:'ch2-6',chapterId:'ch2',no:'TRACK 06',title:'Tempestissimo',artist:'WELKIN',charter:'Welkin',bpm:'116',length:'02:18',notes:1730,level:19,boss:false,chart:'fb',audio:'fb.mp3',cover:'fb.avif',state:'locked',fingers:'multi'};
 const CH2_CYBER={id:'ch2-boss',chapterId:'ch2',no:'TRACK 07',title:'CyberAttack',artist:'WELKIN',charter:'Welkin',bpm:'130',length:'03:21',notes:2270,level:20,boss:true,chart:'cyber',audio:'Cyber.mp3',cover:'ca.avif',state:'locked',fingers:'multi'};
 function makeCh2Songs(){return [CH2_CYBER,CH2_INIT,CH2_AN,CH2_LA,CH2_LADY,CH2_PEN,CH2_FB];}
 const EFFULGENCE={
@@ -2196,7 +2223,7 @@ const SPARK={
 const CH1_T3={id:'ch1-7',chapterId:'ch1',no:'TRACK 03',title:'テリトリーバトル',artist:'WELKIN',charter:'Welkin',bpm:'140',length:'02:32',notes:849,level:11,boss:false,chart:'ltzz',audio:'ltzz.mp3',cover:'ltzz.avif',state:'locked',fingers:'multi'};
 const RIP={id:'ch1-4',chapterId:'ch1',no:'TRACK 04',title:'R.I.P.',artist:'—',charter:'—',bpm:'—',length:'—',notes:0,level:10,boss:false,chart:null,audio:null,cover:'R.I.P.avif',state:'locked',fingers:'dual'};
 const WELKIN={id:'ch1-5',chapterId:'ch1',no:'TRACK 06',title:'WELKIN',artist:'WELKIN',charter:'Welkin',bpm:'150',length:'04:12',notes:1662,level:16,boss:true,chart:'welkin',audio:'WELKIN.mp3',cover:'W.avif',state:'locked',fingers:'multi'};
-const CORR={id:'ch1-6',chapterId:'ch1',no:'TRACK 05',title:'Corrupted Entity',artist:'—',charter:'WeIkin',bpm:'181',length:'02:45',notes:1405,level:15,boss:false,chart:'corr',audio:'Corrupted Entity.mp3',cover:'Corr.avif',state:'locked',fingers:'dual'};
+const CORR={id:'ch1-6',chapterId:'ch1',no:'TRACK 05',title:'Corrupted Entity',artist:'—',charter:'WeIkin',bpm:'181',length:'02:45',notes:1400,level:15,boss:false,chart:'corr',audio:'Corrupted Entity.mp3',cover:'Corr.avif',state:'locked',fingers:'dual'};
 const STILL={id:'ex-1',chapterId:'ex',no:'TRACK 01',title:'Still (piano version)',artist:'—',charter:'Welkin',bpm:'130',length:'01:48',notes:365,level:6,boss:true,chart:'still',audio:'Still.mp3',cover:'Still.avif',state:'locked',fingers:'dual'};
 /* 主线序章：单曲章节，曲目 W。它有自己的选歌页（DATAFALL），和初章 TRACK 05 的占位互不影响。 */
 const PROLOGUE_W={id:'prologue-1',chapterId:'prologue',no:'TRACK 01',title:'W.',artist:'WELKIN',charter:'Welkin',bpm:'152',length:'01:26',notes:84,level:2,boss:false,chart:'w',audio:'w.（.mp3',cover:'wel.avif',state:'available',fingers:'dual'};
@@ -3508,7 +3535,10 @@ const IM_POSTS=[
     text:'大家好！欢迎来到我制作的小音游，以后会加油更新，希望大家多多支持！该网址可以电脑打开游玩，按键控制是cvbn键，对应四个轨道！谢谢大家！',
     comments:[
       {name:'SYSTEM',avatar:'📡',bg:'#9fb6c2',text:'正在更新中！'},
-      {name:'—',avatar:'😡',bg:'#ffcccc',text:'啥时候出新歌？'}
+      {name:'—',avatar:'😡',bg:'#ffcccc',text:'啥时候出新歌？'},
+      /* 老大：磁铁头像，评论区里带一个礼盒，点开领 2487 苍穹星（账号只能领一次） */
+      {name:'老大',avatar:'🧲',bg:'#3d4f63',text:'发点东西给大家吧，说实在的早就有这个念头了',
+       gift:{id:'laoda-gift',amount:2487}}
     ]
   },
   {
@@ -3615,6 +3645,63 @@ function renderFeed(tab){
     });
   });
 }
+/* ---- iM 评论礼盒（老大 的礼盒：2487 苍穹星 · 账号限领一次） -------------------
+   领取状态写进 account.giftLaoda，跟着账号档案走，存档码也会带上（flags bit 1024）：
+   换浏览器 / 换设备粘存档码恢复之后仍然是「已领取」，不会给第二份。 */
+const GIFT_STARS_FALLBACK=2487;
+function giftBoxHTML(c){
+  const amount=Math.max(1,Math.floor(Number(c.gift&&c.gift.amount)||GIFT_STARS_FALLBACK));
+  const who=esc(c.name||'')+' 的礼盒';
+  if(account.giftLaoda){
+    return `<div class="im-gift got" aria-disabled="true">
+      <span class="img-gift-box"><i>✓</i></span>
+      <span class="img-gift-txt"><b>${who}</b><em>+${amount} 苍穹星 已到账</em></span>
+      <span class="img-gift-go">已领取</span>
+    </div>`;
+  }
+  return `<div class="im-gift" data-gift-amount="${amount}" role="button" tabindex="0" aria-label="打开礼盒领取 ${amount} 苍穹星">
+    <span class="img-gift-box"><i>🎁</i><span class="img-gift-shine" aria-hidden="true"></span></span>
+    <span class="img-gift-txt"><b>${who}</b><em>点击领取 <strong>${amount}</strong> 苍穹星</em></span>
+    <span class="img-gift-go">领取 →</span>
+  </div>`;
+}
+function refreshCurrencyUI(){
+  const set=(id,v)=>{const el=$('#'+id);if(el)el.textContent=String(v);};
+  set('storeCur',account.currency);set('storeCur3',account.currency);set('storeLandCur',account.currency);
+}
+function spawnGiftSparks(box){
+  if(!box)return;
+  for(let i=0;i<12;i++){
+    const s=document.createElement('i');
+    s.className='img-gift-spark';
+    s.textContent='✦';
+    s.style.setProperty('--dx',((Math.random()*2-1)*74).toFixed(1)+'px');
+    s.style.setProperty('--dy',(-32-Math.random()*54).toFixed(1)+'px');
+    s.style.animationDelay=(i*26)+'ms';
+    s.style.fontSize=(9+Math.random()*8).toFixed(1)+'px';
+    box.appendChild(s);
+    setTimeout(()=>{try{s.remove();}catch(e){}},1500);
+  }
+}
+function claimCommentGift(box){
+  if(!box||box.classList.contains('got'))return false;
+  if(account.giftLaoda)return false;
+  const amount=Math.max(1,Math.floor(Number(box.dataset.giftAmount)||GIFT_STARS_FALLBACK));
+  account.giftLaoda=true;
+  account.currency+=amount;
+  saveAccount();
+  refreshCurrencyUI();
+  box.classList.add('got');
+  box.removeAttribute('role');
+  box.setAttribute('aria-disabled','true');
+  const ico=box.querySelector('.img-gift-box i');if(ico)ico.textContent='✓';
+  const txt=box.querySelector('.img-gift-txt em');if(txt)txt.textContent='+'+amount+' 苍穹星 已到账';
+  const go=box.querySelector('.img-gift-go');if(go)go.textContent='已领取';
+  spawnGiftSparks(box);
+  royalSfx('reveal');
+  uiSound(1.6);
+  return true;
+}
 function openPost(id){
   const p=IM_POSTS.find(x=>x.id===id);
   if(!p)return;
@@ -3636,10 +3723,18 @@ function openPost(id){
         <span>${p.comments.length} REPLIES</span><span>${esc(p.time)}</span>
       </div>
       <div class="im-comments">
-        ${p.comments.map(c=>`<div class="im-comment"><div class="im-cavatar" style="background:${c.bg}">${c.avatar}</div><div class="im-cbody"><div class="im-cname">${esc(c.name)}</div><div class="im-ctext">${esc(c.text)}</div></div></div>`).join('')}
+        ${p.comments.map(c=>`<div class="im-comment"><div class="im-cavatar" style="background:${c.bg}">${c.avatar}</div><div class="im-cbody"><div class="im-cname">${esc(c.name)}</div><div class="im-ctext">${esc(c.text)}</div>${c.gift?giftBoxHTML(c):''}</div></div>`).join('')}
       </div>
     </div>`;
   $('#imDetail').classList.add('active');
+  /* 评论礼盒：点击 / 回车都能领，领完当场变成「已领取」 */
+  $$('#imDetailBody .im-gift').forEach(g=>{
+    if(g.classList.contains('got'))return;
+    g.addEventListener('click',()=>{claimCommentGift(g);});
+    g.addEventListener('keydown',e=>{
+      if(e.key==='Enter'||e.key===' '||e.key==='Spacebar'){e.preventDefault();claimCommentGift(g);}
+    });
+  });
   const dl=$('#detailLike');
   if(dl)dl.addEventListener('click',()=>{
     likes[id]=!likes[id];
@@ -4549,7 +4644,7 @@ function shapePath(g,bx,by,bw,bh,shape){
   }
 }
 /* 皮肤化按键的填充：ring 画成空心环，其余按 shape 填渐变 + 宝石切面高光 + 双层描边 */
-function paintNoteShape(g,bx,by,bw,bh,shape,fill,edgeColor,glowC,glowA,rim,rim2){
+function paintNoteShape(g,bx,by,bw,bh,shape,fill,edgeColor,glowC,glowA,rim,rim2,SK){
   if(shape==='ring'){
     const lw=Math.max(3,bh*.3),ins=lw/2;
     rr(g,bx+ins,by+ins,bw-ins*2,bh-ins*2,Math.min(bw-ins*2,bh-ins*2)*.5);
@@ -4559,16 +4654,47 @@ function paintNoteShape(g,bx,by,bw,bh,shape,fill,edgeColor,glowC,glowA,rim,rim2)
     g.fillRect(bx+bw*.3,by+bh*.34,bw*.4,Math.max(2,bh*.32));
   }else if(rim){
     /* 皇室奢华材质：宝石切面高光 + 金属镶嵌双层描边 */
+    const cy=by+bh/2;
+    const facet=(SK&&SK.blue&&SK.blue.facet)?SK.blue.facet:0;
+    const gem=facet>0&&shape==='gem';
     shapePath(g,bx,by,bw,bh,shape);
     g.save();g.clip();
     g.fillStyle=fill;g.fillRect(bx,by,bw,bh);
-    const hi=g.createLinearGradient(0,by,0,by+bh*.5);
-    hi.addColorStop(0,'rgba(255,255,255,.94)');hi.addColorStop(1,'rgba(255,255,255,0)');
-    g.fillStyle=hi;g.fillRect(bx,by,bw,bh*.4);
-    g.fillStyle='rgba(255,255,255,.96)';
-    g.fillRect(bx+bw*.16,by+bh*.24,bw*.68,Math.max(1,bh*.09));
-    g.strokeStyle='rgba(255,255,255,.5)';g.lineWidth=1;
-    g.beginPath();g.moveTo(bx+bw*.14,by+bh*.64);g.lineTo(bx+bw*.86,by+bh*.64);g.stroke();
+    if(gem){
+      /* 蓝宝石：上缘只留一层霜白，下面把颜色还给宝石自己，
+         否则整颗键会被白色高光洗成「一块浅蓝」，看不出是蓝宝石。 */
+      const fh=g.createLinearGradient(0,by,0,by+bh*.46);
+      fh.addColorStop(0,'rgba(255,255,255,.52)');fh.addColorStop(1,'rgba(255,255,255,0)');
+      g.fillStyle=fh;g.fillRect(bx,by,bw,bh*.46);
+      /* 八面切面：左右尖角向内收的分割线 + 中央菱面 + 下半压暗 + 底部折射亮边 */
+      g.strokeStyle='rgba(3,30,60,'+(.34*facet).toFixed(3)+')';g.lineWidth=1.3;
+      g.beginPath();
+      g.moveTo(bx+bw*.18,by+bh*.26);g.lineTo(bx+bw*.46,cy);g.lineTo(bx+bw*.18,by+bh*.74);
+      g.moveTo(bx+bw*.82,by+bh*.26);g.lineTo(bx+bw*.54,cy);g.lineTo(bx+bw*.82,by+bh*.74);
+      g.stroke();
+      const dia=Math.min(bw*.15,bh*.46);
+      g.beginPath();
+      g.moveTo(bx+bw*.5,cy-dia);g.lineTo(bx+bw*.5+dia*.9,cy);g.lineTo(bx+bw*.5,cy+dia);g.lineTo(bx+bw*.5-dia*.9,cy);
+      g.closePath();
+      g.fillStyle='rgba(255,255,255,'+(.12*facet).toFixed(3)+')';g.fill();
+      g.strokeStyle='rgba(255,255,255,'+(.34*facet).toFixed(3)+')';g.lineWidth=.8;g.stroke();
+      const shd=g.createLinearGradient(0,cy,0,by+bh);
+      shd.addColorStop(0,'rgba(0,0,0,0)');shd.addColorStop(1,'rgba(0,16,40,'+(.34*facet).toFixed(3)+')');
+      g.fillStyle=shd;g.fillRect(bx,cy,bw,bh*.5);
+      const bl=g.createLinearGradient(0,by+bh*.78,0,by+bh);
+      bl.addColorStop(0,'rgba(0,0,0,0)');bl.addColorStop(1,'rgba(190,240,255,'+(.30*facet).toFixed(3)+')');
+      g.fillStyle=bl;g.fillRect(bx,by+bh*.78,bw,bh*.22);
+    }else{
+      const hi=g.createLinearGradient(0,by,0,by+bh*.5);
+      hi.addColorStop(0,'rgba(255,255,255,.94)');hi.addColorStop(1,'rgba(255,255,255,0)');
+      g.fillStyle=hi;g.fillRect(bx,by,bw,bh*.4);
+    }
+    g.fillStyle=gem?'rgba(255,255,255,.94)':'rgba(255,255,255,.96)';
+    g.fillRect(bx+bw*.16,by+bh*.24,bw*.68,Math.max(1,bh*(gem?.07:.09)));
+    if(!gem){
+      g.strokeStyle='rgba(255,255,255,.5)';g.lineWidth=1;
+      g.beginPath();g.moveTo(bx+bw*.14,by+bh*.64);g.lineTo(bx+bw*.86,by+bh*.64);g.stroke();
+    }
     const re=g.createLinearGradient(0,by+bh*.72,0,by+bh);
     re.addColorStop(0,'rgba(255,255,255,0)');re.addColorStop(1,'rgba(255,255,255,.20)');
     g.fillStyle=re;g.fillRect(bx,by+bh*.72,bw,bh*.28);
@@ -4711,7 +4837,7 @@ function buildShapedNoteSprite(kind,bw,bh,pad,SK){
     g.fillStyle=rg;g.beginPath();g.arc(0,0,bw*.95,0,Math.PI*2);g.fill();g.restore();
     const bg=g.createLinearGradient(0,by,0,by+bh);
     bg.addColorStop(0,top);bg.addColorStop(.38,mid);bg.addColorStop(1,bot);
-    paintNoteShape(g,bx,by,bw,bh,SH,bg,edgeC,glowC,glowA,rim,rim2);
+    paintNoteShape(g,bx,by,bw,bh,SH,bg,edgeC,glowC,glowA,rim,rim2,SK);
     if(kind==='final'){
       shapePath(g,bx-4,by-4,bw+8,bh+8,SH);
       g.strokeStyle='rgba(255,255,255,.95)';g.lineWidth=1.3;g.shadowBlur=14;g.shadowColor='#fff';g.stroke();g.shadowBlur=0;
@@ -6237,8 +6363,18 @@ function drawPlayfield(){
 function drawHoldObject(n,cx,y,ty,alpha,isFinal,bodyOnly){
   const c=sctx,hw=Math.max(14,V.laneW*.46),top=Math.min(y,ty),bottom=Math.max(y,ty),bh=bottom-top;
   const failed=!!n.holdFailed,SK=getNoteSkin(),H=SK.hold;
+  /* 长条也跟着皮肤走：非默认皮肤用自己的 glow / rail / scan / tail / sheen，
+     默认皮肤仍然沿用原来那条青蓝光，输出与旧版逐像素一致。 */
+  const fancy=!SK.classic;
+  const G=(fancy&&H.glow)?H.glow:[34,228,255];
+  const ga='rgba('+G[0]+','+G[1]+','+G[2]+',';
+  const light=fancy?('rgba('+Math.round(G[0]+(255-G[0])*.62)+','+Math.round(G[1]+(255-G[1])*.62)+','+Math.round(G[2]+(255-G[2])*.62)+','):'rgba(190,255,255,';
+  const cL=light,cG=fancy?ga:'rgba(34,228,255,';
   const edgeC=failed?'rgba(150,155,158,.45)':(isFinal?'rgba(255,244,205,.85)':H.edge);
   const capShape=SK.classic?'round':(SK.shape==='ring'?'round':SK.shape);
+  const rail=failed?'rgba(170,170,170,.25)':(isFinal?'rgba(255,250,220,.8)':(fancy?(H.rail||'rgba(170,250,255,.72)'):'rgba(170,250,255,.72)'));
+  const scan=failed?'rgba(180,180,180,.05)':(fancy?(H.scan||'rgba(150,245,255,.10)'):'rgba(150,245,255,.10)');
+  const tailC=failed?'rgba(170,170,170,.4)':(fancy?(H.tail||'rgba(140,248,255,.55)'):'rgba(140,248,255,.55)');
   c.save();
   c.globalAlpha=failed?Math.min(alpha,.38):alpha*.96;
   // 玻璃长条本体：默认皮肤就是原来那块黑玻璃，只是把亮度抬了一点点
@@ -6247,47 +6383,81 @@ function drawHoldObject(n,cx,y,ty,alpha,isFinal,bodyOnly){
   bodyGrad.addColorStop(.45,H.body[1]);
   bodyGrad.addColorStop(1,H.body[2]);
   c.fillStyle=bodyGrad;c.fillRect(cx-hw,top,hw*2,bh);
+  /* 皮肤化长条：左侧玻璃侧棱高光 + 内侧细边 + 上下端压边。
+     长条因此有了厚度和材质，而不是一块纯色矩形（默认皮肤不进这段）。 */
+  if(fancy&&!failed&&bh>8){
+    c.save();
+    const sh=c.createLinearGradient(cx-hw,0,cx-hw*.18,0);
+    sh.addColorStop(0,'rgba(255,255,255,0)');
+    sh.addColorStop(1,H.sheen||'rgba(255,255,255,.12)');
+    c.fillStyle=sh;c.fillRect(cx-hw,top,hw*.82,bh);
+    c.strokeStyle=H.inner||'rgba(255,255,255,.12)';
+    c.lineWidth=1;
+    c.beginPath();
+    c.moveTo(cx-hw+3.5,top+2.5);c.lineTo(cx-hw+3.5,bottom-2.5);
+    c.moveTo(cx+hw-3.5,top+2.5);c.lineTo(cx+hw-3.5,bottom-2.5);
+    c.stroke();
+    c.globalAlpha*=.55;c.fillStyle=H.edge;
+    c.fillRect(cx-hw,top,hw*2,1.6);
+    c.fillRect(cx-hw,bottom-1.6,hw*2,1.6);
+    c.restore();
+  }
   c.strokeStyle=edgeC;
-  c.lineWidth=2;c.shadowBlur=PERF_LITE?0:(failed?0:12);c.shadowColor=failed?'transparent':(isFinal?'rgba(255,220,150,.7)':'rgba(34,228,255,.7)');
+  c.lineWidth=2;c.shadowBlur=PERF_LITE?0:(failed?0:12);c.shadowColor=failed?'transparent':(isFinal?'rgba(255,220,150,.7)':cG+'.7)');
   c.beginPath();c.moveTo(cx-hw+1,top);c.lineTo(cx-hw+1,bottom);c.moveTo(cx+hw-1,top);c.lineTo(cx+hw-1,bottom);c.stroke();
   c.shadowBlur=0;
   // central ion rail
-  c.strokeStyle=failed?'rgba(170,170,170,.25)':(isFinal?'rgba(255,250,220,.8)':'rgba(170,250,255,.72)');
+  c.strokeStyle=rail;
   c.lineWidth=1;c.beginPath();c.moveTo(cx,top+3);c.lineTo(cx,bottom-2);c.stroke();
   if(bodyOnly&&!failed){
     const pulse=.5+.5*Math.sin(game.clock*14+n.lane);
-    c.shadowBlur=PERF_LITE?0:18;c.shadowColor='rgba(34,228,255,.75)';
-    c.strokeStyle='rgba(150,248,255,'+(.28+pulse*.22).toFixed(3)+')';c.lineWidth=2;
+    c.shadowBlur=PERF_LITE?0:18;c.shadowColor=cG+'.75)';
+    c.strokeStyle=cL+(.28+pulse*.22).toFixed(3)+')';c.lineWidth=2;
     c.strokeRect(cx-hw+2,top+1,hw*2-4,Math.max(0,bh-2));
     const hg=c.createRadialGradient(cx,bottom,0,cx,bottom,Math.max(24,hw*1.2));
-    hg.addColorStop(0,'rgba(190,255,255,'+(.13+pulse*.10).toFixed(3)+')');hg.addColorStop(1,'rgba(34,228,255,0)');
+    hg.addColorStop(0,cL+(.13+pulse*.10).toFixed(3)+')');hg.addColorStop(1,cG+'0)');
     c.fillStyle=hg;c.fillRect(cx-hw*1.3,bottom-18,hw*2.6,36);
     // persistent hit ring at the judgment edge
-    c.strokeStyle='rgba(190,255,255,'+(.38+pulse*.28).toFixed(3)+')';c.lineWidth=2;
+    c.strokeStyle=cL+(.38+pulse*.28).toFixed(3)+')';c.lineWidth=2;
     c.beginPath();c.ellipse(cx,V.judgeY-3,hw*(.78+pulse*.06),7+pulse*2,0,0,Math.PI*2);c.stroke();
-    c.fillStyle='rgba(190,255,255,'+(.10+pulse*.06).toFixed(3)+')';
+    c.fillStyle=cL+(.10+pulse*.06).toFixed(3)+')';
     c.beginPath();c.ellipse(cx,V.judgeY-3,hw*.72,5,0,0,Math.PI*2);c.fill();
     c.shadowBlur=0;
   }
   // glass scan lines
-  c.strokeStyle=failed?'rgba(180,180,180,.05)':'rgba(150,245,255,.10)';
+  c.strokeStyle=scan;
   c.lineWidth=1;
   for(let yy=top+7;yy<bottom-2;yy+=7){c.beginPath();c.moveTo(cx-hw+3,yy);c.lineTo(cx+hw-3,yy);c.stroke();}
-  // cyan tail line
+  // tail line（非默认皮肤再补一层从尾端向上散开的柔光）
+  if(fancy&&!failed&&ty>0&&ty<V.h){
+    c.save();
+    const tg=c.createLinearGradient(0,ty-16,0,ty+2);
+    tg.addColorStop(0,'rgba(0,0,0,0)');tg.addColorStop(1,H.edge);
+    c.globalAlpha*=.32;c.fillStyle=tg;c.fillRect(cx-hw-2,ty-16,hw*2+4,18);
+    c.restore();
+  }
   if(ty>0&&ty<V.h){
-    c.fillStyle=failed?'rgba(170,170,170,.4)':'rgba(140,248,255,.55)';
+    c.fillStyle=tailC;
     c.fillRect(cx-hw,ty-1,hw*2,3);
   }
   if(!bodyOnly&&y>-40&&y<V.h+40){
     const capH=Math.max(8,V.noteH*.72),capW=hw*1.03;
     const cap=c.createLinearGradient(0,y-capH/2,0,y+capH/2);
-    cap.addColorStop(0,'#f4ffff');
+    cap.addColorStop(0,(fancy&&!failed&&!isFinal)?H.cap[0]:'#f4ffff');
     cap.addColorStop(.45,failed?'#8a8a8a':(isFinal?'#fff1c4':H.cap[1]));
     cap.addColorStop(1,failed?'#555':(isFinal?'#148eb0':H.cap[2]));
     c.fillStyle=cap;
-    c.shadowBlur=PERF_LITE?0:(failed?0:20);c.shadowColor=failed?'transparent':(isFinal?'rgba(255,220,140,.85)':'rgba(34,228,255,.85)');
+    c.shadowBlur=PERF_LITE?0:(failed?0:20);c.shadowColor=failed?'transparent':(isFinal?'rgba(255,220,140,.85)':cG+'.85)');
     if(SK.classic){c.fillRect(cx-capW,y-capH/2,capW*2,capH);}
-    else{shapePath(c,cx-capW,y-capH/2,capW*2,capH,capShape);c.fill();}
+    else{
+      shapePath(c,cx-capW,y-capH/2,capW*2,capH,capShape);c.fill();
+      c.shadowBlur=0;
+      /* 皮肤化键头：沿轮廓再压一道浅内边，键头看起来是嵌进玻璃里的一块料 */
+      if(!failed){
+        shapePath(c,cx-capW+2.4,y-capH/2+1.6,(capW-2.4)*2,Math.max(2,capH-3.2),capShape);
+        c.lineWidth=1;c.strokeStyle='rgba(255,255,255,.34)';c.stroke();
+      }
+    }
     c.shadowBlur=0;
     c.fillStyle=failed?'rgba(200,200,200,.6)':'rgba(255,255,255,.95)';
     c.fillRect(cx-capW+3,y-1,capW*2-6,2);

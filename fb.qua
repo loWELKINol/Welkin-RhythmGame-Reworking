@@ -606,7 +606,7 @@ HitObjects:
   Lane: 2
   KeySounds: []
 - StartTime: 25862
-  Lane: 4
+  Lane: 3
   KeySounds: []
 - StartTime: 25862
   Lane: 1
@@ -616,46 +616,46 @@ HitObjects:
   Lane: 2
   KeySounds: []
 - StartTime: 25991
-  Lane: 4
+  Lane: 3
   KeySounds: []
 - StartTime: 26120
   Lane: 2
   KeySounds: []
 - StartTime: 26120
-  Lane: 4
+  Lane: 3
   KeySounds: []
 - StartTime: 26250
   Lane: 2
   KeySounds: []
 - StartTime: 26250
-  Lane: 4
+  Lane: 3
   KeySounds: []
 - StartTime: 26379
   Lane: 2
   KeySounds: []
 - StartTime: 26379
-  Lane: 4
+  Lane: 3
   KeySounds: []
 - StartTime: 26508
   Lane: 2
   KeySounds: []
 - StartTime: 26508
-  Lane: 4
+  Lane: 3
   KeySounds: []
 - StartTime: 26637
   Lane: 2
   KeySounds: []
 - StartTime: 26637
-  Lane: 4
+  Lane: 3
   KeySounds: []
 - StartTime: 26767
   Lane: 2
   KeySounds: []
 - StartTime: 26767
-  Lane: 4
+  Lane: 3
   KeySounds: []
 - StartTime: 26896
-  Lane: 4
+  Lane: 3
   KeySounds: []
 - StartTime: 26896
   Lane: 2
@@ -664,10 +664,10 @@ HitObjects:
   Lane: 2
   KeySounds: []
 - StartTime: 27025
-  Lane: 4
+  Lane: 3
   KeySounds: []
 - StartTime: 27155
-  Lane: 4
+  Lane: 3
   KeySounds: []
 - StartTime: 27155
   Lane: 2
@@ -676,10 +676,10 @@ HitObjects:
   Lane: 2
   KeySounds: []
 - StartTime: 27284
-  Lane: 4
+  Lane: 3
   KeySounds: []
 - StartTime: 27413
-  Lane: 4
+  Lane: 3
   KeySounds: []
 - StartTime: 27413
   Lane: 2
@@ -688,10 +688,10 @@ HitObjects:
   Lane: 2
   KeySounds: []
 - StartTime: 27543
-  Lane: 4
+  Lane: 3
   KeySounds: []
 - StartTime: 27672
-  Lane: 4
+  Lane: 3
   KeySounds: []
 - StartTime: 27672
   Lane: 2
@@ -700,10 +700,10 @@ HitObjects:
   Lane: 2
   KeySounds: []
 - StartTime: 27801
-  Lane: 4
+  Lane: 3
   KeySounds: []
 - StartTime: 27931
-  Lane: 4
+  Lane: 3
   KeySounds: []
 - StartTime: 27931
   Lane: 2
@@ -712,16 +712,16 @@ HitObjects:
   Lane: 2
   KeySounds: []
 - StartTime: 28060
-  Lane: 4
+  Lane: 3
   KeySounds: []
 - StartTime: 28189
-  Lane: 4
+  Lane: 3
   KeySounds: []
 - StartTime: 28189
   Lane: 2
   KeySounds: []
 - StartTime: 28318
-  Lane: 4
+  Lane: 3
   KeySounds: []
 - StartTime: 28318
   Lane: 2
@@ -730,28 +730,28 @@ HitObjects:
   Lane: 2
   KeySounds: []
 - StartTime: 28448
-  Lane: 4
+  Lane: 3
   KeySounds: []
 - StartTime: 28577
   Lane: 2
   KeySounds: []
 - StartTime: 28577
-  Lane: 4
+  Lane: 3
   KeySounds: []
 - StartTime: 28706
   Lane: 2
   KeySounds: []
 - StartTime: 28706
-  Lane: 4
+  Lane: 3
   KeySounds: []
 - StartTime: 28836
   Lane: 2
   KeySounds: []
 - StartTime: 28836
-  Lane: 4
+  Lane: 3
   KeySounds: []
 - StartTime: 28965
-  Lane: 4
+  Lane: 3
   KeySounds: []
 - StartTime: 28965
   Lane: 2
@@ -760,10 +760,10 @@ HitObjects:
   Lane: 2
   KeySounds: []
 - StartTime: 29094
-  Lane: 4
+  Lane: 3
   KeySounds: []
 - StartTime: 29224
-  Lane: 4
+  Lane: 3
   KeySounds: []
 - StartTime: 29224
   Lane: 2
@@ -772,34 +772,28 @@ HitObjects:
   Lane: 2
   KeySounds: []
 - StartTime: 29353
-  Lane: 4
+  Lane: 3
   KeySounds: []
 - StartTime: 29482
   Lane: 2
   KeySounds: []
 - StartTime: 29482
-  Lane: 4
+  Lane: 3
   KeySounds: []
 - StartTime: 29612
-  Lane: 4
+  Lane: 3
   KeySounds: []
 - StartTime: 29612
   Lane: 2
   KeySounds: []
 - StartTime: 29870
   Lane: 1
-  KeySounds: []
-- StartTime: 29870
-  Lane: 2
-  KeySounds: []
-- StartTime: 29870
-  Lane: 3
   KeySounds: []
 - StartTime: 29870
   Lane: 4
   KeySounds: []
 - StartTime: 30129
-  Lane: 1
+  Lane: 2
   KeySounds: []
 - StartTime: 30129
   Lane: 3
@@ -809,43 +803,43 @@ HitObjects:
   EndTime: 33879
   KeySounds: []
 - StartTime: 30258
-  Lane: 1
+  Lane: 2
   KeySounds: []
 - StartTime: 30258
   Lane: 3
   KeySounds: []
 - StartTime: 30387
-  Lane: 1
+  Lane: 2
   KeySounds: []
 - StartTime: 30387
   Lane: 3
   KeySounds: []
 - StartTime: 30517
-  Lane: 1
+  Lane: 2
   KeySounds: []
 - StartTime: 30517
   Lane: 3
   KeySounds: []
 - StartTime: 30646
-  Lane: 1
+  Lane: 2
   KeySounds: []
 - StartTime: 30646
   Lane: 3
   KeySounds: []
 - StartTime: 30775
-  Lane: 1
+  Lane: 2
   KeySounds: []
 - StartTime: 30775
   Lane: 3
   KeySounds: []
 - StartTime: 30905
-  Lane: 1
+  Lane: 2
   KeySounds: []
 - StartTime: 30905
   Lane: 3
   KeySounds: []
 - StartTime: 31034
-  Lane: 1
+  Lane: 2
   KeySounds: []
 - StartTime: 31034
   Lane: 3
@@ -854,10 +848,10 @@ HitObjects:
   Lane: 3
   KeySounds: []
 - StartTime: 31163
-  Lane: 1
+  Lane: 2
   KeySounds: []
 - StartTime: 31293
-  Lane: 1
+  Lane: 2
   KeySounds: []
 - StartTime: 31293
   Lane: 3
@@ -866,10 +860,10 @@ HitObjects:
   Lane: 3
   KeySounds: []
 - StartTime: 31422
-  Lane: 1
+  Lane: 2
   KeySounds: []
 - StartTime: 31551
-  Lane: 1
+  Lane: 2
   KeySounds: []
 - StartTime: 31551
   Lane: 3
@@ -878,10 +872,10 @@ HitObjects:
   Lane: 3
   KeySounds: []
 - StartTime: 31681
-  Lane: 1
+  Lane: 2
   KeySounds: []
 - StartTime: 31810
-  Lane: 1
+  Lane: 2
   KeySounds: []
 - StartTime: 31810
   Lane: 3
@@ -890,10 +884,10 @@ HitObjects:
   Lane: 3
   KeySounds: []
 - StartTime: 31939
-  Lane: 1
+  Lane: 2
   KeySounds: []
 - StartTime: 32068
-  Lane: 1
+  Lane: 2
   KeySounds: []
 - StartTime: 32068
   Lane: 3
@@ -902,10 +896,10 @@ HitObjects:
   Lane: 3
   KeySounds: []
 - StartTime: 32198
-  Lane: 1
+  Lane: 2
   KeySounds: []
 - StartTime: 32327
-  Lane: 1
+  Lane: 2
   KeySounds: []
 - StartTime: 32327
   Lane: 3
@@ -914,34 +908,34 @@ HitObjects:
   Lane: 3
   KeySounds: []
 - StartTime: 32456
-  Lane: 1
+  Lane: 2
   KeySounds: []
 - StartTime: 32586
   Lane: 3
   KeySounds: []
 - StartTime: 32586
-  Lane: 1
+  Lane: 2
   KeySounds: []
 - StartTime: 32715
-  Lane: 1
+  Lane: 2
   KeySounds: []
 - StartTime: 32715
   Lane: 3
   KeySounds: []
 - StartTime: 32844
-  Lane: 1
+  Lane: 2
   KeySounds: []
 - StartTime: 32844
   Lane: 3
   KeySounds: []
 - StartTime: 32974
-  Lane: 1
+  Lane: 2
   KeySounds: []
 - StartTime: 32974
   Lane: 3
   KeySounds: []
 - StartTime: 33103
-  Lane: 1
+  Lane: 2
   KeySounds: []
 - StartTime: 33103
   Lane: 3
@@ -950,10 +944,10 @@ HitObjects:
   Lane: 3
   KeySounds: []
 - StartTime: 33232
-  Lane: 1
+  Lane: 2
   KeySounds: []
 - StartTime: 33362
-  Lane: 1
+  Lane: 2
   KeySounds: []
 - StartTime: 33362
   Lane: 3
@@ -962,16 +956,16 @@ HitObjects:
   Lane: 3
   KeySounds: []
 - StartTime: 33491
-  Lane: 1
+  Lane: 2
   KeySounds: []
 - StartTime: 33620
-  Lane: 1
+  Lane: 2
   KeySounds: []
 - StartTime: 33620
   Lane: 3
   KeySounds: []
 - StartTime: 33750
-  Lane: 1
+  Lane: 2
   KeySounds: []
 - StartTime: 33750
   Lane: 3
@@ -980,7 +974,7 @@ HitObjects:
   Lane: 3
   KeySounds: []
 - StartTime: 33879
-  Lane: 1
+  Lane: 2
   KeySounds: []
 - StartTime: 34267
   Lane: 2
@@ -1701,16 +1695,10 @@ HitObjects:
   Lane: 2
   KeySounds: []
 - StartTime: 47435
-  Lane: 3
-  KeySounds: []
-- StartTime: 47435
   Lane: 4
   KeySounds: []
 - StartTime: 47499
   Lane: 1
-  KeySounds: []
-- StartTime: 47564
-  Lane: 3
   KeySounds: []
 - StartTime: 47564
   Lane: 4
@@ -1719,16 +1707,10 @@ HitObjects:
   Lane: 1
   KeySounds: []
 - StartTime: 47693
-  Lane: 3
-  KeySounds: []
-- StartTime: 47693
   Lane: 4
   KeySounds: []
 - StartTime: 47758
   Lane: 1
-  KeySounds: []
-- StartTime: 47823
-  Lane: 3
   KeySounds: []
 - StartTime: 47823
   Lane: 4
@@ -1821,16 +1803,10 @@ HitObjects:
   Lane: 3
   KeySounds: []
 - StartTime: 49417
-  Lane: 2
-  KeySounds: []
-- StartTime: 49417
   Lane: 1
   KeySounds: []
 - StartTime: 49481
   Lane: 4
-  KeySounds: []
-- StartTime: 49546
-  Lane: 2
   KeySounds: []
 - StartTime: 49546
   Lane: 1
@@ -1839,16 +1815,10 @@ HitObjects:
   Lane: 4
   KeySounds: []
 - StartTime: 49675
-  Lane: 2
-  KeySounds: []
-- StartTime: 49675
   Lane: 1
   KeySounds: []
 - StartTime: 49740
   Lane: 4
-  KeySounds: []
-- StartTime: 49805
-  Lane: 2
   KeySounds: []
 - StartTime: 49805
   Lane: 1
@@ -2126,16 +2096,16 @@ HitObjects:
   Lane: 1
   KeySounds: []
 - StartTime: 59181
-  Lane: 2
-  KeySounds: []
-- StartTime: 59181
   Lane: 3
   KeySounds: []
 - StartTime: 59181
   Lane: 4
   KeySounds: []
-- StartTime: 59310
+- StartTime: 59181
   Lane: 2
+  KeySounds: []
+- StartTime: 59310
+  Lane: 3
   KeySounds: []
 - StartTime: 59439
   Lane: 1
@@ -2147,7 +2117,7 @@ HitObjects:
   Lane: 4
   KeySounds: []
 - StartTime: 59568
-  Lane: 3
+  Lane: 2
   KeySounds: []
 - StartTime: 59698
   Lane: 1
@@ -2159,7 +2129,7 @@ HitObjects:
   Lane: 4
   KeySounds: []
 - StartTime: 59827
-  Lane: 2
+  Lane: 3
   KeySounds: []
 - StartTime: 59957
   Lane: 1
@@ -2171,7 +2141,7 @@ HitObjects:
   Lane: 4
   KeySounds: []
 - StartTime: 60086
-  Lane: 3
+  Lane: 2
   KeySounds: []
 - StartTime: 60215
   Lane: 1
@@ -2183,7 +2153,7 @@ HitObjects:
   Lane: 4
   KeySounds: []
 - StartTime: 60344
-  Lane: 2
+  Lane: 3
   KeySounds: []
 - StartTime: 60474
   Lane: 1
@@ -2195,7 +2165,7 @@ HitObjects:
   Lane: 4
   KeySounds: []
 - StartTime: 60603
-  Lane: 3
+  Lane: 2
   KeySounds: []
 - StartTime: 60732
   Lane: 1
@@ -2207,7 +2177,7 @@ HitObjects:
   Lane: 4
   KeySounds: []
 - StartTime: 60862
-  Lane: 2
+  Lane: 3
   KeySounds: []
 - StartTime: 60991
   Lane: 1
@@ -2219,7 +2189,7 @@ HitObjects:
   Lane: 4
   KeySounds: []
 - StartTime: 61120
-  Lane: 3
+  Lane: 2
   KeySounds: []
 - StartTime: 61250
   Lane: 1
@@ -2323,9 +2293,6 @@ HitObjects:
 - StartTime: 63319
   Lane: 1
   KeySounds: []
-- StartTime: 63448
-  Lane: 3
-  KeySounds: []
 - StartTime: 63577
   Lane: 1
   KeySounds: []
@@ -2335,8 +2302,8 @@ HitObjects:
 - StartTime: 63577
   Lane: 3
   KeySounds: []
-- StartTime: 63707
-  Lane: 2
+- StartTime: 63706
+  Lane: 3
   KeySounds: []
 - StartTime: 63836
   Lane: 1
@@ -2348,7 +2315,7 @@ HitObjects:
   Lane: 4
   KeySounds: []
 - StartTime: 63965
-  Lane: 3
+  Lane: 2
   KeySounds: []
 - StartTime: 64094
   Lane: 1
@@ -2358,9 +2325,6 @@ HitObjects:
   KeySounds: []
 - StartTime: 64094
   Lane: 4
-  KeySounds: []
-- StartTime: 64224
-  Lane: 2
   KeySounds: []
 - StartTime: 64353
   Lane: 2
@@ -2447,10 +2411,10 @@ HitObjects:
   Lane: 4
   KeySounds: []
 - StartTime: 66465
-  Lane: 2
+  Lane: 1
   KeySounds: []
 - StartTime: 66465
-  Lane: 3
+  Lane: 4
   KeySounds: []
 - StartTime: 66594
   Lane: 1
@@ -2463,12 +2427,6 @@ HitObjects:
   KeySounds: []
 - StartTime: 66724
   Lane: 4
-  KeySounds: []
-- StartTime: 66853
-  Lane: 2
-  KeySounds: []
-- StartTime: 66853
-  Lane: 3
   KeySounds: []
 - StartTime: 66853
   Lane: 1
@@ -2505,7 +2463,7 @@ HitObjects:
   Lane: 4
   KeySounds: []
 - StartTime: 67629
-  Lane: 4
+  Lane: 3
   KeySounds: []
 - StartTime: 67758
   Lane: 1
@@ -2517,7 +2475,7 @@ HitObjects:
   Lane: 4
   KeySounds: []
 - StartTime: 67887
-  Lane: 1
+  Lane: 2
   KeySounds: []
 - StartTime: 68017
   Lane: 1
@@ -2529,7 +2487,7 @@ HitObjects:
   Lane: 4
   KeySounds: []
 - StartTime: 68146
-  Lane: 4
+  Lane: 3
   KeySounds: []
 - StartTime: 68275
   Lane: 1
@@ -2541,7 +2499,7 @@ HitObjects:
   Lane: 4
   KeySounds: []
 - StartTime: 68405
-  Lane: 1
+  Lane: 2
   KeySounds: []
 - StartTime: 68534
   Lane: 1
@@ -2693,14 +2651,8 @@ HitObjects:
 - StartTime: 71637
   Lane: 1
   KeySounds: []
-- StartTime: 71767
-  Lane: 2
-  KeySounds: []
 - StartTime: 71896
   Lane: 1
-  KeySounds: []
-- StartTime: 71896
-  Lane: 3
   KeySounds: []
 - StartTime: 71896
   Lane: 4
@@ -2823,10 +2775,10 @@ HitObjects:
   Lane: 1
   KeySounds: []
 - StartTime: 74741
-  Lane: 2
+  Lane: 1
   KeySounds: []
 - StartTime: 74741
-  Lane: 3
+  Lane: 4
   KeySounds: []
 - StartTime: 74870
   Lane: 1
@@ -2859,12 +2811,6 @@ HitObjects:
 - StartTime: 75258
   Lane: 3
   EndTime: 75517
-  KeySounds: []
-- StartTime: 75775
-  Lane: 3
-  KeySounds: []
-- StartTime: 75775
-  Lane: 4
   KeySounds: []
 - StartTime: 75862
   Lane: 3
@@ -2948,12 +2894,6 @@ HitObjects:
   Lane: 3
   KeySounds: []
 - StartTime: 76982
-  Lane: 4
-  KeySounds: []
-- StartTime: 77068
-  Lane: 3
-  KeySounds: []
-- StartTime: 77068
   Lane: 4
   KeySounds: []
 - StartTime: 77327
@@ -3228,12 +3168,6 @@ HitObjects:
 - StartTime: 82887
   Lane: 2
   KeySounds: []
-- StartTime: 83017
-  Lane: 1
-  KeySounds: []
-- StartTime: 83017
-  Lane: 2
-  KeySounds: []
 - StartTime: 83103
   Lane: 1
   KeySounds: []
@@ -3366,9 +3300,6 @@ HitObjects:
   KeySounds: []
 - StartTime: 88189
   Lane: 1
-  KeySounds: []
-- StartTime: 88189
-  Lane: 3
   KeySounds: []
 - StartTime: 88189
   Lane: 4
@@ -3377,13 +3308,10 @@ HitObjects:
   Lane: 2
   KeySounds: []
 - StartTime: 88318
-  Lane: 2
+  Lane: 3
   KeySounds: []
 - StartTime: 88448
   Lane: 1
-  KeySounds: []
-- StartTime: 88448
-  Lane: 2
   KeySounds: []
 - StartTime: 88448
   Lane: 4
@@ -3392,13 +3320,10 @@ HitObjects:
   Lane: 3
   KeySounds: []
 - StartTime: 88577
-  Lane: 3
+  Lane: 2
   KeySounds: []
 - StartTime: 88706
   Lane: 1
-  KeySounds: []
-- StartTime: 88706
-  Lane: 3
   KeySounds: []
 - StartTime: 88706
   Lane: 4
@@ -3408,6 +3333,9 @@ HitObjects:
   KeySounds: []
 - StartTime: 88836
   Lane: 2
+  KeySounds: []
+- StartTime: 88836
+  Lane: 3
   KeySounds: []
 - StartTime: 88965
   Lane: 1
@@ -4052,9 +3980,6 @@ HitObjects:
   Lane: 1
   KeySounds: []
 - StartTime: 104870
-  Lane: 3
-  KeySounds: []
-- StartTime: 104870
   Lane: 4
   KeySounds: []
 - StartTime: 104870
@@ -4065,9 +3990,6 @@ HitObjects:
   KeySounds: []
 - StartTime: 105129
   Lane: 1
-  KeySounds: []
-- StartTime: 105129
-  Lane: 2
   KeySounds: []
 - StartTime: 105129
   Lane: 4
@@ -4082,9 +4004,6 @@ HitObjects:
   Lane: 1
   KeySounds: []
 - StartTime: 105387
-  Lane: 3
-  KeySounds: []
-- StartTime: 105387
   Lane: 4
   KeySounds: []
 - StartTime: 105387
@@ -4092,6 +4011,9 @@ HitObjects:
   KeySounds: []
 - StartTime: 105517
   Lane: 3
+  KeySounds: []
+- StartTime: 105517
+  Lane: 2
   KeySounds: []
 - StartTime: 105646
   Lane: 1
@@ -4559,28 +4481,16 @@ HitObjects:
 - StartTime: 114827
   Lane: 4
   KeySounds: []
-- StartTime: 114956
+- StartTime: 115043
+  Lane: 1
+  KeySounds: []
+- StartTime: 115043
   Lane: 4
   KeySounds: []
-- StartTime: 114956
-  Lane: 3
-  KeySounds: []
-- StartTime: 114956
-  Lane: 2
-  KeySounds: []
-- StartTime: 114956
+- StartTime: 115172
   Lane: 1
   KeySounds: []
-- StartTime: 115086
-  Lane: 1
-  KeySounds: []
-- StartTime: 115086
-  Lane: 4
-  KeySounds: []
-- StartTime: 115215
-  Lane: 1
-  KeySounds: []
-- StartTime: 115215
+- StartTime: 115172
   Lane: 4
   KeySounds: []
 - StartTime: 115344
@@ -4970,17 +4880,11 @@ HitObjects:
 - StartTime: 122295
   Lane: 1
   KeySounds: []
-- StartTime: 122295
-  Lane: 2
-  KeySounds: []
 - StartTime: 122359
   Lane: 4
   KeySounds: []
 - StartTime: 122424
   Lane: 1
-  KeySounds: []
-- StartTime: 122424
-  Lane: 2
   KeySounds: []
 - StartTime: 122489
   Lane: 4
@@ -4988,17 +4892,11 @@ HitObjects:
 - StartTime: 122553
   Lane: 1
   KeySounds: []
-- StartTime: 122553
-  Lane: 2
-  KeySounds: []
 - StartTime: 122618
   Lane: 4
   KeySounds: []
 - StartTime: 122683
   Lane: 1
-  KeySounds: []
-- StartTime: 122683
-  Lane: 2
   KeySounds: []
 - StartTime: 122747
   Lane: 4
@@ -5090,17 +4988,11 @@ HitObjects:
 - StartTime: 124299
   Lane: 4
   KeySounds: []
-- StartTime: 124299
-  Lane: 3
-  KeySounds: []
 - StartTime: 124364
   Lane: 1
   KeySounds: []
 - StartTime: 124428
   Lane: 4
-  KeySounds: []
-- StartTime: 124428
-  Lane: 3
   KeySounds: []
 - StartTime: 124493
   Lane: 1
@@ -5108,17 +5000,11 @@ HitObjects:
 - StartTime: 124558
   Lane: 4
   KeySounds: []
-- StartTime: 124558
-  Lane: 3
-  KeySounds: []
 - StartTime: 124622
   Lane: 1
   KeySounds: []
 - StartTime: 124687
   Lane: 4
-  KeySounds: []
-- StartTime: 124687
-  Lane: 3
   KeySounds: []
 - StartTime: 124752
   Lane: 1
@@ -5158,12 +5044,6 @@ HitObjects:
   KeySounds: []
 - StartTime: 125269
   Lane: 1
-  KeySounds: []
-- StartTime: 125398
-  Lane: 3
-  KeySounds: []
-- StartTime: 125398
-  Lane: 2
   KeySounds: []
 - StartTime: 125527
   Lane: 4

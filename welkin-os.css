@@ -826,6 +826,49 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border:0;border-radiu
 .im-v2 .im-cname{color:var(--cy);margin-bottom:7px}
 .im-v2 .im-ctext{font-size:13px;line-height:1.7;color:#b8d1e0}
 
+/* ---- iM 评论礼盒（WELKIN 帖下「老大」的礼盒 · 2487 苍穹星）---- */
+.im-gift{position:relative;display:flex;align-items:center;gap:12px;margin-top:12px;padding:11px 14px;
+  border:1px solid rgba(255,214,120,.48);border-radius:10px;cursor:pointer;overflow:visible;
+  background:linear-gradient(100deg,rgba(48,34,10,.92),rgba(20,14,5,.94) 58%,rgba(42,29,8,.92));
+  box-shadow:inset 0 0 0 1px rgba(255,214,120,.08),0 8px 22px rgba(0,0,0,.45),0 0 18px rgba(255,196,60,.13);
+  transition:transform .18s ease,box-shadow .22s ease,border-color .22s ease;user-select:none}
+.im-gift:hover{transform:translateY(-1px);border-color:rgba(255,228,166,.85);
+  box-shadow:inset 0 0 0 1px rgba(255,228,166,.16),0 10px 26px rgba(0,0,0,.5),0 0 26px rgba(255,196,60,.26)}
+.im-gift:active{transform:translateY(0) scale(.995)}
+.im-gift:focus-visible{outline:2px solid rgba(255,228,166,.85);outline-offset:2px}
+.img-gift-box{position:relative;width:34px;height:34px;flex:0 0 auto;border-radius:8px;display:grid;place-items:center;
+  font-size:19px;background:radial-gradient(circle at 34% 26%,#ffeec0,#c8902d 56%,#66450f);
+  box-shadow:inset 0 2px 10px rgba(255,230,160,.35),0 0 14px rgba(255,196,60,.3)}
+.img-gift-box i{font-style:normal;line-height:1;filter:drop-shadow(0 1px 1px rgba(0,0,0,.45))}
+.img-gift-shine{position:absolute;inset:0;border-radius:8px;overflow:hidden}
+.img-gift-shine::after{content:'';position:absolute;top:-45%;left:-70%;width:38%;height:190%;transform:rotate(18deg);
+  background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.82),rgba(255,255,255,0));
+  animation:imgGiftShine 2.8s ease-in-out infinite}
+@keyframes imgGiftShine{0%{left:-70%}55%{left:125%}100%{left:125%}}
+.img-gift-txt{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:3px}
+.img-gift-txt b{font:600 11px/1.2 var(--font-d);color:#ffe4a6;letter-spacing:.04em}
+.img-gift-txt em{font-style:normal;font:400 11px/1.35 var(--font-d);color:#d9c39a}
+.img-gift-txt strong{color:#ffd76a}
+.img-gift-go{flex:0 0 auto;font:600 10px/1 var(--font-m);letter-spacing:.1em;color:#241a08;
+  padding:7px 10px;border-radius:6px;background:linear-gradient(180deg,#ffe9ad,#d6a63c);
+  box-shadow:0 2px 8px rgba(255,190,60,.35)}
+.im-gift.got{cursor:default;border-color:rgba(140,220,180,.38);
+  background:linear-gradient(100deg,rgba(14,32,26,.92),rgba(10,22,18,.94));box-shadow:none}
+.im-gift.got:hover{transform:none}
+.im-gift.got .img-gift-box{background:radial-gradient(circle at 34% 26%,#dcfff0,#4fbc8e 58%,#1d6b4c);box-shadow:none}
+.im-gift.got .img-gift-shine{display:none}
+.im-gift.got .img-gift-txt b{color:#a8e8c8}
+.im-gift.got .img-gift-txt em{color:#8fb8a6}
+.im-gift.got .img-gift-go{background:rgba(120,180,150,.18);color:#9fd8bd;box-shadow:none}
+.img-gift-spark{position:absolute;left:24px;top:50%;pointer-events:none;color:#ffe9ad;
+  text-shadow:0 0 6px rgba(255,200,90,.9);animation:imgGiftSpark .95s ease-out forwards}
+@keyframes imgGiftSpark{0%{opacity:0;transform:translate(0,0) scale(.4)}25%{opacity:1}
+  100%{opacity:0;transform:translate(var(--dx,0),var(--dy,-40px)) scale(1.18)}}
+@media (prefers-reduced-motion: reduce){
+  .img-gift-shine::after{animation:none}
+  .img-gift-spark{animation-duration:.01s}
+}
+
 /* phone dark/hidden and landscape scene */
 @media (orientation: landscape) and (max-height: 520px) and (max-width: 1000px){
   :root{--pw:min(43vh,190px)}
