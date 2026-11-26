@@ -97,12 +97,13 @@ try{
    1. settings / user / best
    ============================================================ */
 const SET_KEY='welkin_os_settings_v1';
-const DEFAULT_SETTINGS={speed:1,dim:45,volume:85,hit:true,ui:true,early:true,motion:false,perfMode:'auto',hitVol:85,inputOffset:0,trackSkin:0,keySkin:0,mirror:false};
+const DEFAULT_SETTINGS={speed:1,dim:45,volume:85,hit:true,ui:true,early:true,motion:false,perfMode:'auto',hitVol:85,inputOffset:0,trackSkin:0,keySkin:0,mirror:false,linkSave:true};
 let settings=Object.assign({},DEFAULT_SETTINGS);
 try{
   const raw=localStorage.getItem(SET_KEY);
   if(raw){const o=JSON.parse(raw);if(o&&typeof o==='object')settings=Object.assign({},DEFAULT_SETTINGS,o);}
 }catch(e){}
+settings.linkSave=settings.linkSave!==false;
 settings.speed=clamp(Number(settings.speed)||1,0.5,1.5);
 settings.dim=clamp(Number(settings.dim)||0,0,80);
 settings.volume=clamp(Number(settings.volume)||0,0,100);
@@ -1181,6 +1182,52 @@ async function decodeSaveCode(code){
   try{return JSON.parse(atob(s));}catch(e){}
   return null;
 }
+/* ---- 合并恢复（存档码 / 链接存档都走这里） ---------------------------------
+   以前是「整份覆盖」：从别的设备导一套旧档回来，会把这台机器上已经打出来的成绩
+   和攒的星一起冲掉；微信清了缓存、先开了新档打了两首，再想把旧码导回来就更亏。
+   现在一律合并，只增不减：
+     · 苍穹星取多的那边
+     · 皮肤 / 关卡解锁取并集
+     · 每首歌的最佳成绩取更好的那条（同分看准度）
+     · 通关记录取并集
+     · SSS 外观开关取并集（买过的皮肤永远不会因为导入旧档而丢） */
+function mergeAccountInto(cur,src){
+  const a=Object.assign(freshAccount(),cur||{}),b=Object.assign(freshAccount(),src||{});
+  const out=Object.assign({},a);
+  out.currency=Math.max(Math.floor(Number(a.currency)||0),Math.floor(Number(b.currency)||0));
+  const un=(x,y)=>Array.from(new Set([...(Array.isArray(x)?x:[0]),...(Array.isArray(y)?y:[0])])).sort((p,q)=>p-q);
+  out.unlockedNote=un(a.unlockedNote,b.unlockedNote);
+  out.unlockedTrack=un(a.unlockedTrack,b.unlockedTrack);
+  ['phone','lobby','scenery','phoneui','phoneOn','lobbyOn','sceneryOn','phoneuiOn','lobbyMusic','lobbyMusicOn','giftLaoda']
+    .forEach(k=>{out[k]=!!(a[k]||b[k]);});
+  /* 账号 id 跟着存档走；本机已有 id 时保持本机的（同名不同 id 不会互相顶掉） */
+  out.id=a.id||b.id||'';
+  return out;
+}
+function mergeBestMaps(cur,src){
+  const out=Object.assign({},cur||{});
+  for(const id in (src||{})){
+    const n=src[id];if(!n)continue;
+    const o=out[id];
+    if(!o){out[id]=Object.assign(emptyBest(),n);continue;}
+    const ns=n.score|0,os=o.score|0;
+    const better=ns>os||(ns===os&&(Number(n.acc)||0)>=(Number(o.acc)||0));
+    const pick=better?n:o;
+    out[id]=Object.assign(emptyBest(),pick,{
+      ap:!!(o.ap||n.ap),fc:!!(o.fc||n.fc),combo:Math.max(o.combo|0,n.combo|0)
+    });
+  }
+  return out;
+}
+function mergeClears(cur,src){
+  const out={};
+  for(const k in (cur||{}))out[k]=Array.isArray(cur[k])?cur[k].slice():cur[k];
+  for(const k in (src||{})){
+    const a=Array.isArray(out[k])?out[k]:[],b=Array.isArray(src[k])?src[k]:[];
+    out[k]=Array.from(new Set([...a,...b]));
+  }
+  return out;
+}
 function applySaveBlob(obj){
   if(!obj||typeof obj!=='object')return false;
   /* v2 及更早的存档码是在 7 套按键皮肤（含冠冕/星冠）时期导出的，序号按老表重排；
@@ -1200,13 +1247,13 @@ function applySaveBlob(obj){
         lobbyMusic:!!(f&256),lobbyMusicOn:!!(f&512),giftLaoda:!!(f&1024)
       };
     }else if(obj.account&&typeof obj.account==='object'){
-      acctSrc=obj.account;
+      acctSrc=Object.assign({},obj.account);
     }
     if(acctSrc){
-      account=Object.assign(freshAccount(),acctSrc);
+      if(legacyNoteIdx&&Array.isArray(acctSrc.unlockedNote))acctSrc.unlockedNote=remapLegacyNoteList(acctSrc.unlockedNote);
+      account=mergeAccountInto(account,acctSrc);
       if(!Array.isArray(account.unlockedNote))account.unlockedNote=[0];
       if(!Array.isArray(account.unlockedTrack))account.unlockedTrack=[0];
-      if(legacyNoteIdx)account.unlockedNote=remapLegacyNoteList(account.unlockedNote);
       if(!account.unlockedNote.includes(0))account.unlockedNote.unshift(0);
       if(!account.unlockedTrack.includes(0))account.unlockedTrack.unshift(0);
       account.currency=Math.max(0,Math.floor(Number(account.currency)||0));
@@ -1220,11 +1267,11 @@ function applySaveBlob(obj){
         if(Array.isArray(v))next[id]={score:v[0]|0,acc:Number(v[1])||0,ap:!!v[2],fc:!!v[3],combo:v[4]|0,rank:String(v[5]||'—')};
         else if(typeof v==='object')next[id]=Object.assign(emptyBest(),v);
       }
-      bestMap=next;
+      bestMap=mergeBestMaps(bestMap,next);
       try{localStorage.setItem(BEST_MAP_KEY,JSON.stringify(bestMap));}catch(e){}
     }
     const cSrc=(obj.c&&typeof obj.c==='object')?obj.c:((obj.clears&&typeof obj.clears==='object')?obj.clears:null);
-    if(cSrc){clears=cSrc;saveClears();}
+    if(cSrc){clears=mergeClears(clears,cSrc);saveClears();}
     const sSrc=(obj.s&&typeof obj.s==='object')?obj.s:((obj.settings&&typeof obj.settings==='object')?obj.settings:null);
     if(sSrc){
       settings=Object.assign({},DEFAULT_SETTINGS,sSrc);
@@ -1232,7 +1279,7 @@ function applySaveBlob(obj){
       saveSettings();
     }
     const lSrc=(obj.l&&typeof obj.l==='object')?obj.l:((obj.likes&&typeof obj.likes==='object')?obj.likes:null);
-    if(lSrc){likes=lSrc;saveLikes();}
+    if(lSrc){likes=Object.assign({},likes,lSrc);saveLikes();}
     if(typeof obj.e==='number'||typeof obj.e==='boolean'){exUnlocked=!!obj.e;try{localStorage.setItem(EX_KEY,exUnlocked?'1':'0');}catch(e){}}
     else if(typeof obj.exUnlocked==='boolean'){exUnlocked=obj.exUnlocked;try{localStorage.setItem(EX_KEY,exUnlocked?'1':'0');}catch(e){}}
     if(typeof obj.d==='number'||typeof obj.d==='boolean'){devUnlockAll=!!obj.d;saveDevUnlock();}
@@ -1280,7 +1327,7 @@ function openSaveModal(mode,code){
   }else{
     if(kick)kick.textContent='SAVE CODE · 恢复存档';
     if(title)title.textContent='粘贴存档码';
-    if(tip)tip.textContent='把在别的浏览器 / 设备上 EXPORT 出来的那串码整段粘进来，空格换行都不用管。恢复会覆盖当前进度。';
+    if(tip)tip.textContent='把在别的浏览器 / 设备上 EXPORT 出来的那串码整段粘进来，空格换行都不用管。恢复是「合并」：进度、星、皮肤只增不减，不会冲掉这台机器上更新的成绩。';
     ta.value='';
     ta.readOnly=false;
     ta.removeAttribute('readonly');
@@ -2075,8 +2122,29 @@ function preload(){
     });
   });
 }
+let afterLoadRetried=false;
+try{afterLoadRetried=sessionStorage.getItem('wks_rl')==='1';}catch(e){}
 function afterLoad(){
+  /* 存档护航：Cookie / IndexedDB / 地址栏里的存档如果比本机新，WKSAVE 已经把数据
+     写回 localStorage。这里 reload 一次，让解析期已经读过的状态全部换掉；
+     sessionStorage 记名，只许重载一次，重载过还不行就照常进游戏，绝不死循环。 */
+  if(window.WKSAVE&&!WKSAVE.bootSettled){
+    Promise.race([WKSAVE.ready,new Promise(r=>setTimeout(r,1500))]).then(afterLoadNow);
+    return;
+  }
+  afterLoadNow();
+}
+function afterLoadNow(){
+  if(window.WKSAVE&&WKSAVE.needsReload&&!afterLoadRetried){
+    try{sessionStorage.setItem('wks_rl','1');}catch(e){}
+    location.reload();
+    return;
+  }
+  try{sessionStorage.removeItem('wks_rl');}catch(e){}
   if(!user)user=readUser();
+  /* 选章预览用的两张曲绘（初章 / 承章的第一关）开机后在空闲时先解出来：
+     这两张图不在开机 loading 的清单里，早一点解码，进选章页就不会先空一下。 */
+  setTimeout(()=>{try{waitImage('Effulgence.avif');waitImage('init.avif');}catch(e){}},1500);
   if(user){
     runWake();
   }else{
@@ -2170,6 +2238,7 @@ function enterTerminal(){
     try{localStorage.setItem('rhythm_user',JSON.stringify(user));}catch(e2){}
   }
   unlockAudio();
+  if(window.WKSAVE)WKSAVE.flush();
   renderUser();
   runWake();
   setTimeout(()=>{enteringTerminal=false;},800);
@@ -2254,8 +2323,12 @@ const CH3_FINALE={
 };
 const CHAPTERS=[
   {id:'prologue',no:'00',cn:'主线 · 序章',en:'PROLOGUE',sub:'THE ORIGIN SIGNAL',theme:'prologue',layout:'SOLO',progress:'0 / 1',previewArt:'wel.avif',songs:[PROLOGUE_W]},
-  {id:'ch1',no:'01',cn:'主线 · 初章',en:'ORIGIN',sub:'THE FIRST SIGNAL',theme:'ch1',layout:'HELIX',progress:'0 / 6',songs:[WELKIN,EFFULGENCE,SPARK,CH1_T3,RIP,CORR]},
-  {id:'ch2',no:'02',cn:'主线 · 承章',en:'ASCENT',sub:'THE SECOND CURRENT',theme:'ch2',layout:'ORBIT',progress:'0 / 7',songs:makeCh2Songs()},
+  /* 初章 / 承章的选章预览用「第一关」的曲绘（初章 = Effulgence，承章 = init()）。
+     artHead 是人物头部中心在图片里的归一化坐标，选章页按它把头像摆到竖直中间
+     （见 paintChapterArt）；artZoom 只用来在宽画布里补一点横向余量。
+     终章保持原样：不给 previewArt，还是那张纯渐变底。 */
+  {id:'ch1',no:'01',cn:'主线 · 初章',en:'ORIGIN',sub:'THE FIRST SIGNAL',theme:'ch1',layout:'HELIX',progress:'0 / 6',previewArt:'Effulgence.avif',artHead:[.41,.21],artZoom:1.0,songs:[WELKIN,EFFULGENCE,SPARK,CH1_T3,RIP,CORR]},
+  {id:'ch2',no:'02',cn:'主线 · 承章',en:'ASCENT',sub:'THE SECOND CURRENT',theme:'ch2',layout:'ORBIT',progress:'0 / 7',previewArt:'init.avif',artHead:[.19,.12],artZoom:1.0,songs:makeCh2Songs()},
   {id:'ch3',no:'03',cn:'主线 · 终章',en:'TERMINUS',sub:'THE LAST HORIZON',theme:'ch3',layout:'CIRCUIT',progress:'0 / 8',locked:true,songs:[...makeCh3Songs(),CH3_FINALE]},
   {id:'ex',no:'EX',cn:'EX 章节',en:'ANOMALY',sub:'BEYOND THE LINE',theme:'ex',layout:'DIRECT',progress:'LOCKED',locked:true,previewArt:'Still.avif',songs:[STILL]}
 ];
@@ -2441,7 +2514,7 @@ const SS_POS_M={
 };
 function chapterPreviewHTML(ch){
   const art=ch.previewArt
-    ?`<div class="ch-art img" style="background-image:url('${imgUrl(ch.previewArt)}')"></div><div class="ch-veil"></div>`
+    ?`<div class="ch-art img" data-art="${ch.previewArt}" style="background-image:url('${imgUrl(ch.previewArt)}')"></div><div class="ch-veil"></div>`
     :'<div class="ch-art"></div>';
   const only=ch.songs&&ch.songs.length===1?ch.songs[0]:null;
   const track=only?`<p class="ch-track"><em>${only.no}</em> ${only.title}</p>`:'';
@@ -2449,12 +2522,53 @@ function chapterPreviewHTML(ch){
     <div class="ch-info"><span>${ch.locked?'ACCESS DENIED':'NOW SELECTING'}</span><h2>${ch.cn}</h2><p>${ch.en} — ${ch.sub}</p>${track}<b>${ch.locked?'CHAPTER LOCKED':'ENTER CHAPTER →'}</b></div>
     <div class="ch-progress"><b>${ch.progress}</b>CHAPTER PROGRESS</div>`;
 }
+/* ---- 选章预览曲绘的取景 ------------------------------------------------------
+   .ch-art 是一条宽而扁的窗口，曲绘都是竖图，cover 一裁就只剩中间一条。
+   这里不用 CSS 的百分比位置（那玩意在宽高比变化时会飘），而是按图片原始尺寸
+   自己算 cover 的缩放和偏移：把「人物头部中心」摆到画布的中间偏上（水平 44%、
+   竖直 46%），越界就夹在边界上，绝不露出空白边。
+   头部坐标来自 ART_INFO（归一化，自己量的），换曲绘时改这里就行。 */
+const ART_INFO={
+  'Effulgence.avif':{w:1311,h:1538,head:[.41,.21]},
+  'init.avif':{w:1280,h:1348,head:[.19,.12]}
+};
+function paintChapterArt(){
+  const pv=$('#chapterPreview');
+  if(!pv)return;
+  const el=pv.querySelector('.ch-art.img');
+  if(!el)return;
+  const ch=CHAPTERS[chapterFocus];
+  if(!ch||!ch.previewArt)return;
+  const info=ART_INFO[ch.previewArt];
+  const w=el.clientWidth,h=el.clientHeight;
+  if(!info||w<4||h<4)return;
+  const zoom=ch.artZoom||1;
+  const scale=Math.max(w/info.w,h/info.h)*zoom;
+  const iw=info.w*scale,ih=info.h*scale;
+  const head=ch.artHead||info.head;
+  const tx=w*(ch.artFocusX!=null?ch.artFocusX:.44);
+  const ty=h*(ch.artFocusY!=null?ch.artFocusY:.46);
+  const px=clamp(tx-head[0]*iw,w-iw,0);
+  const py=clamp(ty-head[1]*ih,h-ih,0);
+  el.style.backgroundSize=iw.toFixed(1)+'px '+ih.toFixed(1)+'px';
+  el.style.backgroundPosition=px.toFixed(1)+'px '+py.toFixed(1)+'px';
+}
+let chapterArtTimer=0;
+function scheduleChapterArt(){
+  clearTimeout(chapterArtTimer);
+  chapterArtTimer=setTimeout(()=>{
+    if(chapterScreen&&chapterScreen.classList.contains('active'))paintChapterArt();
+  },60);
+}
+window.addEventListener('resize',scheduleChapterArt);
 function updateChapterFocus(i){
   chapterFocus=i;
   $$('#chapterCards .ch-card').forEach((el,j)=>el.classList.toggle('on',j===i));
   const ch=CHAPTERS[i];
   $('#chapterPreview').innerHTML=chapterPreviewHTML(ch);
   $('#chapterPreview').classList.toggle('attack',ch.id==='ch2');
+  /* 插完 DOM 再量尺寸：曲绘要按真实画布大小算取景，不能提前算 */
+  requestAnimationFrame(paintChapterArt);
 }
 function enterChapter(ch){
   if(!ch)return;
@@ -2486,6 +2600,7 @@ function enterChapter(ch){
 function renderChapterSelect(){
   $('#chapterPreview').innerHTML=chapterPreviewHTML(CHAPTERS[chapterFocus]);
   $('#chapterPreview').classList.toggle('attack',CHAPTERS[chapterFocus].id==='ch2');
+  requestAnimationFrame(paintChapterArt);
   const totalTracks=CHAPTERS.reduce((n,ch)=>n+ch.songs.length,0);
   const cnt=$('#chStatusCount');
   if(cnt)cnt.textContent=`${CHAPTERS.length} CHAPTERS / ${totalTracks} TRACKS`;
@@ -2521,6 +2636,9 @@ const CHAPTER_COVER_GATES={
   ch1:chapterCoverList('ch1'),
   ch2:chapterCoverList('ch2')||CH2_COVER_FILES
 };
+/* 解码过的曲绘留一份引用，别让 GC 在切页那一瞬间把它们丢掉（丢掉就得重解一次，
+   选歌页又会闪一下白） */
+const CHAPTER_COVER_KEEP=[];
 function gateChapterCovers(ch,done){
   const covers=ch?CHAPTER_COVER_GATES[ch.id]:null;
   if(!covers||!covers.length){done();return;}
@@ -2549,12 +2667,25 @@ function gateChapterCovers(ch,done){
       setTimeout(()=>{layer.classList.remove('active');done();},wait);
     }
   };
+  /* 2026-11-26：以前只等 onload 就算「加载完」，可 onload 只是字节到了，
+     AVIF 的像素还没解进显存 —— 于是 loading 一走，选歌页的曲绘要一张张跳出来。
+     现在等 Image.decode() 真正解完才算数，进选歌页时每一张曲绘都是现成的。 */
   covers.forEach(src=>{
     const im=new Image();
+    try{im.decoding='sync';}catch(e){}
     let t=false;
-    const once=()=>{if(!t){t=true;tick();}};
-    im.onload=once;im.onerror=once;
-    setTimeout(once,6000);
+    const once=()=>{
+      if(t)return;t=true;
+      CHAPTER_COVER_KEEP.push(im);
+      while(CHAPTER_COVER_KEEP.length>24)CHAPTER_COVER_KEEP.shift();
+      tick();
+    };
+    im.onload=()=>{
+      if(typeof im.decode==='function')im.decode().then(once,once);
+      else once();
+    };
+    im.onerror=once;
+    setTimeout(once,8000);
     im.src=imgUrl(src);
   });
 }
@@ -3196,6 +3327,9 @@ function openSongDetail(song,source){
   showNavLayer(songScreen);
   state='SONG';
   renderSongDetail(song);
+  /* 详情页一打开就开始把这首歌的 mp3 拉进 Cache Storage：
+     等你看完曲绘、按下 BEGIN SESSION，进度条基本是直接从缓存起跳。 */
+  prefetchSongAudio(song);
   playUIMusic('select',false);
   uiSound(1.1);
 }
@@ -3299,6 +3433,24 @@ function syncSettingsUI(){
   const tui=$('#tPhoneui');if(tui){tui.classList.toggle('locked',!account.phoneui);setSwitch('#tPhoneui',!!account.phoneuiOn);}
   const tlbm=$('#tLobbyMusic');if(tlbm){tlbm.classList.toggle('locked',!account.lobbyMusic);setSwitch('#tLobbyMusic',!!account.lobbyMusicOn);}
   if(user)$('#setUser').textContent=user.name;
+  setSwitch('#tLinkSave',settings.linkSave);
+  refreshSaveHealth();
+}
+/* ---- 存档体检：把四个独立存储桶的存活情况直接摆在设置页上 ------------------
+   LOCAL / COOKIE / INDEXED / LINK 每项一个 ✓ 或 ✗。哪一个挂了都能一眼看出来，
+   不用再靠「数据没了」这种事后现象去猜。 */
+function refreshSaveHealth(){
+  const el=$('#saveHealth');if(!el)return;
+  if(!window.WKSAVE){el.textContent='—';return;}
+  const paint=(list)=>{
+    try{
+      el.innerHTML=list.map(s=>(s.ok>0
+        ?'<b>'+s.name+' ✓</b>'
+        :'<i>'+s.name+' ✗</i>')).join(' · ');
+    }catch(e){}
+  };
+  paint(WKSAVE.status());
+  try{WKSAVE.probe().then(paint).catch(()=>{});}catch(e){}
 }
 /* ---- 手机新 UI / 大厅 BGM：五件 SSS 各一个开关 --------------------------------
    鎏金终端（手机壳）/ 金殿（大厅）/ 黄金苍穹（外景）/ 鎏金天幕（天气屏）/
@@ -5125,10 +5277,20 @@ function updateGameHud(){
    ============================================================================= */
 let songLoadToken=0,songLoadTimer=0,songLoadRetry=null,songLoadAbort=null,songAudioBlobUrl='';
 let songAudioHandlers=[];
-const SONG_LOAD_TIMEOUT=45000;
+/* 总超时 22 秒就够：谱面 12s + 下载 8s 卡死判定 + 解码 12s 都各自有超时，
+   这条只是兜底。以前是 45 秒，用户会以为「卡死」了。 */
+const SONG_LOAD_TIMEOUT=22000;
 function fmtTime(sec){const s=Math.max(0,Math.round(sec||0));return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
 function songLoadingBytes(txt){const el=$('#slBytes');if(el)el.textContent=txt;}
-function songLoadingAction(txt,fn){const b=$('#slCancel');if(b){b.textContent=txt;b.onclick=fn;}}
+/* 加载页那颗按钮：同一个元素上既挂了 onClick 又挂了 addEventListener 时，
+   两个回调都会跑（先挂的先跑）—— 以前 RETRY 就是这样被 CANCEL 抢在前面清掉的，
+   按了等于没按。现在只留一个入口，动作存在这里。 */
+let songLoadingFn=null;
+function songLoadingAction(txt,fn){
+  const b=$('#slCancel');
+  if(b)b.textContent=txt;
+  songLoadingFn=fn||null;
+}
 function songLoadingSet(pct,stateText,hint){
   const p=clamp(pct,0,100);
   $('#slFill').style.width=p.toFixed(1)+'%';
@@ -5242,49 +5404,182 @@ function validateSongChart(song){
   game.notes=keep||[];
   return {ok:ok,count:total,judged:judged};
 }
-/* ---- 音频：真下载（读流算进度）→ blob 交给 <audio> → 等真能播 ------------ */
-function fetchSongAudio(url,onProgress,signal){
-  return fetch(url,{signal:signal}).then(res=>{
-    if(!res.ok)throw new Error('HTTP '+res.status);
-    const total=Number(res.headers.get('content-length'))||0;
-    if(!res.body||typeof res.body.getReader!=='function'){
-      return res.blob().then(b=>{onProgress(b.size,b.size||total);return b;});
-    }
-    const reader=res.body.getReader();
-    const chunks=[];
-    let received=0;
-    const pump=()=>reader.read().then(step=>{
-      if(step.done){
-        onProgress(received,total||received);
-        return new Blob(chunks,{type:'audio/mpeg'});
-      }
-      chunks.push(step.value);
-      received+=step.value.length;
-      onProgress(received,total||0);
-      return pump();
-    });
-    return pump();
+/* ---- 音频：Cache Storage 命中 → 真下载 → blob 交给 <audio> ------------------
+   2026-11-26 改：
+     · 同一首歌的 mp3 下载完就塞进 Cache Storage，第二次进歌 / 重试 / 反复打同一首
+       都是 0 网络（微信里重进一次页面也不会再下一次）。
+     · 点开曲目详情页时就开始偷偷预取，等你按下 BEGIN SESSION，多半已经下好了。
+     · 下载中途 8 秒收不到一个字节就判卡死，直接退回「让 <audio> 流式播」，
+       不再傻等 45 秒 —— 上一条的「卡住不动」就是死在 45 秒超时之前那段死等的。
+--------------------------------------------------------------------------- */
+const SONG_CACHE='welkin_song_audio_v1';
+let songCacheReady=null;
+function songCacheOpen(){
+  if(songCacheReady)return songCacheReady;
+  songCacheReady=(async()=>{
+    try{
+      /* 注意：caches 是对象不是函数，别用 typeof === 'function' 判（会永远进不来） */
+      if(typeof caches==='undefined'||!caches||typeof caches.open!=='function')return null;
+      return await caches.open(SONG_CACHE);
+    }catch(e){return null;}
+  })();
+  return songCacheReady;
+}
+function songCacheGet(url){
+  return songCacheOpen().then(c=>{
+    if(!c)return null;
+    return c.match(url).then(r=>r?r.blob():null).catch(()=>null);
+  }).then(b=>(b&&b.size)?b:null).catch(()=>null);
+}
+function songCachePut(url,res){
+  return songCacheOpen().then(c=>{
+    if(!c||!res)return false;
+    return c.put(url,res).then(()=>true).catch(()=>false);
+  }).catch(()=>false);
+}
+/* 打开曲目详情页就开始预取：只灌 Cache Storage，不碰 <audio>，失败了也不吭声。 */
+const prefetching={};
+function prefetchSongAudio(song){
+  try{
+    if(!song||!song.audio)return;
+    if(typeof fetch!=='function'||location.protocol==='file:')return;
+    if(song.chart&&!chartBuilderReady(song.chart))return;
+    const url=song.audio;
+    if(prefetching[url])return;
+    prefetching[url]=true;
+    songCacheGet(url).then(hit=>{
+      if(hit){prefetching[url]=false;return;}
+      const ac=(typeof AbortController!=='undefined')?new AbortController():null;
+      const timer=setTimeout(()=>{try{if(ac)ac.abort();}catch(e){}},12000);
+      return fetch(url,ac?{signal:ac.signal}:undefined).then(res=>{
+        if(!res.ok)throw new Error('HTTP '+res.status);
+        return songCachePut(url,res);
+      }).catch(()=>{}).then(()=>{
+        clearTimeout(timer);
+        prefetching[url]=false;
+      });
+    }).catch(()=>{prefetching[url]=false;});
+  }catch(e){prefetching[song&&song.audio||'']=false;}
+}
+/* 读响应体，边读边报进度；8 秒收不到一个字节就判卡死 */
+function readChunk(reader,ms){
+  return new Promise((resolve,reject)=>{
+    const t=setTimeout(()=>reject(new Error('stalled')),ms);
+    reader.read().then(v=>{clearTimeout(t);resolve(v);},e=>{clearTimeout(t);reject(e);});
   });
 }
-/* 等 <audio> 真的把这首 blob / 文件读进缓冲：canplaythrough + 时长有效才算过 */
-function hydrateSongAudio(src,onTick){
+async function readBlobTracked(res,onProgress){
+  const total=Number(res.headers.get('content-length'))||0;
+  const report=(r,t)=>{try{onProgress&&onProgress(r,t||total);}catch(e){}};
+  if(!res.body||typeof res.body.getReader!=='function'){
+    const b=await res.blob();
+    report(b.size,b.size);
+    return b;
+  }
+  const reader=res.body.getReader();
+  const chunks=[];
+  let received=0;
+  report(0,total);
+  for(;;){
+    let step;
+    try{step=await readChunk(reader,8000);}
+    catch(e){
+      try{reader.cancel();}catch(e2){}
+      throw e;   /* 8 秒一个字节都没有 = 卡死，交给上层退回流式播放 */
+    }
+    if(step.done)break;
+    chunks.push(step.value);
+    received+=step.value.length;
+    report(received,total);
+  }
+  try{reader.releaseLock&&reader.releaseLock();}catch(e){}
+  report(received,received);
+  return new Blob(chunks,{type:'audio/mpeg'});
+}
+/* 打开曲目详情页就开始预取：只灌 Cache Storage，不碰 <audio>，失败了也不吭声。
+   预取和正式加载共用同一个 job：按 BEGIN 的时候如果预取还没完，就接着它等，
+   绝不会再发第二遍请求（这点以前会白白多下一整首歌）。 */
+const prefetchJobs={};
+let prefetchActive=0;
+function prefetchSongAudio(song){
+  try{
+    if(!song||!song.audio)return;
+    if(typeof fetch!=='function'||location.protocol==='file:')return;
+    if(song.chart&&!chartBuilderReady(song.chart))return;
+    const url=song.audio;
+    if(prefetchJobs[url])return;
+    if(prefetchActive>=2)return;          /* 最多同时预取两首，别把带宽吃干净 */
+    prefetchActive++;
+    const job={url:url,recv:0,total:0,state:'run'};
+    job.p=(async()=>{
+      try{
+        const hit=await songCacheGet(url);
+        if(hit){job.recv=hit.size;job.total=hit.size;job.state='hit';return hit;}
+        const ac=(typeof AbortController!=='undefined')?new AbortController():null;
+        const timer=setTimeout(()=>{try{if(ac)ac.abort();}catch(e){}},15000);
+        try{
+          const res=await fetch(url,ac?{signal:ac.signal}:undefined);
+          if(!res.ok)throw new Error('HTTP '+res.status);
+          const blob=await readBlobTracked(res,(r,t)=>{job.recv=r;job.total=t;});
+          job.state='done';
+          job.recv=blob.size;job.total=blob.size;
+          songCachePut(url,new Response(blob,{headers:{'content-type':'audio/mpeg'}}));
+          return blob;
+        }finally{clearTimeout(timer);}
+      }finally{
+        prefetchActive=Math.max(0,prefetchActive-1);
+      }
+    })().catch(()=>{job.state='fail';return null;});
+    prefetchJobs[url]=job;
+  }catch(e){}
+}
+async function fetchSongAudio(url,onProgress,signal){
+  /* 1. 预取正在跑：接着它等，进度也照它算，不再开第二条下载 */
+  const job=prefetchJobs[url];
+  if(job&&job.state==='run'){
+    const tick=setInterval(()=>{try{onProgress(job.recv,job.total);}catch(e){}},120);
+    try{
+      const b=await job.p;
+      if(b&&b.size){onProgress(b.size,b.size);return b;}
+    }finally{clearInterval(tick);}
+  }
+  /* 2. 缓存里已经有：0 网络 */
+  const hit=await songCacheGet(url);
+  if(hit){onProgress(hit.size,hit.size);return hit;}
+  /* 3. 老老实实下一遍 */
+  const res=await fetch(url,{signal:signal});
+  if(!res.ok)throw new Error('HTTP '+res.status);
+  const blob=await readBlobTracked(res,onProgress);
+  songCachePut(url,new Response(blob,{headers:{'content-type':'audio/mpeg'}}));
+  return blob;
+}
+/* 等 <audio> 真的能播：
+   · local（blob 已在内存）→ readyState>=2 + 时长有效就够，播放绝不会缺数据。
+     以前要求 >=4(canplaythrough)，可 X5 / WKWebView 对 blob 经常永远不补发这个事件，
+     进度就卡在 86% 的 DECODING 上干等 30 秒 —— 这就是「卡住不动」的真凶。
+   · 流式（网络直读）→ 要求 readyState>=3，至少能连续出声。
+   失败要快：本地 4 秒 / 流式 9 秒还拿不到元数据就直接判失败，别让人盯着看。 */
+function hydrateSongAudio(src,onTick,local){
   return new Promise(resolve=>{
     let done=false;
     const finish=ok=>{
       if(done)return;done=true;
-      clearTimeout(timer);
+      clearTimeout(timer);clearTimeout(metaTimer);
       detachSongAudioListeners();
       resolve(!!ok);
+    };
+    const durOk=()=>{try{return bgm.duration>0&&isFinite(bgm.duration);}catch(e){return false;}};
+    const enough=()=>{
+      if(!durOk())return false;
+      return local?bgm.readyState>=2:bgm.readyState>=3;
     };
     const tick=()=>{
       if(done)return;
       try{onTick&&onTick();}catch(e){}
-      if(bgm.readyState>=4&&bgm.duration>0)finish(true);
+      if(enough())finish(true);
     };
-    const timer=setTimeout(()=>{
-      /* 兜底：元数据 + 缓冲都到位就算过；否则判失败，绝不带坏文件进游戏 */
-      finish(bgm.readyState>=2&&bgm.duration>0&&isFinite(bgm.duration));
-    },30000);
+    const timer=setTimeout(()=>finish(enough()),local?6000:12000);
+    const metaTimer=setTimeout(()=>{if(!enough())finish(false);},local?4000:9000);
     bindSongAudio('loadedmetadata',tick);
     bindSongAudio('loadeddata',tick);
     bindSongAudio('canplay',tick);
@@ -5293,8 +5588,7 @@ function hydrateSongAudio(src,onTick){
     bindSongAudio('error',()=>finish(false));
     try{bgm.preload='auto';bgm.src=src;bgm.load();}catch(e){finish(false);return;}
     tick();
-    /* 整段都已缓冲时某些内核不会再补发 canplaythrough，补一次检查 */
-    if(bgm.readyState>=4&&bgm.duration>0)setTimeout(()=>finish(true),0);
+    if(enough())setTimeout(()=>finish(true),0);
   });
 }
 function loadSongForSession(song,done){
@@ -5328,6 +5622,11 @@ function loadSongForSession(song,done){
     songLoadingSet(lastPct,'LINK FAILED',hint||'AUDIO FILE UNAVAILABLE');
     songLoadRetry=()=>{if(!alive())return;loadSongForSession(song,done);};
     songLoadingAction('RETRY LINK',()=>{if(songLoadRetry)songLoadRetry();});
+    /* 关键：把状态从 LOADING 放回 SONG。以前失败后 state 一直卡在 LOADING，
+       startGame() 看到 state!=='SONG' 直接 return —— 于是「点歌没反应」，
+       只能退出页面重进。现在失败也还能再点一次。 */
+    state='SONG';
+    const b=$('#btnStartGame');if(b)b.disabled=false;
     uiSound(.5);
   };
   const finish=()=>{
@@ -5362,8 +5661,8 @@ function loadSongForSession(song,done){
     if(!chart.ok){fail('CHART DATA EMPTY');return;}
     songLoadingSet(lastPct,'SYNCED','NOTES '+chart.count);
 
-    /* ---- 2. 音频：真下载一遍（file:// 下 fetch 不可用，直接交给 <audio>） ---- */
-    let src=song.audio;
+    /* ---- 2. 音频：先看 Cache Storage，没有再真下载一遍 ---------------- */
+    let src=song.audio,local=false;
     if(typeof fetch==='function'&&location.protocol!=='file:'){
       const ac=(typeof AbortController!=='undefined')?new AbortController():null;
       songLoadAbort=ac;
@@ -5385,16 +5684,19 @@ function loadSongForSession(song,done){
         releaseSongAudioBlob();
         songAudioBlobUrl=URL.createObjectURL(blob);
         src=songAudioBlobUrl;
+        local=true;
       }catch(err){
         if(err&&err.name==='AbortError')return;
-        /* 网络 / 权限问题：退回让 <audio> 直接读源文件，至少还有机会出声 */
-        src=song.audio;
+        /* 网络慢 / 中途卡死 / 权限问题：退回让 <audio> 直接流式读源文件，
+           至少还能立刻开打，不用再干等一次完整下载 */
+        src=song.audio;local=false;
+        songLoadingBytes('DIRECT STREAM');
       }
     }
     if(!alive()||settled)return;
 
     /* ---- 3. 解码 / 缓冲 ---- */
-    setPct(86,'DECODING','BUILDING WAVEFORM');
+    setPct(86,'DECODING',local?'BUILDING WAVEFORM':'STREAMING AUDIO');
     const ok=await hydrateSongAudio(src,()=>{
       let p=86;
       try{
@@ -5403,11 +5705,11 @@ function loadSongForSession(song,done){
         else if(bgm.readyState>=2)p=90;
         else if(bgm.readyState>=1)p=87;
       }catch(e){}
-      setPct(p,'DECODING','BUILDING WAVEFORM');
+      setPct(p,'DECODING',local?'BUILDING WAVEFORM':'STREAMING AUDIO');
       try{
         if(bgm.duration>0&&isFinite(bgm.duration))songLoadingBytes('DUR '+fmtTime(bgm.duration));
       }catch(e){}
-    });
+    },local);
     if(!alive()||settled)return;
     if(!ok){fail('AUDIO FILE UNREADABLE');return;}
     try{
@@ -8179,7 +8481,7 @@ function wireUI(){
 
   bind('#songBack','click',closeSong);
   bind('#btnStartGame','click',startGame);
-  bind('#slCancel','click',cancelSongLoading);
+  bind('#slCancel','click',()=>{ if(songLoadingFn)songLoadingFn(); else cancelSongLoading(); });
   bind('#btnSongSet','click',()=>openSettings('SONG'));
   bind('#chapterBack','click',closeChapterSelect);
   bind('#ssBack','click',closeSongSelect);
@@ -8256,6 +8558,28 @@ function wireUI(){
     if(copied)showExNotice('COPIED','存档码已复制');
   });
   bind('#btnImport','click',()=>{openSaveModal('import','');uiSound(1.3);});
+  /* 注册页也要能恢复：微信把存档清掉之后弹的就是这一页，不给人粘贴的地方等于逼人重练 */
+  bind('#btnLoginRestore','click',()=>{openSaveModal('import','');uiSound(1.3);});
+  bind('#tLinkSave','click',()=>{
+    settings.linkSave=!settings.linkSave;
+    setSwitch('#tLinkSave',settings.linkSave);
+    saveSettings();
+    if(window.WKSAVE){
+      if(settings.linkSave)WKSAVE.flush();
+      else{try{history.replaceState(history.state,'',location.pathname+location.search);}catch(e){}}
+    }
+    refreshSaveHealth();
+    uiSound(1.3);
+  });
+  bind('#btnCopyLink','click',async()=>{
+    uiSound(1.3);
+    if(!window.WKSAVE){showExNotice('NO LINK','当前环境不支持');return;}
+    const url=await WKSAVE.linkUrl();
+    if(!url){showExNotice('NO LINK','生成失败');return;}
+    const ok=await copyTextSmart(url);
+    if(ok)showExNotice('LINK COPIED','恢复链接已复制 · 换设备 / 清缓存后打开它就能找回');
+    else showExNotice('LINK','链接已经写在地址栏里，长按复制即可');
+  });
   bind('#saveModalCancel','click',closeSaveModal);
   bind('#saveModal','click',e=>{if(e.target===e.currentTarget)closeSaveModal();});
   bind('#saveModalOk','click',async()=>{
@@ -8277,7 +8601,10 @@ function wireUI(){
     const ok=await importSave(code);
     if(ok){
       closeSaveModal();
-      syncSettingsUI();renderUser();applyUnlocks();
+      syncSettingsUI();renderUser();applyUnlocks();applySettings();applySkins();
+      if(window.WKSAVE)WKSAVE.flush();
+      /* 在注册页粘存档码进来：恢复完直接进游戏，不用再建一个空档案 */
+      if(state==='LOGIN'&&user)runWake();
       showExNotice('IMPORT OK','进度已恢复');
       uiSound(1.4);
     }else{

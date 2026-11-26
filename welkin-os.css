@@ -2994,3 +2994,11 @@ body.sss-phoneui .pw-homebar{background:rgba(247,227,168,.72)}
 body.sss-phoneui .phone-boot{background:#0c0803}
 body.sss-phoneui .phone-boot-mark{color:#f0d68a;text-shadow:0 0 40px rgba(232,200,118,.7)}
 body.sss-phoneui .phone-boot-line{background:linear-gradient(90deg,transparent,#f0d68a,transparent)}
+
+/* ---- 存档护航：登录页的恢复入口 + 设置页的存活状态 ---- */
+.login-restore{margin-top:14px;font:500 8.5px/1 var(--font-m);letter-spacing:.18em;color:#4b6b82;background:none;border:0;cursor:pointer;transition:.2s}
+.login-restore:hover{color:var(--cy)}
+.save-ctl .set-mini{white-space:nowrap}
+#saveHealth{letter-spacing:.08em}
+#saveHealth b{font-weight:600;color:#7fe6b0}
+#saveHealth i{font-style:normal;color:#ff6b96}
