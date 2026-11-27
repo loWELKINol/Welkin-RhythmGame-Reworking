@@ -760,7 +760,29 @@ function noteSkinThumb(i){
   const bot=(sk.blue&&sk.blue.bot)?sk.blue.bot:mid;
   return `<span class="dr-thumb note" style="background:linear-gradient(180deg,${cap} 0%,${mid} 52%,${bot} 100%);border-color:${edge}"></span>`;
 }
+/* 抽奖按钮正上方那一格：永远只有一个「累计抽取次数」，
+   单抽 +1、十连 +10 共用一个数，这里不再显示苍穹星余额。
+   页面 HTML 是旧缓存（那格还是整块苍穹星）时，这里就地整块换掉，不用手动清缓存。 */
+function ensureDrawCounter(){
+  const host=$('.store-draw');if(!host)return null;
+  let box=host.querySelector('.store-draw-total');
+  if(!box){
+    const head=host.firstElementChild;
+    box=document.createElement('div');
+    if(head&&head.classList&&head.classList.contains('store-balance-big'))host.replaceChild(box,head);
+    else host.insertBefore(box,head);
+  }
+  box.className='store-balance-big store-draw-total';
+  box.setAttribute('aria-label','累计抽取次数');
+  /* 里面还混着旧版苍穹星（#storeCur / 「苍穹星」字样）就整块重写成计数 */
+  if(!box.querySelector('#storeDraws')||box.querySelector('em')||box.textContent.indexOf('苍穹星')>=0){
+    document.querySelectorAll('#storeDraws').forEach(n=>{if(!box.contains(n))n.remove();});
+    box.innerHTML='<span class="sdt-kicker">累计抽取</span><b class="sdt-num" id="storeDraws">0</b><span class="sdt-unit">次</span>';
+  }
+  return box;
+}
 function renderStore(){
+  ensureDrawCounter();
   const drawsEl=$('#storeDraws');if(drawsEl)drawsEl.textContent=String(Math.max(0,Math.floor(Number(account.draws)||0)));
   const cur3=$('#storeCur3');if(cur3)cur3.textContent=account.currency;
   const svgC=$('.sbr-svg');if(svgC)svgC.innerHTML=starSVG(14);
