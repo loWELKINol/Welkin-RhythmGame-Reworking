@@ -81,6 +81,8 @@ const hud=$('#gameHud');
 
 let state='BOOT';
 let settingsReturn='PHONE';
+/* 无音乐游玩：加载页点 MUTE RUN 跳过音频下载/解码，直接按墙钟开铺面。仅当次生效。 */
+let noMusicMode=false;
 const PERF_LITE=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)||Math.min(window.innerWidth||999,window.innerHeight||999)<820;
 document.body.classList.toggle('perf-lite',PERF_LITE);
 /* crash diary: record the last uncaught error / rejection so a UI freeze can be diagnosed later */
@@ -2270,7 +2272,7 @@ const CH2_COVER_FILES=['init.avif','an.avif','La.avif','bn.avif','pen.avif','fb.
 /* 承章七首正式接入：顺序 TRACK 01→06 = init / 时逝 / Lamentation / Grievous Lady /
    Pentiment / Tempestissimo，魔王曲 = CyberAttack。曲绘沿用旧的短名文件（bn=Grievous Lady，
    ca=CyberAttack）。id 沿用 ch2-2…ch2-6 / ch2-boss，La 用独立 id ch2-7，避免撞旧通关记录。 */
-const CH2_INIT={id:'ch2-2',chapterId:'ch2',no:'TRACK 01',title:'init()',artist:'WELKIN',charter:'Welkin',bpm:'180',length:'02:22',notes:915,level:10,boss:false,chart:'init',audio:'init.mp3',cover:'init.avif',state:'locked',fingers:'dual'};
+const CH2_INIT={id:'ch2-2',chapterId:'ch2',no:'TRACK 01',title:'init()',artist:'WELKIN',charter:'Welkin',bpm:'180',length:'02:22',notes:915,level:9,boss:false,chart:'init',audio:'init.mp3',cover:'init.avif',state:'locked',fingers:'dual'};
 const CH2_AN={id:'ch2-3',chapterId:'ch2',no:'TRACK 02',title:'时逝',artist:'WELKIN',charter:'Welkin',bpm:'199',length:'02:09',notes:1152,level:14,boss:false,chart:'an',audio:'an.mp3',cover:'an.avif',state:'locked',fingers:'dual'};
 const CH2_LA={id:'ch2-7',chapterId:'ch2',no:'TRACK 03',title:'Lamentation',artist:'WELKIN',charter:'Welkin',bpm:'98',length:'02:22',notes:770,level:15,boss:false,chart:'la',audio:'La.mp3',cover:'La.avif',state:'locked',fingers:'multi'};
 const CH2_LADY={id:'ch2-4',chapterId:'ch2',no:'TRACK 04',title:'Grievous Lady',artist:'WELKIN',charter:'Welkin',bpm:'106',length:'02:22',notes:1505,level:17,boss:false,chart:'lady',audio:'Lady.mp3',cover:'bn.avif',state:'locked',fingers:'multi'};
@@ -2284,7 +2286,7 @@ const EFFULGENCE={
 };
 const SPARK={
   id:'ch1-3',chapterId:'ch1',no:'TRACK 02',title:'The Spark',artist:'WELKIN',charter:'Welkin',
-  bpm:'175',length:'02:25',notes:1078,level:8,boss:false,chart:'spark',audio:'The Spark.mp3',cover:'The Spark.avif',state:'locked',fingers:'dual'
+  bpm:'175',length:'02:25',notes:1078,level:10,boss:false,chart:'spark',audio:'The Spark.mp3',cover:'The Spark.avif',state:'locked',fingers:'dual'
 };
 /* 初章第三关：插在 The Spark(TRACK 02) 和 R.I.P.(原 TRACK 03) 之间，成为新的第三关。
    曲绘 ltzz.avif、曲名 テリトリーバトル、铺面 ltzz.qua、音乐 ltzz.mp3、难度 11；
@@ -2329,8 +2331,8 @@ const CHAPTERS=[
      artHead 是人物头部中心在图片里的归一化坐标，选章页按它把头像摆到竖直中间
      （见 paintChapterArt）；artZoom 只用来在宽画布里补一点横向余量。
      终章保持原样：不给 previewArt，还是那张纯渐变底。 */
-  {id:'ch1',no:'01',cn:'主线 · 初章',en:'ORIGIN',sub:'THE FIRST SIGNAL',theme:'ch1',layout:'HELIX',progress:'0 / 6',previewArt:'Effulgence.avif',artHead:[.41,.21],artZoom:1.0,songs:[WELKIN,EFFULGENCE,SPARK,CH1_T3,RIP,CORR]},
-  {id:'ch2',no:'02',cn:'主线 · 承章',en:'ASCENT',sub:'THE SECOND CURRENT',theme:'ch2',layout:'ORBIT',progress:'0 / 7',previewArt:'init.avif',artHead:[.19,.12],artZoom:1.0,songs:makeCh2Songs()},
+  {id:'ch1',no:'01',cn:'主线 · 初章',en:'ORIGIN',sub:'THE FIRST SIGNAL',theme:'ch1',layout:'HELIX',progress:'0 / 6',previewArt:'Effulgence.avif',artHead:[.41,.21],artZoom:0.65,songs:[WELKIN,EFFULGENCE,SPARK,CH1_T3,RIP,CORR]},
+  {id:'ch2',no:'02',cn:'主线 · 承章',en:'ASCENT',sub:'THE SECOND CURRENT',theme:'ch2',layout:'ORBIT',progress:'0 / 7',previewArt:'init.avif',artHead:[.19,.12],artZoom:0.65,songs:makeCh2Songs()},
   {id:'ch3',no:'03',cn:'主线 · 终章',en:'TERMINUS',sub:'THE LAST HORIZON',theme:'ch3',layout:'CIRCUIT',progress:'0 / 8',locked:true,songs:[...makeCh3Songs(),CH3_FINALE]},
   {id:'ex',no:'EX',cn:'EX 章节',en:'ANOMALY',sub:'BEYOND THE LINE',theme:'ex',layout:'DIRECT',progress:'LOCKED',locked:true,previewArt:'Still.avif',songs:[STILL]}
 ];
@@ -2550,8 +2552,9 @@ function paintChapterArt(){
   const head=ch.artHead||info.head;
   const tx=w*(ch.artFocusX!=null?ch.artFocusX:.44);
   const ty=h*(ch.artFocusY!=null?ch.artFocusY:.46);
-  const px=clamp(tx-head[0]*iw,w-iw,0);
-  const py=clamp(ty-head[1]*ih,h-ih,0);
+  /* artZoom<1 时图比画布窄/矮：居中铺余量，别被旧的 clamp(w-iw,0) 顶到右/下边 */
+  const px=iw>=w?clamp(tx-head[0]*iw,w-iw,0):(w-iw)/2;
+  const py=ih>=h?clamp(ty-head[1]*ih,h-ih,0):(h-ih)/2;
   el.style.backgroundSize=iw.toFixed(1)+'px '+ih.toFixed(1)+'px';
   el.style.backgroundPosition=px.toFixed(1)+'px '+py.toFixed(1)+'px';
 }
@@ -4355,6 +4358,7 @@ function unlockAudio(){
   }else bgm.muted=false;
 }
 function startAudio(){
+  if(noMusicMode)return false;
   if(playPending)return false;
   if(!bgm.paused){audioSyncPending=true;return true;}
   if(performance.now()<audioRetryAfter)return false;
@@ -4390,6 +4394,7 @@ function resetAudioState(){
   try{bgm.pause();bgm.currentTime=0;}catch(e){}
 }
 function updateMusic(){
+  if(noMusicMode)return;
   if(playPending&&performance.now()-playPendingSince>2500){playPending=false;playToken++;}
   if(!audioStarted&&!audioGateDone&&game.clock>=MUSIC_DELAY+AUDIO_DELAY&&performance.now()>=audioRetryAfter){
     if(!audioGate){
@@ -5293,6 +5298,9 @@ function updateGameHud(){
    ============================================================================= */
 let songLoadToken=0,songLoadTimer=0,songLoadRetry=null,songLoadAbort=null,songAudioBlobUrl='';
 let songAudioHandlers=[];
+/* 最近一首成功加载的曲：blob URL 留着，同曲再进直接热复用（不下载/不解码）。
+   只存一份，进别的歌时被 dropSongAudio 清掉。 */
+let warmSongAudio=null;
 /* 总超时 22 秒就够：谱面 12s + 下载 8s 卡死判定 + 解码 12s 都各自有超时，
    这条只是兜底。以前是 45 秒，用户会以为「卡死」了。 */
 const SONG_LOAD_TIMEOUT=22000;
@@ -5348,12 +5356,17 @@ function releaseSongAudioBlob(){
   try{URL.revokeObjectURL(songAudioBlobUrl);}catch(e){}
   songAudioBlobUrl='';
 }
-function dropSongAudio(){
+/* 只停掉这次加载的下载与监听，保留 bgm 的 src / blob —— 同曲热缓存要靠它 */
+function abortSongDownload(){
   if(songLoadAbort){try{songLoadAbort.abort();}catch(e){}songLoadAbort=null;}
   detachSongAudioListeners();
+}
+function dropSongAudio(){
+  abortSongDownload();
   try{if(!bgm.paused)bgm.pause();}catch(e){}
   try{bgm.removeAttribute('src');bgm.load();}catch(e){}
   releaseSongAudioBlob();
+  warmSongAudio=null;
 }
 /* ---- 谱面：构建函数 → 按需补加载 → 真建一遍拿到音符数 ---------------------- */
 const CHART_BUNDLE={
@@ -5610,6 +5623,7 @@ function hydrateSongAudio(src,onTick,local){
 }
 function loadSongForSession(song,done){
   const token=++songLoadToken;
+  noMusicMode=false;   /* 正常进歌一律带音乐；只有 MUTE RUN 才跳过 */
   const startedAt=performance.now();
   const alive=()=>token===songLoadToken;
   ensureAudioCtx();unlockAudio();buildHitSounds();
@@ -5617,6 +5631,14 @@ function loadSongForSession(song,done){
   state='LOADING';
   songLoadRetry=null;
   const b=$('#btnStartGame');if(b)b.disabled=true;
+  /* ---- 同曲热缓存：上一把已加载、blob 还挂在 bgm 上 → 不下载/不解码，直接进场 ---- */
+  if(warmSongAudio&&warmSongAudio.url===song.audio&&warmSongAudio.blobUrl
+     &&songAudioBlobUrl===warmSongAudio.blobUrl&&bgm.duration>0&&bgm.readyState>=2){
+    AUDIO_LOADED_DURATION=bgm.duration||0;
+    try{if(AUDIO_LOADED_DURATION>0)song.length=fmtTime(AUDIO_LOADED_DURATION);}catch(e){}
+    done();
+    return;
+  }
   songLoading.classList.add('active');
   $('#slTitle').textContent=String(song.title||'').toUpperCase();
   $('#slChapter').textContent=(song.chapterEn||'ORIGIN')+' / '+song.no;
@@ -5650,7 +5672,9 @@ function loadSongForSession(song,done){
     if(!alive()||settled)return;
     settled=true;clearTimeout(songLoadTimer);
     songLoadingSet(98,'LINKED','AUDIO READY');
-    const wait=Math.max(0,720-(performance.now()-startedAt));
+    /* 缓存命中时真正工作只有几十毫秒，这里给一个最短停留让加载页不至于闪一下就过；
+       720ms 的老底限是「可读性」遗留，已压到 220ms —— 缓存命中整条链 ~300ms 进场。 */
+    const wait=Math.max(0,220-(performance.now()-startedAt));
     setTimeout(()=>{
       if(!alive())return;
       songLoadingSet(100,'LINKED','AUDIO READY');
@@ -5660,7 +5684,7 @@ function loadSongForSession(song,done){
         if(!alive())return;
         closeSongLoading();
         done();
-      },180);
+      },80);
     },wait);
   };
   /* 总超时：文件在但一直下不完 / 解不开，就当失败处理，别让人干等 */
@@ -5734,6 +5758,7 @@ function loadSongForSession(song,done){
       if(AUDIO_LOADED_DURATION>0)song.length=fmtTime(AUDIO_LOADED_DURATION);
     }catch(e){AUDIO_LOADED_DURATION=0;}
     songLoadingBytes('DUR '+fmtTime(AUDIO_LOADED_DURATION));
+    if(songAudioBlobUrl)warmSongAudio={url:song.audio,blobUrl:songAudioBlobUrl};
     finish();
   })().catch(()=>{
     if(!alive()||settled)return;
@@ -5765,6 +5790,21 @@ function startGame(){
   if(!selectedSong||!selectedSong.chart)return;
   if(performance.now()-detailReadyAt<220)return;
   loadSongForSession(selectedSong,beginSession);
+}
+/* 无音乐游玩：加载页点「MUTE RUN」直接跳到铺面，不下载也不解码音频。
+   谱面在正常加载流程里已经验过了（只有谱面就绪才能进入 loading），这里直接进场。
+   时钟照常从 -3 倒数、按 wall-clock 走，判定只看画面；bgm 全程不碰、不进音频门。 */
+function startNoMusicSession(){
+  if(state!=='LOADING')return;
+  noMusicMode=true;
+  songLoadToken++;          /* 让仍在飞的那次下载/解码全部作废 */
+  songLoadRetry=null;
+  dropSongAudio();
+  closeSongLoading();
+  ensureAudioCtx();
+  buildHitSounds();         /* 打击音照常，只是没有背景音乐 */
+  uiSound(.7);
+  beginSession();
 }
 function pauseGame(){
   if(state!=='GAME')return;
@@ -5801,7 +5841,7 @@ function quitToSong(){
   state='LOADING';
   resetAudioState();
   songLoadRetry=null;
-  dropSongAudio();
+  abortSongDownload();   /* 只停下载/监听，保留 blob —— 同曲再进热复用 */
   stopAllUIMusic();
   gameWrap.classList.remove('active');
   gameHud.classList.remove('active');
@@ -5894,9 +5934,9 @@ function backToSong(){
   if(state!=='RESULT')return;
   resultLayer.classList.remove('active');
   resetAudioState();
-  /* 回选歌页就把这首的 blob 和监听器都放掉，下次再进是干净的一次加载 */
+  /* 回选歌页只停下载/监听，blob 留着：同一首再进走热缓存，不用重新加载 */
   songLoadRetry=null;
-  dropSongAudio();
+  abortSongDownload();
   stopAllUIMusic();
   gameWrap.classList.remove('active');
   gameHud.classList.remove('active');
@@ -8552,6 +8592,7 @@ function wireUI(){
   bind('#songBack','click',closeSong);
   bind('#btnStartGame','click',startGame);
   bind('#slCancel','click',()=>{ if(songLoadingFn)songLoadingFn(); else cancelSongLoading(); });
+  bind('#slMute','click',startNoMusicSession);
   bind('#btnSongSet','click',()=>openSettings('SONG'));
   bind('#chapterBack','click',closeChapterSelect);
   bind('#ssBack','click',closeSongSelect);

@@ -1496,7 +1496,11 @@ body.perf-lite .og-motes,body.perf-lite .og-rays{opacity:.25}
 .sl-log span:nth-child(2){color:rgba(255,207,106,.65)}
 .sl-cancel{margin-top:24px;width:100%;height:36px;border:1px solid rgba(180,210,225,.16);background:rgba(8,16,24,.6);color:rgba(190,215,225,.65);font:500 8px/1 var(--font-m);letter-spacing:.22em;cursor:pointer;transition:.2s}
 .sl-cancel:hover{border-color:rgba(255,90,140,.45);color:#ff9bb8;background:rgba(40,8,18,.3)}
-@media(max-width:640px){.sl-shell{width:auto;left:16px;right:16px;padding:24px 22px}.sl-orbit{width:36px;height:36px;right:18px;top:18px}.sl-shell h2{font-size:30px}.sl-log{font-size:6px;gap:8px}}
+.sl-actions{display:flex;gap:10px;margin-top:24px}
+.sl-actions .sl-cancel{margin-top:0;width:auto;flex:1}
+.sl-mute{border-color:rgba(110,205,255,.3);color:rgba(150,220,240,.8)}
+.sl-mute:hover{border-color:rgba(90,205,255,.62);color:#b8efff;background:rgba(6,26,42,.5)}
+@media(max-width:640px){.sl-shell{width:auto;left:16px;right:16px;padding:24px 22px}.sl-orbit{width:36px;height:36px;right:18px;top:18px}.sl-shell h2{font-size:30px}.sl-log{font-size:6px;gap:8px}.sl-actions{flex-direction:column;gap:8px}}
 /* full-bleed song map on desktop/tablet: no dead column at the right */
 @media (min-width:701px){
   .ss-stage{grid-template-columns:minmax(0,1fr);gap:0}
