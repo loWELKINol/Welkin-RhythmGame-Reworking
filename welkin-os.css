@@ -1500,6 +1500,10 @@ body.perf-lite .og-motes,body.perf-lite .og-rays{opacity:.25}
 .sl-actions .sl-cancel{margin-top:0;width:auto;flex:1}
 .sl-mute{border-color:rgba(110,205,255,.3);color:rgba(150,220,240,.8)}
 .sl-mute:hover{border-color:rgba(90,205,255,.62);color:#b8efff;background:rgba(6,26,42,.5)}
+/* 加载失败：进度条转红，一眼看出是断了不是还在转；MUTE RUN 高亮成退路 */
+.song-loading.failed .sl-bar i{background:linear-gradient(90deg,#5c0d22,#ff5a8c);box-shadow:0 0 18px rgba(255,90,140,.55)}
+.song-loading.failed .sl-kicker span{color:#ff6b96}
+.song-loading.failed .sl-mute{border-color:rgba(255,120,160,.55);color:#ffc2d4;background:rgba(46,8,20,.4)}
 @media(max-width:640px){.sl-shell{width:auto;left:16px;right:16px;padding:24px 22px}.sl-orbit{width:36px;height:36px;right:18px;top:18px}.sl-shell h2{font-size:30px}.sl-log{font-size:6px;gap:8px}.sl-actions{flex-direction:column;gap:8px}}
 /* full-bleed song map on desktop/tablet: no dead column at the right */
 @media (min-width:701px){
@@ -1995,7 +1999,9 @@ html[data-img="webp"]{--cover-wel:url("wel.webp");--cover-still:url("Still.webp"
 
 /* ---------- chapter select: 5 cards + art preview ---------- */
 .ch-cards{grid-template-columns:repeat(5,1fr)}
-.ch-preview .ch-art.img{background-size:cover;background-position:50% 38%;filter:saturate(.9) brightness(.76)}
+/* 取景由 paintChapterArt 按图片原始尺寸算（artZoom<1 时图比画布窄），
+   必须 no-repeat：否则窄出来的那截会被平铺，左右各多出半个人影。 */
+.ch-preview .ch-art.img{background-size:cover;background-position:50% 38%;background-repeat:no-repeat;filter:saturate(.9) brightness(.76)}
 .ch-preview .ch-art.img:before{display:none}
 .ch-veil{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(2,8,14,.12) 0%,rgba(2,8,14,.34) 46%,rgba(2,8,14,.82) 78%,rgba(2,8,14,.95) 100%)}
 .ch-preview .ch-info .ch-track{margin:7px 0 0;font:500 7.5px/1 var(--font-m);letter-spacing:.22em;color:rgba(206,228,242,.66);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -2439,6 +2445,11 @@ body.perf-lite .gd-panel::after{animation-duration:15s}
   border:1px solid var(--royal-line);box-shadow:inset 0 1px 0 rgba(247,227,168,.1)}
 .store-balance-big{display:inline-flex;align-items:center;gap:9px;font:500 9px/1 var(--font-m);letter-spacing:.18em;color:#a98e50}
 .store-balance-big .s-cur{font:800 34px/1 var(--font-d);color:#ffe9ad;font-variant-numeric:tabular-nums;text-shadow:0 0 22px rgba(232,200,118,.4)}
+/* 单抽按钮上方那格：不再是苍穹星余额，改成「累计抽取次数」（永久累计，只增不减） */
+.store-draw-total{gap:11px;padding:4px 0}
+.store-draw-total .sdt-kicker{font:600 9px/1 var(--font-m);letter-spacing:.26em;color:#a98e50}
+.store-draw-total .sdt-num{font:800 34px/1 var(--font-d);color:#ffe9ad;font-variant-numeric:tabular-nums;text-shadow:0 0 22px rgba(232,200,118,.4)}
+.store-draw-total .sdt-unit{font:600 9px/1 var(--font-m);letter-spacing:.2em;color:#8f7a44}
 /* 抽奖界面正下方 · 红色框框（剩余苍穹星） */
 .store-balance-red{display:inline-flex;align-items:center;gap:12px;padding:12px 28px;border-radius:10px;
   background:linear-gradient(160deg,#5c121c,#380a10 55%,#26060b);
