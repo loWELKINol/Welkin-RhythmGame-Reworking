@@ -2290,7 +2290,9 @@ const SPARK={
    曲绘 ltzz.avif、曲名 テリトリーバトル、铺面 ltzz.qua、音乐 ltzz.mp3、难度 11；
    仍锁在解锁链上逐关解锁；id 用 ch1-7 避免撞号。 */
 const CH1_T3={id:'ch1-7',chapterId:'ch1',no:'TRACK 03',title:'テリトリーバトル',artist:'WELKIN',charter:'Welkin',bpm:'140',length:'02:32',notes:849,level:11,boss:false,chart:'ltzz',audio:'ltzz.mp3',cover:'ltzz.avif',state:'locked',fingers:'multi'};
-const RIP={id:'ch1-4',chapterId:'ch1',no:'TRACK 04',title:'R.I.P.',artist:'—',charter:'—',bpm:'—',length:'—',notes:0,level:10,boss:false,chart:null,audio:null,cover:'R.I.P.avif',state:'locked',fingers:'dual'};
+/* 初章第四关：R.I.P. 正式接入。铺面 RIP.qua（1095 键 / 88 条长条，192 BPM）、
+   音乐 rip.mp3（02:30）、铺师 @__@、难度 13。特效见 ripChordShake / drawRipFog / ripSaturation。 */
+const RIP={id:'ch1-4',chapterId:'ch1',no:'TRACK 04',title:'R.I.P.',artist:'—',charter:'@__@',bpm:'192',length:'02:30',notes:1095,level:13,boss:false,chart:'rip',audio:'rip.mp3',cover:'R.I.P.avif',state:'locked',fingers:'dual'};
 const WELKIN={id:'ch1-5',chapterId:'ch1',no:'TRACK 06',title:'WELKIN',artist:'WELKIN',charter:'Welkin',bpm:'150',length:'04:12',notes:1662,level:16,boss:true,chart:'welkin',audio:'WELKIN.mp3',cover:'W.avif',state:'locked',fingers:'multi'};
 const CORR={id:'ch1-6',chapterId:'ch1',no:'TRACK 05',title:'Corrupted Entity',artist:'—',charter:'WeIkin',bpm:'181',length:'02:45',notes:1400,level:15,boss:false,chart:'corr',audio:'Corrupted Entity.mp3',cover:'Corr.avif',state:'locked',fingers:'dual'};
 const STILL={id:'ex-1',chapterId:'ex',no:'TRACK 01',title:'Still (piano version)',artist:'—',charter:'Welkin',bpm:'130',length:'01:48',notes:365,level:6,boss:true,chart:'still',audio:'Still.mp3',cover:'Still.avif',state:'locked',fingers:'dual'};
@@ -4137,6 +4139,7 @@ const CHART_META={
   still:{duration:108,final:101.769},
   w:{duration:86.34,final:82.006},
   ltzz:{duration:152.1,final:148.621},
+  rip:{duration:150.2,final:140.035},
   welkin:{duration:252,final:242.833},
   init:{duration:142.44,final:139.027},
   an:{duration:128.67,final:127.839},
@@ -4324,6 +4327,7 @@ function generateBeatmap(){
   else if(selectedSong&&selectedSong.chart==='still')buildStillChart();
   else if(selectedSong&&selectedSong.chart==='w')buildWChart();
   else if(selectedSong&&selectedSong.chart==='ltzz')buildLtzzChart();
+  else if(selectedSong&&selectedSong.chart==='rip')buildRipChart();
   else if(selectedSong&&selectedSong.chart==='welkin')buildWelkinChart();
   else if(selectedSong&&selectedSong.chart==='init')buildInitChart();
   else if(selectedSong&&selectedSong.chart==='an')buildAnChart();
@@ -4445,7 +4449,7 @@ function judgeBreak(n){
   game.perfect++;game.weightSum+=1;game.combo++;
   game.feedback='PERFECT';game.feedbackType='P';game.feedbackTimer=.62;game.comboScale=1.5;feedbackYOffset=0;
   game.judgeLineGlow=1;game.screenShake=Math.max(game.screenShake,2);
-  addHitFx(n.lane,0,n.is_chord,n.is_multi);ltzzChordShake(n);welkinChordShake(n);ch2ChordShake(n);playBreakSfx(n.lane);
+  addHitFx(n.lane,0,n.is_chord,n.is_multi);ltzzChordShake(n);welkinChordShake(n);ch2ChordShake(n);ripChordShake(n);playBreakSfx(n.lane);
   if(game.combo>game.maxCombo)game.maxCombo=game.combo;
   if(Math.abs(n.time-FINAL_CHORD_TIME)<.05)game.flashAlpha=.5;
 }
@@ -4456,7 +4460,7 @@ function startHold(n,quality){
   game.feedback=quality==='P'?'PERFECT':'GOOD';game.feedbackType=quality==='P'?'P':'G';
   game.feedbackTimer=.62;game.comboScale=1.5;feedbackYOffset=0;
   game.judgeLineGlow=quality==='P'?1:.6;game.screenShake=quality==='P'?2:1.5;
-  addHitFx(n.lane,quality==='P'?0:1,n.is_chord,n.is_multi);ltzzChordShake(n);welkinChordShake(n);ch2ChordShake(n);
+  addHitFx(n.lane,quality==='P'?0:1,n.is_chord,n.is_multi);ltzzChordShake(n);welkinChordShake(n);ch2ChordShake(n);ripChordShake(n);
   playHitSfx(n.lane,quality==='P'?0:1);
   if(game.combo>game.maxCombo)game.maxCombo=game.combo;
 }
@@ -4529,11 +4533,11 @@ function judgeLane(lane,stamp){
     if(bestDt<=PERFECT_WINDOW){
       game.perfect++;game.weightSum+=1;game.combo++;
       game.feedback='PERFECT';game.feedbackType='P';game.judgeLineGlow=1;game.screenShake=2.0;
-      addHitFx(lane,0,n.is_chord,n.is_multi);ltzzChordShake(n);welkinChordShake(n);ch2ChordShake(n);playHitSfx(lane,0);
+      addHitFx(lane,0,n.is_chord,n.is_multi);ltzzChordShake(n);welkinChordShake(n);ch2ChordShake(n);ripChordShake(n);playHitSfx(lane,0);
     }else if(bestDt<=GOOD_WINDOW){
       game.good++;game.weightSum+=.65;game.combo++;
       game.feedback='GOOD';game.feedbackType='G';game.judgeLineGlow=.6;game.screenShake=1.5;
-      addHitFx(lane,1,n.is_chord,n.is_multi);ltzzChordShake(n);welkinChordShake(n);ch2ChordShake(n);playHitSfx(lane,1);
+      addHitFx(lane,1,n.is_chord,n.is_multi);ltzzChordShake(n);welkinChordShake(n);ch2ChordShake(n);ripChordShake(n);playHitSfx(lane,1);
     }else{
       game.bad++;game.combo=0;game.feedback='BAD';game.feedbackType='B';
       addHitFx(lane,2,n.is_chord,n.is_multi);
@@ -4711,6 +4715,18 @@ function ch2ChordShake(n){
     amt=size>=3?16:12;
   }
   if(amt>0)game.screenShake=Math.max(game.screenShake,amt);
+}
+/* R.I.P.（初章第四关）— 双押小振动：从开头到结尾，只要成双押就轻轻抖一下，单点不抖。
+   幅度刻意压得比前几首小（双押 6 / 三押 7，基准 720 高），是「指尖的麻」不是砸屏。
+   只在命中(P/G)时触发；同一次和弦靠 ripChordShakeAt 去重，双押的两个键不会各抖一次。 */
+function ripChordShake(n){
+  if(!selectedSong||selectedSong.chart!=='rip')return;
+  const size=n.chordSize||1;
+  if(size<2)return;
+  const mt=n.time-MUSIC_DELAY;
+  if(Math.abs(mt-game.ripChordShakeAt)<0.03)return;
+  game.ripChordShakeAt=mt;
+  game.screenShake=Math.max(game.screenShake,size>=3?7:6);
 }
 function addMissFx(lane){
   const x=V.x+lane*V.laneW+V.laneW/2;
@@ -5058,7 +5074,7 @@ function resetGameData(){
     feedback:'',feedbackType:'',feedbackTimer:0,comboScale:1,screenShake:0,
     judgeLineGlow:0,bpmPulse:0,flashAlpha:0,whiteFlash:0,
     notes:[],effects:[],keyHold:[false,false,false,false],laneFlash:[0,0,0,0],
-    lastDelta:0,lastType:'',lastShakeBeat:-1,ltzzChordShakeAt:-999,welkinChordShakeAt:-999,ch2ChordShakeAt:-999,lanePtr:[0,0,0,0]
+    lastDelta:0,lastType:'',lastShakeBeat:-1,ltzzChordShakeAt:-999,welkinChordShakeAt:-999,ch2ChordShakeAt:-999,ripChordShakeAt:-999,lanePtr:[0,0,0,0]
   };
   generateBeatmap();
   // Mirror：谱面沿 y 轴左右翻转（只翻转显示/判定用的轨道，不改谱面配置与计分）。
@@ -5347,6 +5363,7 @@ const CHART_BUNDLE={
   still:{fn:'buildStillChart',file:'still_chart.js'},
   w:{fn:'buildWChart',file:'wel_chart.js'},
   ltzz:{fn:'buildLtzzChart',file:'ltzz_chart.js'},
+  rip:{fn:'buildRipChart',file:'rip_chart.js'},
   welkin:{fn:'buildWelkinChart',file:'welkin_chart.js'},
   init:{fn:'buildInitChart',file:'init_chart.js'},
   an:{fn:'buildAnChart',file:'an_chart.js'},
@@ -6065,6 +6082,7 @@ function drawGame(dt){
   const isWelkin=selectedSong&&selectedSong.chart==='welkin';
   const isCyber=selectedSong&&selectedSong.chart==='cyber';
   const isAn=selectedSong&&selectedSong.chart==='an';
+  const isRip=selectedSong&&selectedSong.chart==='rip';
   const mt=game.clock-MUSIC_DELAY;
   // Corr: lanes + background go grayscale (0 -> 70% over the countdown, stays 70%).
   // Notes/receptors/judgement stay full color, so we only wrap the backdrop+playfield.
@@ -6100,6 +6118,7 @@ function drawGame(dt){
   if(isWelkin)drawWelkinFog();
   if(isStill)drawStillRays();
   drawCh2Fog();
+  if(isRip)drawRipFog();
   if(!V.ultraFx)drawCh2Ambient();
   drawNotes();
   drawTopFade();
@@ -6173,6 +6192,26 @@ function drawGame(dt){
   /* 时逝：10s 淡入黑白 10%、18-20s 淡回全彩，同套 saturation 混合模式。 */
   if(isAn){
     const desat=clamp(1-anSaturation(mt),0,1);
+    if(desat>0.001){
+      if(welkinBlendOk(c)){
+        c.save();
+        c.globalCompositeOperation='saturation';
+        c.globalAlpha=desat;
+        c.fillStyle='#808080';
+        c.fillRect(0,0,V.w,V.h);
+        c.restore();
+        const q=Math.round(desat*100)/100;
+        if(q!==welkinHudDesat){welkinHudDesat=q;gameHud.style.filter='grayscale('+q+')';}
+      }else{
+        stage.style.filter='grayscale('+desat.toFixed(3)+')';
+        gameHud.style.filter='grayscale('+desat.toFixed(3)+')';
+        welkinHudDesat=-1;
+      }
+    }
+  }
+  /* R.I.P.：最后一组双押长条里整帧慢慢褪成黑白，长条松手时正好全灰并保持到曲子结束。 */
+  if(isRip){
+    const desat=clamp(1-ripSaturation(mt),0,1);
     if(desat>0.001){
       if(welkinBlendOk(c)){
         c.save();
@@ -7354,6 +7393,37 @@ function drawLtzzEndFogVeil(){
   c.fillStyle='rgba(0,0,0,'+v.toFixed(3)+')';
   c.fillRect(0,0,V.w,V.h);
   c.restore();
+}
+/* R.I.P.（初章第四关）exclusive FX —— 黑雾两段 + 收尾黑白。
+   黑雾：60s 淡入到 70%、持续 9 秒（60–69s）；80s 再淡入到 70%、持续 18 秒（80–98s）。
+   两段都用 smoothstep 包住：前后各留 1s 左右的淡入/淡出，不做硬切。 */
+function ripFogLevel(mt){
+  const env=(t0,dur,peak,atk,rel)=>{
+    if(mt<t0||mt>t0+dur)return 0;
+    const a=Math.min(clamp((mt-t0)/atk,0,1),clamp((t0+dur-mt)/rel,0,1));
+    return peak*a*a*(3-2*a);
+  };
+  return Math.max(env(60,9,.70,1.0,1.0),env(80,18,.70,1.2,1.2));
+}
+function drawRipFog(){
+  if(!selectedSong||selectedSong.chart!=='rip')return;
+  const f=ripFogLevel(game.clock-MUSIC_DELAY);
+  if(f<=.005)return;
+  const c=sctx;
+  c.save();
+  c.fillStyle='rgba(0,0,0,'+f.toFixed(3)+')';
+  c.fillRect(0,0,V.w,V.h);
+  c.restore();
+}
+/* 收尾黑白：最后一组双押长条（140.035s–143.186s，lane 1+4 同时按下）里，
+   屏幕颜色慢慢褪掉，长条按完的瞬间正好全灰，之后一直保持到曲子结束。
+   走 WELKIN 那套 saturation 混合模式（保亮度、去颜色，连音符/判定特效一起变），
+   老浏览器不支持时退化成给 canvas + HUD 挂 CSS grayscale。 */
+const RIP_FINAL_HOLD_START=140.035,RIP_FINAL_HOLD_END=143.186;
+function ripSaturation(mt){
+  if(mt<RIP_FINAL_HOLD_START)return 1;
+  if(mt>=RIP_FINAL_HOLD_END)return 0;
+  return 1-clamp((mt-RIP_FINAL_HOLD_START)/(RIP_FINAL_HOLD_END-RIP_FINAL_HOLD_START),0,1);
 }
 /* W. (prologue) exclusive FX — black fog + corruption, never drawn for other charts. */
 function wFogLevel(mt){
