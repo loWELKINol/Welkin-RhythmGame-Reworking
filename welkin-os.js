@@ -2323,9 +2323,10 @@ const SPARK={
    曲绘 ltzz.avif、曲名 テリトリーバトル、铺面 ltzz.qua、音乐 ltzz.mp3、难度 11；
    仍锁在解锁链上逐关解锁；id 用 ch1-7 避免撞号。 */
 const CH1_T3={id:'ch1-7',chapterId:'ch1',no:'TRACK 03',title:'テリトリーバトル',artist:'WELKIN',charter:'Welkin',bpm:'140',length:'02:32',notes:849,level:11,boss:false,chart:'ltzz',audio:'ltzz.mp3',cover:'ltzz.avif',state:'locked',fingers:'multi'};
-/* 初章第四关：R.I.P. 正式接入。铺面 RIP.qua（1095 键 / 88 条长条，192 BPM）、
-   音乐 rip.mp3（02:30）、铺师 @__@、难度 13。特效见 ripChordShake / drawRipFog / ripSaturation。 */
-const RIP={id:'ch1-4',chapterId:'ch1',no:'TRACK 04',title:'R.I.P.',artist:'—',charter:'@__@',bpm:'192',length:'02:30',notes:1095,level:13,boss:false,chart:'rip',audio:'rip.mp3',cover:'R.I.P.avif',state:'locked',fingers:'dual'};
+/* 初章第四关：R.I.P. 正式接入。铺面 RIP.qua（1065 键 / 88 条长条，192 BPM，
+   2026-11-27 由谱师更新后重新生成）、音乐 rip.mp3（02:30）、铺师 @__@、难度 13。
+   特效见 ripChordShake / drawRipFog / ripSaturation。 */
+const RIP={id:'ch1-4',chapterId:'ch1',no:'TRACK 04',title:'R.I.P.',artist:'—',charter:'@__@',bpm:'192',length:'02:30',notes:1065,level:13,boss:false,chart:'rip',audio:'rip.mp3',cover:'R.I.P.avif',state:'locked',fingers:'dual'};
 const WELKIN={id:'ch1-5',chapterId:'ch1',no:'TRACK 06',title:'WELKIN',artist:'WELKIN',charter:'Welkin',bpm:'150',length:'04:12',notes:1662,level:16,boss:true,chart:'welkin',audio:'WELKIN.mp3',cover:'W.avif',state:'locked',fingers:'multi'};
 const CORR={id:'ch1-6',chapterId:'ch1',no:'TRACK 05',title:'Corrupted Entity',artist:'—',charter:'WeIkin',bpm:'181',length:'02:45',notes:1400,level:15,boss:false,chart:'corr',audio:'Corrupted Entity.mp3',cover:'Corr.avif',state:'locked',fingers:'dual'};
 const STILL={id:'ex-1',chapterId:'ex',no:'TRACK 01',title:'Still (piano version)',artist:'—',charter:'Welkin',bpm:'130',length:'01:48',notes:365,level:6,boss:true,chart:'still',audio:'Still.mp3',cover:'Still.avif',state:'locked',fingers:'dual'};
@@ -5493,37 +5494,57 @@ function validateSongChart(song){
        不再傻等 45 秒 —— 上一条的「卡住不动」就是死在 45 秒超时之前那段死等的。
 --------------------------------------------------------------------------- */
 const SONG_CACHE='welkin_song_audio_v1';
+/* 给一个 Promise 加「到点就算失败」的保险。Cache Storage 在微信 X5 / 老 WebView 上
+   不是「抛错」，而是「不抛错也不返回」—— caches.open / match / blob 都可能永久挂住。
+   以前整条加载链就 await 在那里，22 秒总超时一响，症状就是
+   「每次都 AUDIO LOAD TIMEOUT、进度停在 0%、已下载 0.00MB」。 */
+function withTimeout(p,ms,fallback){
+  return new Promise(resolve=>{
+    let done=false;
+    const fin=v=>{if(done)return;done=true;resolve(v);};
+    const t=setTimeout(()=>fin(fallback),ms);
+    Promise.resolve(p).then(v=>{clearTimeout(t);fin(v);},()=>{clearTimeout(t);fin(fallback);});
+  });
+}
+const SONG_CACHE_TIMEOUT=3500;
+let songCacheDead=false;
 let songCacheReady=null;
 function songCacheOpen(){
+  if(songCacheDead)return Promise.resolve(null);
   if(songCacheReady)return songCacheReady;
-  songCacheReady=(async()=>{
+  const p=withTimeout((async()=>{
     try{
       /* 注意：caches 是对象不是函数，别用 typeof === 'function' 判（会永远进不来） */
       if(typeof caches==='undefined'||!caches||typeof caches.open!=='function')return null;
       return await caches.open(SONG_CACHE);
     }catch(e){return null;}
-  })();
+  })(),SONG_CACHE_TIMEOUT,null);
+  songCacheReady=p.then(c=>{
+    /* 打不开或挂住：本轮会话直接放弃缓存，之后一律走网络，别再每次卡 3.5 秒 */
+    if(!c){songCacheDead=true;songCacheReady=null;}
+    return c;
+  });
   return songCacheReady;
 }
 function songCacheGet(url){
-  return songCacheOpen().then(c=>{
+  return withTimeout(songCacheOpen().then(c=>{
     if(!c)return null;
     return c.match(url).then(r=>r?r.blob():null).catch(()=>null);
-  }).then(b=>(b&&b.size)?b:null).catch(()=>null);
+  }).then(b=>(b&&b.size)?b:null).catch(()=>null),SONG_CACHE_TIMEOUT,null);
 }
 function songCachePut(url,res){
-  return songCacheOpen().then(c=>{
+  return withTimeout(songCacheOpen().then(c=>{
     if(!c||!res)return false;
     return c.put(url,res).then(()=>true).catch(()=>false);
-  }).catch(()=>false);
+  }).catch(()=>false),SONG_CACHE_TIMEOUT,false);
 }
 /* 解不开的缓存条目要能删：老设备上偶尔会留下半截 blob，不删的话 RETRY
    每次都读同一份坏数据，看起来就是「永远卡在 86%」。 */
 function songCacheDelete(url){
-  return songCacheOpen().then(c=>{
+  return withTimeout(songCacheOpen().then(c=>{
     if(!c)return false;
     return c.delete(url).then(()=>true).catch(()=>false);
-  }).catch(()=>false);
+  }).catch(()=>false),SONG_CACHE_TIMEOUT,false);
 }
 /* 打开曲目详情页就开始预取：只灌 Cache Storage，不碰 <audio>，失败了也不吭声。 */
 const prefetching={};
@@ -5627,8 +5648,10 @@ async function fetchSongAudio(url,onProgress,signal){
   if(job&&job.state==='run'){
     const tick=setInterval(()=>{try{onProgress(job.recv,job.total);}catch(e){}},120);
     try{
-      const b=await job.p;
+      /* 预取任务也可能被一个挂住的缓存/网络调用拖死，别让它把正式加载也一起拖住 */
+      const b=await withTimeout(job.p,20000,null);
       if(b&&b.size){onProgress(b.size,b.size);return b;}
+      if(!b)job.state='fail';
     }finally{clearInterval(tick);}
   }
   /* 2. 缓存里已经有：0 网络 */
@@ -5816,6 +5839,12 @@ function loadSongForSession(song,done){
         if(bgm.duration>0&&isFinite(bgm.duration))songLoadingBytes('DUR '+fmtTime(bgm.duration));
       }catch(e){}
     };
+    /* 解码阶段不再吃「下载阶段的总超时」：老平板「下载完了但解不动」时会连做
+       blob（16s）和直读源文件（20s）两次尝试，合起来必然超过 22 秒。
+       以前这条总超时会在第二次尝试刚开始时就把人踢掉，症状就是
+       「每次进 R.I.P. 都是 AUDIO LOAD TIMEOUT」——文件明明下完了 100%。 */
+    clearTimeout(songLoadTimer);
+    songLoadTimer=setTimeout(()=>fail('AUDIO LOAD TIMEOUT'),30000);
     setPct(86,'DECODING',local?'BUILDING WAVEFORM':'STREAMING AUDIO');
     let ok=await hydrateSongAudio(src,decTick,local);
     if(!alive()||settled)return;
@@ -5832,9 +5861,14 @@ function loadSongForSession(song,done){
       if(!alive()||settled)return;
     }
     if(!ok){
-      /* 404 和「解不开」要分开报：前者是这台机器上没有这个文件，后者是解码器不吃。 */
+      /* 404 和「解不开」要分开报：前者是这台机器上没有这个文件，后者是解码器不吃。
+         报错里带上具体文件名（有的服务器是把 w.（.mp3 这种非 ASCII 名吃掉，
+         有的是整首没传上平板）—— 只写 FILE MISSING 根本看不出是哪一个。 */
       const httpCode=/HTTP\s+\d{3}/.exec(fetchErr||'');
-      fail(httpCode?('AUDIO '+httpCode[0]+' · FILE MISSING'):'AUDIO FILE UNREADABLE');
+      const which=String((song&&song.audio)||'').replace(/^\s+|\s+$/g,'');
+      fail(httpCode
+        ?('AUDIO '+httpCode[0]+' · FILE MISSING'+(which?' · '+which:''))
+        :('AUDIO FILE UNREADABLE'+(which?' · '+which:'')));
       return;
     }
     try{
