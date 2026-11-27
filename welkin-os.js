@@ -2323,10 +2323,10 @@ const SPARK={
    曲绘 ltzz.avif、曲名 テリトリーバトル、铺面 ltzz.qua、音乐 ltzz.mp3、难度 11；
    仍锁在解锁链上逐关解锁；id 用 ch1-7 避免撞号。 */
 const CH1_T3={id:'ch1-7',chapterId:'ch1',no:'TRACK 03',title:'テリトリーバトル',artist:'WELKIN',charter:'Welkin',bpm:'140',length:'02:32',notes:849,level:11,boss:false,chart:'ltzz',audio:'ltzz.mp3',cover:'ltzz.avif',state:'locked',fingers:'multi'};
-/* 初章第四关：R.I.P. 正式接入。铺面 RIP.qua（1065 键 / 88 条长条，192 BPM，
-   2026-11-27 由谱师更新后重新生成）、音乐 rip.mp3（02:30）、铺师 @__@、难度 14。
+/* 初章第四关：R.I.P. 正式接入。铺面 RIP.qua（1060 键 / 88 条长条，192 BPM，
+   2026-11-27 21:25 由谱师再次更新后重新生成）、音乐 rip.mp3（02:30）、铺师 @__@、难度 14。
    特效见 ripChordShake / drawRipFog / ripSaturation。 */
-const RIP={id:'ch1-4',chapterId:'ch1',no:'TRACK 04',title:'R.I.P.',artist:'—',charter:'@__@',bpm:'192',length:'02:30',notes:1065,level:14,boss:false,chart:'rip',audio:'rip.mp3',cover:'R.I.P.avif',state:'locked',fingers:'dual'};
+const RIP={id:'ch1-4',chapterId:'ch1',no:'TRACK 04',title:'R.I.P.',artist:'—',charter:'@__@',bpm:'192',length:'02:30',notes:1060,level:14,boss:false,chart:'rip',audio:'rip.mp3',cover:'R.I.P.avif',state:'locked',fingers:'dual'};
 const WELKIN={id:'ch1-5',chapterId:'ch1',no:'TRACK 06',title:'WELKIN',artist:'WELKIN',charter:'Welkin',bpm:'150',length:'04:12',notes:1662,level:16,boss:true,chart:'welkin',audio:'WELKIN.mp3',cover:'W.avif',state:'locked',fingers:'multi'};
 const CORR={id:'ch1-6',chapterId:'ch1',no:'TRACK 05',title:'Corrupted Entity',artist:'—',charter:'WeIkin',bpm:'181',length:'02:45',notes:1400,level:15,boss:false,chart:'corr',audio:'Corrupted Entity.mp3',cover:'Corr.avif',state:'locked',fingers:'dual'};
 const STILL={id:'ex-1',chapterId:'ex',no:'TRACK 01',title:'Still (piano version)',artist:'—',charter:'Welkin',bpm:'130',length:'01:48',notes:365,level:6,boss:true,chart:'still',audio:'Still.mp3',cover:'Still.avif',state:'locked',fingers:'dual'};
