@@ -2305,7 +2305,7 @@ const CH2_COVER_FILES=['init.avif','an.avif','La.avif','bn.avif','pen.avif','fb.
    ca=CyberAttack）。id 沿用 ch2-2…ch2-6 / ch2-boss，La 用独立 id ch2-7，避免撞旧通关记录。 */
 const CH2_INIT={id:'ch2-2',chapterId:'ch2',no:'TRACK 01',title:'init()',artist:'WELKIN',charter:'Welkin',bpm:'180',length:'02:22',notes:915,level:9,boss:false,chart:'init',audio:'init.mp3',cover:'init.avif',state:'locked',fingers:'dual'};
 const CH2_AN={id:'ch2-3',chapterId:'ch2',no:'TRACK 02',title:'时逝',artist:'WELKIN',charter:'Welkin',bpm:'199',length:'02:09',notes:1152,level:13,boss:false,chart:'an',audio:'an.mp3',cover:'an.avif',state:'locked',fingers:'dual'};
-const CH2_LA={id:'ch2-7',chapterId:'ch2',no:'TRACK 03',title:'Lamentation',artist:'WELKIN',charter:'Welkin',bpm:'98',length:'02:22',notes:770,level:15,boss:false,chart:'la',audio:'La.mp3',cover:'La.avif',state:'locked',fingers:'multi'};
+const CH2_LA={id:'ch2-7',chapterId:'ch2',no:'TRACK 03',title:'Lamentation',artist:'WELKIN',charter:'Welkin',bpm:'98',length:'02:22',notes:765,level:15,boss:false,chart:'la',audio:'La.mp3',cover:'La.avif',state:'locked',fingers:'multi'};
 const CH2_LADY={id:'ch2-4',chapterId:'ch2',no:'TRACK 04',title:'Grievous Lady',artist:'WELKIN',charter:'Welkin',bpm:'106',length:'02:22',notes:1505,level:17,boss:false,chart:'lady',audio:'Lady.mp3',cover:'bn.avif',state:'locked',fingers:'multi'};
 const CH2_PEN={id:'ch2-5',chapterId:'ch2',no:'TRACK 05',title:'Pentiment',artist:'WELKIN',charter:'Welkin',bpm:'111',length:'02:41',notes:1213,level:18,boss:false,chart:'pen',audio:'pen.mp3',cover:'pen.avif',state:'locked',fingers:'dual'};
 const CH2_FB={id:'ch2-6',chapterId:'ch2',no:'TRACK 06',title:'Tempestissimo',artist:'WELKIN',charter:'Welkin',bpm:'116',length:'02:18',notes:1730,level:19,boss:false,chart:'fb',audio:'fb.mp3',cover:'fb.avif',state:'locked',fingers:'multi'};
@@ -2331,7 +2331,7 @@ const WELKIN={id:'ch1-5',chapterId:'ch1',no:'TRACK 06',title:'WELKIN',artist:'WE
 const CORR={id:'ch1-6',chapterId:'ch1',no:'TRACK 05',title:'Corrupted Entity',artist:'—',charter:'WeIkin',bpm:'181',length:'02:45',notes:1400,level:15,boss:false,chart:'corr',audio:'Corrupted Entity.mp3',cover:'Corr.avif',state:'locked',fingers:'dual'};
 const STILL={id:'ex-1',chapterId:'ex',no:'TRACK 01',title:'Still (piano version)',artist:'—',charter:'Welkin',bpm:'130',length:'01:48',notes:365,level:6,boss:true,chart:'still',audio:'Still.mp3',cover:'Still.avif',state:'locked',fingers:'dual'};
 /* 主线序章：单曲章节，曲目 W。它有自己的选歌页（DATAFALL），和初章 TRACK 05 的占位互不影响。 */
-const PROLOGUE_W={id:'prologue-1',chapterId:'prologue',no:'TRACK 01',title:'W.',artist:'WELKIN',charter:'Welkin',bpm:'152',length:'01:26',notes:84,level:2,boss:false,chart:'w',audio:'w.（.mp3',cover:'wel.avif',state:'available',fingers:'dual'};
+const PROLOGUE_W={id:'prologue-1',chapterId:'prologue',no:'TRACK 01',title:'W.',artist:'WELKIN',charter:'Welkin',bpm:'152',length:'01:26',notes:87,level:2,boss:false,chart:'w',audio:'w.（.mp3',cover:'wel.avif',state:'available',fingers:'dual'};
 /* 终章普通曲（占位）：TRACK 01→06，魔王曲 TRACK 07，收尾曲 TRACK 08(secret)。
    新插的第三关暂无曲绘，cover 保持 null；插在 TRACK 02 和 TRACK 03 之间，
    独立 id ch3-8 避免撞号，其余沿用 ch3-2…ch3-6 / ch3-boss。 */
@@ -7821,9 +7821,11 @@ function ch2TimedShake(at){
   return null;
 }
 /* 蓝键→黄键转换（在 finalizeChart 之后做，此时 chordSize 已知）：
+   - W.：6.315s–6.9s 那六连（3/2 轨交替）的蓝键全变黄键
    - 时逝：69s–73.719s 所有蓝键（tap）变黄键
    - CyberAttack：124.299s–137.697s 的「单点」蓝键（chordSize<2，即不成双押/多押）变黄键 */
 const BREAK_RANGES={
+  w:{start:6.315,end:6.9,singleOnly:false},
   an:{start:69,end:73.719,singleOnly:false},
   cyber:{start:124.299,end:137.697,singleOnly:true}
 };
